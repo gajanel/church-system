@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { getMembers, createMember, updateMember, deleteMember,
          getMemberMinistries, assignMinistry, removeMinistry, uploadMemberPhoto } from "../api/members";
 import { getMinistries, getMinistryRoles } from "../api/ministries";
+import { API_URL } from "../api/api";
 import MemberForm from "../components/MemberForm";
 import ConfirmDialog from "../components/ConfirmDialog";
 import {
@@ -131,7 +132,7 @@ export default function Members() {
     setConfirmOpen(true);
   };
 
-  const photoUrl = (m) => m.photo_url ? `http://${window.location.hostname}:8000${m.photo_url}` : "";
+  const photoUrl = (m) => m.photo_url ? `${API_URL}${m.photo_url}` : "";
 
   return (
     <div className={s.page}>

@@ -7,13 +7,14 @@ import {
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Save as SaveIcon, People as PeopleIcon, TrendingUp as TrendingIcon, AssignmentInd as AttendanceIcon, EventAvailable as EventIcon } from "@mui/icons-material";
 import axios from "axios";
+import { API_URL as BASE_URL } from "../api/api";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { PageHeader } from "../components/ui/PageHeader";
 import s from "../styles/page.module.css";
 
-const API_URL      = `http://${window.location.hostname}:8000/attendance`;
+const API_URL      = `${BASE_URL}/attendance`;
 const SERVICE_TYPES = [
   "Culto de Oracion",
   "Culto Ministerio de la Mujer",

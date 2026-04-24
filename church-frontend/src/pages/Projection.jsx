@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { WS_URL } from "../api/api";
 
 export default function Projection() {
   const [payload, setPayload] = useState(null); // { type, data }
@@ -29,7 +30,7 @@ export default function Projection() {
     // Conectar WebSocket
     let ws;
     const connect = () => {
-      ws = new WebSocket(`ws://${window.location.hostname}:8000/announcements/ws`);
+      ws = new WebSocket(`${WS_URL}/announcements/ws`);
       
       ws.onmessage = (event) => {
         const message = JSON.parse(event.data);

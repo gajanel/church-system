@@ -1,4 +1,5 @@
 import API from "./api";
+import { API_URL } from "./api";
 
 /** Obtiene la configuración global del sistema. */
 export const getSettings = () => API.get("/settings");
@@ -15,7 +16,7 @@ export const factoryReset = () => API.post("/settings/factory-reset");
 /** Descarga un backup JSON de la base de datos. */
 export const downloadBackup = async () => {
   const token = localStorage.getItem("token");
-  const baseUrl = `http://${window.location.hostname}:8000`;
+  const baseUrl = API_URL;
   const res = await fetch(`${baseUrl}/settings/backup`, {
     headers: { Authorization: `Bearer ${token}` },
   });

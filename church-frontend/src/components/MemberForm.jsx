@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Grid, TextField, MenuItem, Button, Box, Avatar, IconButton, Typography, Alert, CircularProgress } from "@mui/material";
 import { PhotoCamera } from "@mui/icons-material";
+import { API_URL } from "../api/api";
 
 const emptyForm = {
   first_name: "", last_name: "", phone: "", email: "",
@@ -19,7 +20,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
   useEffect(() => {
     if (initial) {
       setForm({ ...emptyForm, ...initial });
-      setPhotoPreview(initial.photo_url ? `http://${window.location.hostname}:8000${initial.photo_url}` : "");
+      setPhotoPreview(initial.photo_url ? `${API_URL}${initial.photo_url}` : "");
     }
     else {
       setForm(emptyForm);

@@ -8,6 +8,7 @@ import {
 import { Visibility, VisibilityOff, LockOutlined, Person, Shield } from "@mui/icons-material";
 import { useToast } from "../components/ui/Toast";
 import { getPublicSettings } from "../api/settings";
+import { API_URL } from "../api/api";
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -37,7 +38,7 @@ function Login() {
     if (!username || !password) { setError("Ingresa tu usuario y contraseña"); return; }
     setLoading(true); setError("");
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/auth/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim().toLowerCase(), password }),
@@ -73,7 +74,7 @@ function Login() {
     if (newPassword !== confirmPassword) { setError("Las contraseñas no coinciden"); return; }
     setLoading(true); setError("");
     try {
-      const response = await fetch(`http://${window.location.hostname}:8000/auth/change-password`, {
+      const response = await fetch(`${API_URL}/auth/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tokenToSave}` },
         body: JSON.stringify({ 

@@ -13,6 +13,7 @@ import {
   History
 } from "@mui/icons-material";
 import { getSettings, updateSettings, downloadBackup, factoryReset } from "../api/settings";
+import { API_URL } from "../api/api";
 import { getAuditLogs } from "../api/audit";
 import { changePassword } from "../api/users";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -198,7 +199,7 @@ export default function Settings() {
     setRestoreDialog(false);
     try {
       const token = localStorage.getItem("token");
-      const baseUrl = `http://${window.location.hostname}:8000`;
+      const baseUrl = API_URL;
       const formData = new FormData();
       formData.append("file", restoreFile);
 
