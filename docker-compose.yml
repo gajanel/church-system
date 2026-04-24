@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Base de datos (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: church-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - church-network
+
+  # Backend (FastAPI)
+  backend:
+    build: ./backend
+    container_name: church-backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      - db
+    volumes:
+      - ./backend/static:/app/static
+    ports:
+      - "8000:8000"
+    networks:
+      - church-network
+
+  # Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./church-frontend
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+    container_name: church-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - church-network
+
+networks:
+  church-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,469 @@
+/* ════════════════════════════════════════════════════════
+   MainLayout.module.css
+   Enterprise shell — sidebar + topbar + main
+   ════════════════════════════════════════════════════════ */
+
+/* ── Shell ── */
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--surface-app);
+  color: var(--text-primary);
+}
+
+/* ════════════════════════════════════════════════════════
+   SIDEBAR — Modern Enterprise Glass
+   ════════════════════════════════════════════════════════ */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--surface-sidebar);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-slow);
+}
+
+/* Mobile overlay */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 199;
+  backdrop-filter: blur(4px);
+}
+
+/* Logo / Brand */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-5);
+  height: var(--topbar-height);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);   /* darker logo area — Snipe-IT style */
+}
+
+.logoMark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.logoName {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logoBadge {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(184, 199, 206, 0.7);   /* muted sidebar text */
+  line-height: 1;
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Nav */
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-3);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+
+.nav::-webkit-scrollbar { width: 3px; }
+.nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 99px;
+}
+
+.navSection {
+  font-size: 10px;
+  font-weight: 700;
+  color: #4a5b60;   /* Snipe-IT section label */
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 0 var(--sp-3);
+  margin-bottom: var(--sp-3);
+  user-select: none;
+}
+
+.navList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Nav item base */
+.navBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 10px var(--sp-4);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sidebar-text);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition-base);
+  overflow: hidden;
+}
+
+.navBtn:hover {
+  background: var(--sidebar-item-hover-bg);
+  color: #e2e8f0;
+}
+
+/* Active state — Snipe-IT left border highlight */
+.navBtn.active {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--sidebar-text-active);
+  font-weight: 600;
+}
+
+.activePill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--sidebar-item-active-border);
+  border-radius: 0 2px 2px 0;
+}
+
+.navIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: inherit;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.navBtn:hover .navIcon,
+.navBtn.active .navIcon {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.navTitle {
+  flex: 1;
+}
+
+.navArrow {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.2s;
+  color: var(--text-muted);
+}
+
+.navBtn:hover .navArrow {
+  opacity: 0.5;
+  transform: translateX(0);
+}
+
+.navBtn.active .navArrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--color-primary);
+}
+
+.navBtn.active .navIcon {
+  color: #93c5fd;
+  opacity: 1;
+}
+
+/* ════════════════════════════════════════════════════════
+   TOPBAR — White, clean, enterprise
+   ════════════════════════════════════════════════════════ */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: var(--topbar-height);
+  background: var(--surface-topbar);   /* Snipe-IT blue topbar */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--sp-6);
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  transition: left var(--transition-slow);
+}
+
+:global(html.dark) .topbar {
+  background: #2a6f96;
+}
+
+.hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.topbarTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;   /* white text on blue topbar */
+  letter-spacing: -0.01em;
+}
+
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.dividerV {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 var(--sp-2);
+}
+
+/* ── Global Action Buttons ── */
+.iconActionBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.85);   /* white icons on blue topbar */
+  cursor: pointer;
+  font-family: var(--font);
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.iconActionBtn:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: #ffffff;
+}
+
+.langLabel {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* ── Language & User Menu Wrap ── */
+.langMenuWrap {
+  position: relative;
+}
+
+.userMenuWrap {
+  position: relative;
+}
+
+.userMenuBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.userMenuBtn:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;   /* white on blue topbar */
+  line-height: 1.2;
+}
+
+.userRole {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);   /* semi-transparent on blue */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  background: rgba(0, 0, 0, 0.2);   /* dark avatar on blue topbar */
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Dropdown */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--sp-2);
+  z-index: 999;
+}
+
+.dropdownSection {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 12px 4px;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 8px;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  font-weight: 500;
+}
+
+.dropdownItem:hover {
+  background: var(--surface-app);
+}
+
+.logoutBtn {
+  color: var(--color-error);
+}
+
+.logoutBtn:hover {
+  background: var(--color-error-light);
+}
+
+.langFlag {
+  font-size: 16px;
+}
+
+/* ════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ════════════════════════════════════════════════════════ */
+.main {
+  margin-left: var(--sidebar-width);
+  margin-top: var(--topbar-height);
+  flex: 1;
+  min-height: calc(100vh - var(--topbar-height));
+  padding: var(--sp-8);
+  background: var(--surface-app);
+  transition: margin-left var(--transition-slow);
+}
+
+/* ════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .overlay {
+    display: block;
+  }
+
+  .topbar {
+    left: 0;
+  }
+
+  .main {
+    margin-left: 0;
+    padding: var(--sp-4);
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .userInfo {
+    display: none;
+  }
+}
