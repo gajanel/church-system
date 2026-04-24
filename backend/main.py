@@ -148,6 +148,8 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # ── Archivos estáticos ─────────────────────────────────────────────
+if not os.path.exists("static"):
+    os.makedirs("static")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ── Routers ───────────────────────────────────────────────────────
