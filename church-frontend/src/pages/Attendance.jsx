@@ -26,11 +26,11 @@ const SERVICE_TYPES = [
   "Otro"
 ];
 
-const STAT_CARDS = (latest) => [
-  { label: "Asistencia Total", value: latest?.total ?? 0, sub: latest ? `Último: ${latest.service_type}` : "Sin registros", color: "var(--color-primary-hover)", icon: <PeopleIcon sx={{ fontSize: 20, color: "#fff" }} />, textColor: "#fff" },
-  { label: "Convertidos", value: latest?.converts ?? 0, sub: "Total de almas nuevas", color: "var(--color-info)", icon: <TrendingIcon sx={{ fontSize: 20, color: "#fff" }} />, textColor: "#fff" },
-  { label: "Invitados Especiales", value: latest?.visitors ?? 0, sub: "Nuevas Visitas", color: "var(--surface-card)", icon: <EventIcon sx={{ fontSize: 20 }} />, textColor: "var(--text-primary)" },
-  { label: "Ministerio Infantil", value: latest?.children ?? 0, sub: "Asistencia de menores", color: "var(--surface-card)", icon: <AttendanceIcon sx={{ fontSize: 20 }} />, textColor: "var(--text-primary)" },
+const STAT_CARDS = (summary) => [
+  { label: "Asistencia Total", value: summary.total ?? 0, sub: "Acumulado del periodo", color: "#0F172A", icon: <PeopleIcon sx={{ fontSize: 20, color: "#fff" }} />, textColor: "#fff" },
+  { label: "Convertidos", value: summary.converts ?? 0, sub: "Total de almas nuevas", color: "#166534", icon: <TrendingIcon sx={{ fontSize: 20, color: "#fff" }} />, textColor: "#fff" },
+  { label: "Invitados Especiales", value: summary.visitors ?? 0, sub: "Nuevas Visitas", color: "#ffffff", icon: <EventIcon sx={{ fontSize: 20, color: "#64748b" }} />, textColor: "#0F172A", border: "1px solid #e5e7eb" },
+  { label: "Ministerio Infantil", value: summary.children ?? 0, sub: "Asistencia de menores", color: "#ffffff", icon: <AttendanceIcon sx={{ fontSize: 20, color: "#64748b" }} />, textColor: "#0F172A", border: "1px solid #e5e7eb" },
 ];
 
 function Attendance() {
@@ -41,6 +41,7 @@ function Attendance() {
   const [error, setError]          = useState(null);
   const [success, setSuccess]      = useState(null);
   const [editingId, setEditingId]  = useState(null);
+  const [dateFilter, setDateFilter] = useState("all");
   
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState({ title: "", content: "", onConfirm: () => {} });
@@ -129,23 +130,50 @@ function Attendance() {
     setConfirmOpen(true);
   };
 
-  const latest = attendanceList[0] || null;
+  const filteredList = attendanceList.filter(row => {
+    if (dateFilter === "all") return true;
+    const date = new Date(row.date + "T12:00:00");
+    const now = new Date();
+    if (dateFilter === "month") return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    if (dateFilter === "7days") return (now - date) / (1000 * 60 * 60 * 24) <= 7;
+    return true;
+  });
+
+  const summary = {
+    total: filteredList.reduce((acc, row) => acc + (row.total || 0), 0),
+    converts: filteredList.reduce((acc, row) => acc + (row.converts || 0), 0),
+    visitors: filteredList.reduce((acc, row) => acc + (row.visitors || 0), 0),
+    children: filteredList.reduce((acc, row) => acc + (row.children || 0), 0)
+  };
 
   return (
     <div className={s.page}>
       <PageHeader title="Registro de Asistencia" subtitle="Gestiona la asistencia de los diferentes cultos y sociedades.">
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpen}>Registrar Asistencia</Button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <TextField 
+            select 
+            size="small" 
+            value={dateFilter} 
+            onChange={(e) => setDateFilter(e.target.value)} 
+            sx={{ minWidth: 150, bgcolor: 'white' }}
+          >
+            <MenuItem value="all">Todos los registros</MenuItem>
+            <MenuItem value="month">Este Mes</MenuItem>
+            <MenuItem value="7days">Últimos 7 días</MenuItem>
+          </TextField>
+          <Button variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }} size="small" startIcon={<AddIcon />} onClick={handleOpen}>Registrar Asistencia</Button>
+        </div>
       </PageHeader>
 
-      {success && <div style={{ padding:"10px 16px", borderRadius:8, background:"var(--color-success-light)", border:"1px solid var(--color-success-border)", color:"var(--color-success)", fontSize:13, fontWeight:600, marginBottom:16 }}>{success}</div>}
+      {success && <div style={{ padding:"10px 16px", borderRadius:8, background:"#dcfce7", border:"1px solid #86efac", color:"#166534", fontSize:13, fontWeight:600, marginBottom:16 }}>{success}</div>}
       {error   && <div className={s.errorText}>{error}</div>}
 
       {/* Summary cards */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px,1fr))", gap:16, marginBottom:24 }}>
-        {STAT_CARDS(latest).map((sc, i) => (
-          <Card key={i} style={{ background:sc.color, border: sc.color==="var(--surface-card)"?"1px solid var(--border)":"none" }}>
+        {STAT_CARDS(summary).map((sc, i) => (
+          <Card key={i} style={{ background:sc.color, border: sc.border || "none", boxShadow: "none" }}>
             <CardBody>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, opacity:sc.color!=="var(--surface-card)"?.85:1 }}>{sc.icon}<span style={{ fontSize:11, fontWeight:700, color:sc.textColor, opacity:.9 }}>{sc.label}</span></div>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8, opacity:sc.color==="#ffffff"?1:0.85 }}>{sc.icon}<span style={{ fontSize:11, fontWeight:700, color:sc.textColor, opacity:.9 }}>{sc.label}</span></div>
               <div style={{ fontSize:36, fontWeight:800, color:sc.textColor, lineHeight:1 }}>{sc.value}</div>
               <div style={{ fontSize:11, color:sc.textColor, opacity:.8, marginTop:6, fontWeight:500 }}>{sc.sub}</div>
             </CardBody>
@@ -154,25 +182,25 @@ function Attendance() {
       </div>
 
       {/* Table */}
-      <TableContainer component={Paper} elevation={0} sx={{ border:"1px solid var(--border)", borderRadius:"10px", overflow:"hidden" }}>
-        <Table>
+      <TableContainer component={Paper} elevation={0} sx={{ border:"1px solid #e5e7eb", borderRadius:"4px", boxShadow:"none" }}>
+        <Table size="small" sx={{ '& .MuiTableCell-root': { padding: '6px 12px', fontSize: '0.8125rem', borderBottom: '1px solid #e5e7eb' } }}>
           <TableHead>
-            <TableRow>
+            <TableRow sx={{ '& th': { fontWeight:600, color:"#374151", bgcolor:"#f9fafb" } }}>
               <TableCell>Fecha</TableCell>
               <TableCell>Culto / Actividad</TableCell>
-              <TableCell align="center">Caballeros</TableCell>
-              <TableCell align="center">Damas</TableCell>
-              <TableCell align="center">Jóvenes</TableCell>
-              <TableCell align="center">Niños</TableCell>
-              <TableCell align="center">Visitas</TableCell>
-              <TableCell align="center">Convertidos</TableCell>
-              <TableCell align="center">Total</TableCell>
-              <TableCell align="center">Acciones</TableCell>
+              <TableCell align="center" sx={{ width: '8%' }}>Caballeros</TableCell>
+              <TableCell align="center" sx={{ width: '8%' }}>Damas</TableCell>
+              <TableCell align="center" sx={{ width: '8%' }}>Jóvenes</TableCell>
+              <TableCell align="center" sx={{ width: '8%' }}>Niños</TableCell>
+              <TableCell align="center" sx={{ width: '8%' }}>Visitas</TableCell>
+              <TableCell align="center" sx={{ width: '9%' }}>Convertidos</TableCell>
+              <TableCell align="center" sx={{ width: '9%' }}>Total</TableCell>
+              <TableCell align="center" sx={{ width: '10%' }}>Acciones</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {attendanceList.map(row => (
-              <TableRow key={row.id}>
+            {filteredList.map(row => (
+              <TableRow key={row.id} sx={{ '&:nth-of-type(even)': { bgcolor: '#F9FAFB' }, '&:hover': { bgcolor:"#f1f5f9" }, transition: 'background-color 0.2s' }}>
                 <TableCell sx={{ fontWeight:500 }}>{row.date}</TableCell>
                 <TableCell><Badge variant="info" size="sm">{row.service_type}</Badge></TableCell>
                 <TableCell align="center">{row.men}</TableCell>
@@ -180,9 +208,9 @@ function Attendance() {
                 <TableCell align="center">{row.youth}</TableCell>
                 <TableCell align="center">{row.children}</TableCell>
                 <TableCell align="center">{row.visitors}</TableCell>
-                <TableCell align="center" sx={{ fontWeight:700, color:"var(--color-primary)" }}>{row.converts}</TableCell>
-                <TableCell align="center">
-                  <span style={{ fontWeight:700, padding:"2px 10px", background:"var(--color-primary)", color:"#fff", borderRadius:99, fontSize:12 }}>{row.total}</span>
+                <TableCell align="center" sx={{ fontWeight:700, color:"#166534" }}>{row.converts}</TableCell>
+                <TableCell align="center" sx={{ fontWeight:800, bgcolor: "#f1f5f9", borderRight: "1px solid #e5e7eb", borderLeft: "1px solid #e5e7eb" }}>
+                  {row.total}
                 </TableCell>
                 <TableCell align="center">
                   <Tooltip title="Editar">
@@ -198,7 +226,7 @@ function Attendance() {
                 </TableCell>
               </TableRow>
             ))}
-            {attendanceList.length === 0 && (
+            {filteredList.length === 0 && (
               <TableRow>
                 <TableCell colSpan={10} align="center" sx={{ py:6, color:"text.secondary" }}>
                   No hay registros de asistencia actualmente.
@@ -215,9 +243,9 @@ function Attendance() {
           <DialogTitle sx={{ fontWeight:800 }}>Registrar Nueva Asistencia</DialogTitle>
           <DialogContent dividers>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
-              <TextField label="Fecha" type="date" name="date" fullWidth value={formData.date}
+              <TextField size="small" label="Fecha" type="date" name="date" fullWidth value={formData.date}
                 onChange={handleChange} InputLabelProps={{ shrink:true }} required />
-              <TextField select label="Tipo de Actividad" name="service_type" fullWidth
+              <TextField size="small" select label="Tipo de Actividad" name="service_type" fullWidth
                 value={formData.service_type} onChange={handleChange} required>
                 {SERVICE_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </TextField>
@@ -225,15 +253,15 @@ function Attendance() {
             <Divider sx={{ my:2 }}>Asistentes por Categoría</Divider>
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:16 }}>
               {[["Caballeros","men"],["Damas","women"],["Jóvenes","youth"],["Niños","children"],["Visitas","visitors"],["Convertidos","converts"]].map(([lbl,nm]) => (
-                <TextField key={nm} label={lbl} type="number" name={nm} value={formData[nm]} onChange={handleChange} />
+                <TextField size="small" key={nm} label={lbl} type="number" name={nm} value={formData[nm]} onChange={handleChange} />
               ))}
             </div>
-            <TextField label="Notas / Observaciones" name="notes" fullWidth multiline rows={3}
+            <TextField size="small" label="Notas / Observaciones" name="notes" fullWidth multiline rows={3}
               value={formData.notes} onChange={handleChange} placeholder="Detalles sobre el servicio..." />
           </DialogContent>
           <DialogActions sx={{ p:2.5 }}>
             <Button onClick={() => setOpen(false)} color="inherit">Cancelar</Button>
-            <Button type="submit" variant="contained" startIcon={<SaveIcon />} disabled={loading} sx={{ px:3 }}>
+            <Button type="submit" variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"}, px:3 }} startIcon={<SaveIcon />} disabled={loading}>
               Guardar Registro
             </Button>
           </DialogActions>

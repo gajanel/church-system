@@ -59,6 +59,7 @@ export default function Finance() {
   const [exPage, setExPage]             = useState(1);
   const [exTotal, setExTotal]           = useState(1);
   const [exForm, setExForm]             = useState({ expense_type:"Alquiler terreno", amount:"", date:getToday(), observations:"" });
+  const [exFile, setExFile]             = useState(null);
 
   const [fixedExp, setFixedExp]         = useState([]);
   const [fixForm, setFixForm]           = useState({ name:"", amount:"" });
@@ -138,8 +139,15 @@ export default function Finance() {
   const onGasto = async e => {
     e.preventDefault(); setError("");
     try {
-      await createExpense({ ...exForm, amount:exForm.expense_type==="Diezmo de Ofrendas"?0:parseFloat(exForm.amount), observations:exForm.observations||null });
+      const fd = new FormData();
+      fd.append("expense_type", exForm.expense_type);
+      fd.append("amount", exForm.expense_type === "Diezmo de Ofrendas" ? 0 : parseFloat(exForm.amount));
+      fd.append("date", exForm.date);
+      if (exForm.observations) fd.append("observations", exForm.observations);
+      if (exFile) fd.append("file", exFile);
+      await createExpense(fd);
       setExForm({ expense_type:"Alquiler terreno", amount:"", date:getToday(), observations:"" });
+      setExFile(null);
       refreshActive();
     } catch { setError("Error al registrar gasto"); }
   };
@@ -375,7 +383,29 @@ export default function Finance() {
                   />
                   <TextField required type="date" label="Fecha *" InputLabelProps={{ shrink:true }} value={exForm.date} onChange={e => setExForm({...exForm, date:e.target.value})} />
                 </div>
-                <TextField fullWidth label="Observaciones y detalles de la factura" value={exForm.observations} onChange={e => setExForm({...exForm, observations:e.target.value})} style={{ marginBottom:12 }} />
+                <div style={{ display:"grid", gridTemplateColumns:"1fr auto", gap:12, marginBottom:12, alignItems:"center" }}>
+                  <TextField fullWidth label="Observaciones y detalles de la factura" value={exForm.observations} onChange={e => setExForm({...exForm, observations:e.target.value})} />
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    color={exFile ? "success" : "primary"}
+                    startIcon={<Receipt />}
+                  >
+                    {exFile ? "Cambiar Comprobante" : "Adjuntar Comprobante"}
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*,.pdf"
+                      onChange={e => setExFile(e.target.files[0] || null)}
+                    />
+                  </Button>
+                </div>
+                {exFile && (
+                  <div style={{ fontSize:11, color:"var(--color-success)", fontWeight:600, marginBottom:12, display:"flex", alignItems:"center", gap:6 }}>
+                    ✓ Comprobante listo: {exFile.name}
+                    <button type="button" onClick={() => setExFile(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--color-error)", fontSize:12, fontWeight:700 }}>✕</button>
+                  </div>
+                )}
                 <div style={{ display:"flex", justifyContent:"flex-end" }}>
                   <Button type="submit" variant="contained" color="error" startIcon={<AddCircle />}>Registrar Gasto</Button>
                 </div>
@@ -384,14 +414,33 @@ export default function Finance() {
           </Card>
           <p style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Historial de Egresos</p>
           {loading ? (
-            <TableSkeleton rows={10} cols={5} />
+            <TableSkeleton rows={10} cols={6} />
           ) : (
             <TableWrap>
-              <TableHead><TableRow><TableCell>Fecha</TableCell><TableCell>Concepto</TableCell><TableCell>Observaciones</TableCell><TableCell>Autorizado Por</TableCell><TableCell align="right">Desembolso</TableCell></TableRow></TableHead>
+              <TableHead><TableRow><TableCell>Fecha</TableCell><TableCell>Concepto</TableCell><TableCell>Observaciones</TableCell><TableCell>Autorizado Por</TableCell><TableCell align="center">Comprobante</TableCell><TableCell align="right">Desembolso</TableCell></TableRow></TableHead>
               <TableBody>
-                {expenses.length === 0 ? <TableRow><TableCell colSpan={5} align="center">Sin registros</TableCell></TableRow>
+                {expenses.length === 0 ? <TableRow><TableCell colSpan={6} align="center">Sin registros</TableCell></TableRow>
                 : expenses.map(ex => (
-                  <TableRow key={ex.id}><TableCell>{ex.date}</TableCell><TableCell>{ex.expense_type}</TableCell><TableCell sx={{ color:"text.secondary" }}>{ex.observations||"—"}</TableCell><TableCell>{ex.created_by_name}</TableCell><TableCell align="right" sx={{ fontWeight:700, color:"var(--color-error)" }}>-{fmt(ex.amount)}</TableCell></TableRow>
+                  <TableRow key={ex.id}>
+                    <TableCell>{ex.date}</TableCell>
+                    <TableCell>{ex.expense_type}</TableCell>
+                    <TableCell sx={{ color:"text.secondary" }}>{ex.observations||"—"}</TableCell>
+                    <TableCell>{ex.created_by_name}</TableCell>
+                    <TableCell align="center">
+                      {ex.document_url ? (
+                        <Button
+                          size="small"
+                          startIcon={<Receipt />}
+                          onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}${ex.document_url}`, "_blank")}
+                        >
+                          Ver
+                        </Button>
+                      ) : (
+                        <span style={{ fontSize:10, color:"var(--text-muted)" }}>Sin doc.</span>
+                      )}
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight:700, color:"var(--color-error)" }}>-{fmt(ex.amount)}</TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </TableWrap>

@@ -7,70 +7,91 @@ import './i18n'
 import App from './App.jsx'
 
 /**
- * MUI "Ghost" Theme
- * MUI se usa solo para widgets complejos (Table, Dialog, DatePicker).
- * Los colores y tipografía son controlados por nuestro Design System (tokens.css).
+ * MUI Corporate Flat Theme
+ * Navy Blue corporate primary · Dense · Flat · 4-6px radius
  */
 const theme = createTheme({
   palette: {
-    primary:    { main: '#1e3a8a', light: '#2563eb', dark: '#1e40af', contrastText: '#fff' },
-    secondary:  { main: '#0369a1', contrastText: '#fff' },
-    success:    { main: '#16a34a' },
-    error:      { main: '#dc2626' },
-    warning:    { main: '#d97706' },
+    primary:   { main: '#1e3a5f', light: '#3b82f6', dark: '#0f2540', contrastText: '#fff' },
+    secondary: { main: '#374151', contrastText: '#fff' },
+    success:   { main: '#16a34a' },
+    error:     { main: '#dc2626' },
+    warning:   { main: '#d97706' },
     text: {
       primary:   '#111827',
-      secondary: '#6b7280',
-      disabled:  '#9ca3af',
+      secondary: '#374151',
+      disabled:  '#9CA3AF',
     },
     background: {
-      default: '#f3f4f6',
-      paper:   '#ffffff',
+      default: '#F9FAFB',
+      paper:   '#FFFFFF',
     },
-    divider: '#e5e7eb',
+    divider: '#E5E7EB',
   },
   typography: {
-    fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
     fontSize: 13,
     button: {
       textTransform: 'none',
       fontWeight: 600,
       fontSize: 13,
     },
+    h1: { fontWeight: 700 },
+    h2: { fontWeight: 700 },
+    h3: { fontWeight: 700 },
+    h4: { fontWeight: 600 },
+    h5: { fontWeight: 600 },
+    h6: { fontWeight: 600 },
   },
-  shape: { borderRadius: 6 },
+  shape: { borderRadius: 4 },
   shadows: [
-    'none',
-    '0 1px 2px rgba(0,0,0,0.04)',
-    '0 1px 3px rgba(0,0,0,0.06)',
-    '0 4px 6px -1px rgba(0,0,0,0.07)',
-    '0 10px 15px -3px rgba(0,0,0,0.08)',
-    '0 20px 25px -5px rgba(0,0,0,0.08)',
+    'none',           // 0
+    '0 1px 2px rgba(0,0,0,0.05)',   // 1
+    '0 1px 3px rgba(0,0,0,0.07)',   // 2
+    '0 2px 4px rgba(0,0,0,0.07)',   // 3
+    '0 4px 8px rgba(0,0,0,0.08)',   // 4
+    '0 8px 16px rgba(0,0,0,0.08)',  // 5
     ...Array(19).fill('none'),
   ],
   components: {
-    MuiCssBaseline: { styleOverrides: { body: { backgroundColor: '#f3f4f6' } } },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: { backgroundColor: '#F9FAFB' },
+      },
+    },
+
+    /* ── Buttons — flat, 4px radius ── */
     MuiButton: {
       styleOverrides: {
         root: {
           boxShadow: 'none',
-          borderRadius: 6,
+          borderRadius: 4,
+          fontWeight: 600,
+          letterSpacing: 0,
           '&:hover': { boxShadow: 'none' },
         },
+        containedPrimary: {
+          background: '#1e3a5f',
+          '&:hover': { background: '#16304f' },
+        },
+        sizeMedium: { padding: '6px 14px' },
+        sizeSmall:  { padding: '4px 10px', fontSize: 12 },
       },
     },
+
+    /* ── Tables — zebra striping ── */
     MuiTableHead: {
       styleOverrides: {
         root: {
           '& .MuiTableCell-head': {
-            backgroundColor: '#f9fafb',
-            color: '#6b7280',
+            backgroundColor: '#F3F4F6',
+            color: '#374151',
             fontWeight: 700,
             fontSize: 11,
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
-            borderBottom: '1px solid #e5e7eb',
-            padding: '10px 16px',
+            borderBottom: '1px solid #E5E7EB',
+            padding: '8px 12px',
           },
         },
       },
@@ -79,8 +100,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           fontSize: 13,
-          borderBottom: '1px solid #f3f4f6',
-          padding: '11px 16px',
+          borderBottom: '1px solid #F3F4F6',
+          padding: '9px 12px',
           color: '#111827',
         },
       },
@@ -88,76 +109,155 @@ const theme = createTheme({
     MuiTableRow: {
       styleOverrides: {
         root: {
-          '&:hover': { backgroundColor: '#f9fafb' },
-          '&:last-child td': { borderBottom: 0 },
+          /* Zebra striping */
+          '&:nth-of-type(odd)':  { backgroundColor: '#FFFFFF' },
+          '&:nth-of-type(even)': { backgroundColor: '#F9FAFB' },
+          '&:hover':             { backgroundColor: '#EBF0F7 !important' },
+          '&:last-child td':     { borderBottom: 0 },
         },
       },
     },
+
+    /* ── Chips — flat 3px radius ── */
     MuiChip: {
       styleOverrides: {
         root: {
           fontFamily: "'Inter', sans-serif",
           fontWeight: 600,
           fontSize: 11,
-          height: 22,
-          borderRadius: 99,
+          height: 20,
+          borderRadius: 3,
         },
-        label: { padding: '0 8px' },
+        label: { padding: '0 7px' },
       },
     },
+
+    /* ── Text fields — dense ── */
     MuiTextField: {
       defaultProps: { size: 'small' },
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
             fontSize: 13,
-            borderRadius: 6,
-            '& fieldset': { borderColor: '#e5e7eb' },
-            '&:hover fieldset': { borderColor: '#d1d5db' },
-            '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+            borderRadius: 4,
+            '& fieldset':             { borderColor: '#E5E7EB' },
+            '&:hover fieldset':       { borderColor: '#D1D5DB' },
+            '&.Mui-focused fieldset': { borderColor: '#1e3a5f', borderWidth: '1.5px' },
+          },
+          '& .MuiInputLabel-root.Mui-focused': {
+            color: '#1e3a5f',
           },
         },
       },
     },
+
+    /* ── Select ── */
     MuiSelect: {
       defaultProps: { size: 'small' },
+      styleOverrides: {
+        outlined: { borderRadius: 4 },
+      },
     },
+
+    /* ── Dialogs — flat ── */
     MuiDialog: {
       styleOverrides: {
         paper: {
-          borderRadius: 12,
-          boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+          borderRadius: 6,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          border: '1px solid #E5E7EB',
         },
       },
     },
-    MuiPaper: {
+    MuiDialogTitle: {
       styleOverrides: {
-        root: { backgroundImage: 'none' },
-        rounded: { borderRadius: 8 },
+        root: {
+          fontSize: 15,
+          fontWeight: 600,
+          padding: '14px 20px',
+          borderBottom: '1px solid #E5E7EB',
+        },
       },
     },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: { padding: '16px 20px' },
+      },
+    },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          padding: '12px 20px',
+          borderTop: '1px solid #E5E7EB',
+          gap: 8,
+        },
+      },
+    },
+
+    /* ── Paper ── */
+    MuiPaper: {
+      styleOverrides: {
+        root:    { backgroundImage: 'none' },
+        rounded: { borderRadius: 4 },
+      },
+    },
+
+    /* ── Card ── */
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          borderRadius: 10,
-          border: '1px solid #e5e7eb',
+          boxShadow: 'none',
+          borderRadius: 4,
+          border: '1px solid #E5E7EB',
         },
+      },
+    },
+
+    /* ── Tabs ── */
+    MuiTabs: {
+      styleOverrides: {
+        root:      { borderBottom: '1px solid #E5E7EB', minHeight: 42 },
+        indicator: { backgroundColor: '#1e3a5f', height: 2 },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          minHeight: 42,
+          fontSize: 13,
+          fontWeight: 500,
+          color: '#6B7280',
+          padding: '0 16px',
+          '&.Mui-selected': { color: '#1e3a5f', fontWeight: 600 },
+        },
+      },
+    },
+
+    /* ── Tooltip ── */
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: {
+          backgroundColor: '#1F2937',
+          fontSize: 12,
+          borderRadius: 4,
+          padding: '4px 10px',
+        },
+        arrow: { color: '#1F2937' },
+      },
+    },
+
+    /* ── Alerts — flat ── */
+    MuiAlert: {
+      styleOverrides: {
+        root: { borderRadius: 4, fontSize: 13 },
       },
     },
   },
 });
 
-// ─── Professional Navigation Refresh Logic ───
-// Detecta si la página se carga desde el caché del navegador (bfcache) 
-// al presionar "atrás" y fuerza una recarga controlada si es necesario.
+// Detect bfcache navigation
 window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    // Si la página viene del bfcache, recargamos la información
-    // Esto asegura datos frescos sin penalizar la navegación inicial.
-    console.log('Navegación detectada desde caché. Refrescando datos...');
-    window.location.reload();
-  }
+  if (event.persisted) window.location.reload();
 });
 
 createRoot(document.getElementById('root')).render(

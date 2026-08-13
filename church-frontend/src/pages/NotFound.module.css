@@ -18,11 +18,7 @@
   font-weight: 800;
   margin: 0;
   line-height: 1;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  opacity: 0.15;
+  color: var(--border);
 }
 
 .title {

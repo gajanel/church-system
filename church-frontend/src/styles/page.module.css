@@ -1,56 +1,38 @@
 /* ════════════════════════════════════════════════════════
-   page.module.css — Utilidades compartidas para todas las páginas
+   page.module.css — Shared page utilities
+   Corporate flat style — dense & information-rich
    ════════════════════════════════════════════════════════ */
 
-/* ── Wrapper de página ── */
+/* ── Wrapper ── */
 .page {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding-bottom: var(--sp-10);
+  padding-bottom: var(--sp-8);
 }
 
-/* ── Toolbar (búsqueda + filtros) ── */
+/* ── Toolbar ── */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   flex-wrap: wrap;
-  margin-bottom: var(--sp-5);
+  margin-bottom: var(--sp-3);
 }
 
-/* ── Grids de cards ── */
-.cardGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--sp-4);
-}
+/* ── Card grids — tighter gaps ── */
+.cardGrid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--sp-3); }
+.cardGrid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: var(--sp-3); }
+.cardGrid4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--sp-3); }
 
-.cardGrid2 {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: var(--sp-4);
-}
-
-.cardGrid4 {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: var(--sp-4);
-}
-
-/* ── Card interna de miembro / usuario ── */
-.memberHead {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-3);
-}
-
+/* ── Member card internals ── */
+.memberHead { display: flex; align-items: flex-start; gap: var(--sp-3); }
 .memberInfo { flex: 1; min-width: 0; }
 
 .memberName {
   font-size: var(--text-md);
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
-  margin: 0 0 4px;
+  margin: 0 0 3px;
   line-height: 1.3;
 }
 
@@ -59,17 +41,18 @@
   align-items: center;
   gap: var(--sp-1);
   font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin-bottom: 3px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
 }
 
-/* ── Card footer / acciones ── */
+/* ── Card footer ── */
 .cardFooter {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  padding: var(--sp-2) var(--sp-4) var(--sp-2);
   border-top: 1px solid var(--border);
+  background: #FAFAFA;
 }
 
 .cardActions {
@@ -78,15 +61,15 @@
   gap: var(--sp-1);
 }
 
-/* ── Avatar custom ── */
+/* ── Avatar ── */
 .avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-full);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-lg);
+  font-size: 14px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
@@ -94,20 +77,21 @@
 }
 
 .avatarSm {
-  width: 36px;
-  height: 36px;
-  font-size: var(--text-base);
+  width: 30px;
+  height: 30px;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
 }
 
-/* ── Badge row (múltiples chips) ── */
+/* ── Badge row ── */
 .badgeRow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-1);
-  margin-top: var(--sp-2);
+  margin-top: var(--sp-1);
 }
 
-/* ── Rol selector grid ── */
+/* ── Role selector grid ── */
 .roleGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -118,23 +102,18 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: 9px 12px;
+  padding: 7px 10px;
   border-radius: var(--radius-md);
-  border: 1.5px solid var(--border);
+  border: 1px solid var(--border);
   background: transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
   font-family: var(--font);
 }
 
-.roleItem:hover { border-color: var(--border-strong); background: #f9fafb; }
-.roleItemActive { border-color: var(--color-primary) !important; background: var(--color-primary-light) !important; }
-
-.roleLabel {
-  font-size: var(--text-sm);
-  font-weight: 400;
-  color: var(--text-primary);
-}
+.roleItem:hover         { border-color: var(--border-strong); background: var(--surface-app); }
+.roleItemActive         { border-color: var(--color-primary) !important; background: var(--color-primary-light) !important; }
+.roleLabel              { font-size: var(--text-sm); font-weight: 400; color: var(--text-primary); }
 .roleItemActive .roleLabel { font-weight: 600; color: var(--color-primary); }
 
 /* ── Empty state ── */
@@ -143,19 +122,19 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--sp-12) var(--sp-6);
-  background: rgba(0, 0, 0, 0.02);
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-xl);
+  padding: var(--sp-10) var(--sp-6);
+  background: var(--surface-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
   color: var(--text-muted);
   text-align: center;
   gap: var(--sp-2);
-  margin-top: var(--sp-6);
+  margin-top: var(--sp-4);
 }
 
 .emptyTitle {
-  font-size: var(--text-lg);
-  font-weight: 700;
+  font-size: var(--text-md);
+  font-weight: 600;
   color: var(--text-secondary);
   margin: 0;
 }
@@ -164,10 +143,10 @@
   font-size: var(--text-base);
   color: var(--text-muted);
   margin: 0;
-  max-width: 400px;
+  max-width: 380px;
 }
 
-/* ── Error/info inline ── */
+/* ── Inline error ── */
 .errorText {
   color: var(--color-error);
   font-size: var(--text-sm);
@@ -176,42 +155,41 @@
   background: var(--color-error-light);
   border: 1px solid var(--color-error-border);
   border-radius: var(--radius-md);
-  margin-bottom: var(--sp-4);
+  margin-bottom: var(--sp-3);
 }
 
-/* ── Panel secundario (dentro de dialog) ── */
+/* ── Sub panel ── */
 .subPanel {
-  background: #f9fafb;
+  background: var(--surface-app);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--sp-4);
+  border-radius: var(--radius-md);
+  padding: var(--sp-3);
 }
 
 .subPanelTitle {
   font-size: var(--text-sm);
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0 0 var(--sp-3);
 }
 
-/* ── Stat row (label + value horizontal) ── */
+/* ── Stat row ── */
 .statRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--border);
   font-size: var(--text-base);
 }
-
 .statRow:last-child { border-bottom: none; }
-.statRow label { color: var(--text-secondary); font-weight: 500; }
-.statRow span  { color: var(--text-primary);   font-weight: 700; }
+.statRow label { color: var(--text-muted);    font-weight: 400; }
+.statRow span  { color: var(--text-primary);  font-weight: 600; }
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .cardGrid, .cardGrid2 { grid-template-columns: 1fr; }
-  .roleGrid { grid-template-columns: 1fr; }
+  .roleGrid              { grid-template-columns: 1fr; }
 }

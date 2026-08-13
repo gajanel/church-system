@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { getMinistries, createMinistry, updateMinistry, deleteMinistry } from "../api/ministries";
 import {
-  Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
+  Button, TableRow, TableCell, IconButton,
+  Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, FormGroup, FormControlLabel, Checkbox, MenuItem
 } from "@mui/material";
-import { AddHomeWork, Edit, Delete, AccountBalance } from "@mui/icons-material";
+import { AddHomeWorkOutlined, EditOutlined, DeleteOutlined, AccountBalanceOutlined } from "@mui/icons-material";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { Badge } from "../components/ui/Badge";
 import { PageHeader } from "../components/ui/PageHeader";
+import DataTable from "../components/ui/DataTable";
 import s from "../styles/page.module.css";
 
 const ALL_ROLES  = ["Coordinador","Subcoordinador","Secretario","Tesorero","Vocal 1","Vocal 2","Vocal 3","Vocal 4"];
@@ -66,10 +67,12 @@ export default function Ministries() {
     setConfirmOpen(true);
   };
 
+  const [search, setSearch] = useState("");
+
   return (
     <div className={s.page}>
       <PageHeader title="Ministerios" subtitle="Administra los departamentos y sus roles dentro de la congregación.">
-        <Button variant="contained" startIcon={<AddHomeWork />}
+        <Button variant="contained" size="small" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }} startIcon={<AddHomeWorkOutlined sx={{ fontSize: 15 }} />}
           onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}>
           Nuevo Ministerio
         </Button>
@@ -77,55 +80,51 @@ export default function Ministries() {
 
       {error && !showForm && <div className={s.errorText}>{error}</div>}
 
-      <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid var(--border)", borderRadius: "10px" }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Nombre del Ministerio</TableCell>
-              <TableCell>Día de Servicio</TableCell>
-              <TableCell>Roles Disponibles</TableCell>
-              <TableCell align="right">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {ministries.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 5, color: "text.secondary" }}>
-                  No hay ministerios registrados
-                </TableCell>
-              </TableRow>
-            ) : (
-              ministries.map(m => (
-                <TableRow key={m.id}>
-                  <TableCell sx={{ fontWeight: 600 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <AccountBalance sx={{ fontSize: 14, color: "var(--color-primary)" }} /> {m.name}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {m.service_day
-                      ? <Badge variant="info">{m.service_day}</Badge>
-                      : <span style={{ color: "var(--text-disabled)", fontSize: 12 }}>Sin asignar</span>}
-                  </TableCell>
-                  <TableCell>
-                    <div className={s.badgeRow}>
-                      {m.roles.map(r => <Badge key={r.id} variant="ghost">{r.role}</Badge>)}
-                    </div>
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton color="primary" size="small" onClick={() => handleEdit(m)} sx={{ mr: 1 }}>
-                      <Edit fontSize="small" />
-                    </IconButton>
-                    <IconButton color="error" size="small" onClick={() => handleDelete(m.id)}>
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <DataTable
+        columns={[
+          { label: "Ministerio",  width: "28%" },
+          { label: "Día",         width: "12%" },
+          { label: "Roles",       width: "auto" },
+          { label: "Miembros",    width: "10%" },
+          { label: "Acciones",    width: "10%", align: "right" },
+        ]}
+        rows={ministries.filter(m => !search || m.name.toLowerCase().includes(search.toLowerCase()))}
+        search={search}
+        onSearch={setSearch}
+        searchPlaceholder="Buscar ministerio..."
+        emptyText="No hay ministerios registrados."
+        renderRow={(m) => (
+          <TableRow key={m.id} sx={{ '&:hover': { bgcolor:"#f9fafb" } }}>
+            <TableCell>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <AccountBalanceOutlined sx={{ fontSize: 14, color: "var(--color-primary)" }} />
+                <span style={{ fontWeight: 600, fontSize: 13 }}>{m.name}</span>
+              </div>
+            </TableCell>
+            <TableCell>
+              {m.service_day
+                ? <Badge variant="info" size="sm">{m.service_day}</Badge>
+                : <span style={{ color: "var(--text-disabled)", fontSize: 12 }}>—</span>}
+            </TableCell>
+            <TableCell>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                {m.roles.map(r => <Badge key={r.id} variant="ghost" size="sm">{r.role}</Badge>)}
+              </div>
+            </TableCell>
+            <TableCell sx={{ fontSize: 12, color: "text.secondary" }}>{m.member_count ?? "—"}</TableCell>
+            <TableCell align="right">
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                <IconButton size="small" onClick={() => handleEdit(m)}>
+                  <EditOutlined sx={{ fontSize: 15 }} />
+                </IconButton>
+                <IconButton size="small" color="error" onClick={() => handleDelete(m.id)}>
+                  <DeleteOutlined sx={{ fontSize: 15 }} />
+                </IconButton>
+              </div>
+            </TableCell>
+          </TableRow>
+        )}
+      />
 
       {/* Dialog Form */}
       <Dialog open={showForm} onClose={() => { setShowForm(false); setError(""); }} maxWidth="sm" fullWidth>
@@ -133,9 +132,9 @@ export default function Ministries() {
           <DialogTitle sx={{ fontWeight: 800 }}>{editing ? "Editar Ministerio" : "Nuevo Ministerio"}</DialogTitle>
           <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {error && <div className={s.errorText}>{error}</div>}
-            <TextField label="Nombre del ministerio" value={form.name}
+            <TextField size="small" label="Nombre del ministerio" value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })} required fullWidth />
-            <TextField select label="Día de Servicio" value={form.service_day}
+            <TextField size="small" select label="Día de Servicio" value={form.service_day}
               onChange={e => setForm({ ...form, service_day: e.target.value })}
               fullWidth InputLabelProps={{ shrink: true }}>
               <MenuItem value=""><em>(Sin día asignado)</em></MenuItem>
@@ -159,7 +158,7 @@ export default function Ministries() {
           </DialogContent>
           <DialogActions sx={{ p: 2.5 }}>
             <Button onClick={() => { setShowForm(false); setError(""); setEditing(null); }} color="inherit">Cancelar</Button>
-            <Button type="submit" variant="contained" sx={{ px: 3 }}>Guardar</Button>
+            <Button type="submit" variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"}, px:3 }}>Guardar</Button>
           </DialogActions>
         </form>
       </Dialog>

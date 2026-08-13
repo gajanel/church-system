@@ -1,100 +1,85 @@
-/* Dashboard.module.css */
+/* Dashboard.module.css — Corporate flat, dense layout */
 
 .page {
   max-width: var(--content-max);
   margin: 0 auto;
-  padding-bottom: var(--sp-10);
-}
-
-/* ── Metric Cards Grid ── */
-.metricsGrid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--sp-4);
-  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-8);
 }
 
 /* ── Charts Grid ── */
 .chartsGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--sp-4);
-  margin-bottom: var(--sp-5);
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
 }
 
-/* ── Bottom Grid (table + stats) ── */
+/* ── Bottom Grid ── */
 .bottomGrid {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: var(--sp-4);
+  grid-template-columns: 1fr 300px;
+  gap: var(--sp-3);
 }
 
-/* ── Metric Card internals ── */
-.metricInner {
+/* ── Metric Tabs — Minimalist non-AI flat layout ── */
+.metricsTabs {
   display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: var(--sp-6);
+  padding-bottom: var(--sp-2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.metricTab {
+  display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 10px;
-}
-
-.metricTop {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
+  text-align: center;
+  padding: 12px 16px;
+  min-width: 140px;
+  border-right: 1px solid var(--border);
+  gap: 6px;
 }
 
-.metricLabel {
-  font-size: var(--text-xs);
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-
-.metricIcon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+.metricTab:last-child {
+  border-right: none;
 }
 
 .metricValue {
-  font-size: 26px;
-  font-weight: 900;
+  font-size: 22px;
+  font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.04em;
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 .metricSub {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
   line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
 }
 
-/* ── Icon color helpers ── */
-.iconSuccess { background: rgba(0, 166, 90, 0.1); color: var(--color-success); }
-.iconError   { background: rgba(221, 75, 57, 0.1); color: var(--color-error);   }
-.iconPrimary { background: rgba(60, 141, 188, 0.1); color: var(--color-primary); }
-.iconNeutral { background: rgba(0, 0, 0, 0.05);     color: var(--text-secondary); }
+/* ── Icon colors ── */
+.iconSuccess { background: var(--color-success-light); color: var(--color-success); }
+.iconError   { background: var(--color-error-light);   color: var(--color-error);   }
+.iconPrimary { background: var(--color-primary-light); color: var(--color-primary); }
+.iconNeutral { background: #F3F4F6;                    color: var(--text-muted);    }
 
 /* ── Text color helpers ── */
 .textSuccess { color: var(--color-success); }
 .textError   { color: var(--color-error); }
 .textMuted   { color: var(--text-muted); }
 
-
 /* ── Charts ── */
 .chartWrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 210px;
+  min-height: 190px;
 }
 
 /* Bar chart */
@@ -103,25 +88,22 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-around;
-  padding-bottom: 28px;
-  padding-top: 20px;
+  padding-bottom: 24px;
+  padding-top: 16px;
   width: 100%;
-  height: 210px;
+  height: 190px;
 }
 
 .barGrid {
   position: absolute;
-  top: 20px;
-  left: 8px;
-  right: 8px;
-  bottom: 28px;
+  top: 16px; left: 8px; right: 8px; bottom: 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   pointer-events: none;
 }
 
-.barGridLine { border-top: 1px dashed rgba(0,0,0,0.06); }
+.barGridLine { border-top: 1px dashed rgba(0,0,0,0.05); }
 
 .barGroup {
   display: flex;
@@ -132,22 +114,22 @@
   width: 25%;
   position: relative;
   z-index: 1;
-  gap: 8px;
+  gap: 6px;
 }
 
 .barValue {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .bar {
   width: 100%;
-  max-width: 48px;
-  border-radius: 6px 6px 0 0;
-  transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  min-height: 4px;
+  max-width: 40px;
+  border-radius: 3px 3px 0 0;
+  transition: height 0.4s ease;
+  min-height: 3px;
 }
 
 .barLabel {
@@ -155,7 +137,7 @@
   font-weight: 500;
   color: var(--text-muted);
   position: absolute;
-  bottom: -20px;
+  bottom: -18px;
   text-align: center;
   white-space: nowrap;
 }
@@ -165,42 +147,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 210px;
+  height: 190px;
   color: var(--text-muted);
   font-size: var(--text-base);
 }
 
-/* ── Admin stats list ── */
+/* ── Stat rows ── */
 .statRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--border);
 }
-
 .statRow:last-child { border-bottom: none; }
-
-.statLabel {
-  font-size: var(--text-base);
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.statValue {
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: var(--text-primary);
-}
+.statLabel { font-size: var(--text-base); color: var(--text-secondary); font-weight: 400; }
+.statValue { font-size: var(--text-base); font-weight: 700; color: var(--text-primary); }
 
 /* Section divider */
 .sectionLabel {
-  font-size: var(--text-xs);
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  padding: var(--sp-4) 0 var(--sp-3);
+  padding: var(--sp-3) 0 var(--sp-2);
   border-top: 1px solid var(--border);
   margin-top: var(--sp-2);
 }
@@ -210,7 +181,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .ministryName {
@@ -227,13 +198,11 @@
   .metricsGrid { grid-template-columns: repeat(3, 1fr); }
   .chartsGrid  { grid-template-columns: repeat(2, 1fr); }
 }
-
 @media (max-width: 900px) {
   .metricsGrid { grid-template-columns: repeat(2, 1fr); }
   .chartsGrid  { grid-template-columns: 1fr; }
   .bottomGrid  { grid-template-columns: 1fr; }
 }
-
 @media (max-width: 480px) {
   .metricsGrid { grid-template-columns: 1fr; }
 }

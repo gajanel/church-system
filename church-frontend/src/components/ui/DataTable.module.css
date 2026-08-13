@@ -1,0 +1,75 @@
+/* DataTable.module.css — Corporate dense table styles */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Filter bar ── */
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  flex-wrap: wrap;
+}
+
+.filterLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Native select — compact, flat corporate style */
+.filterSelect {
+  height: 36px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.1s;
+  min-width: 140px;
+}
+
+.filterSelect:hover  { border-color: var(--border-strong); }
+.filterSelect:focus  { border-color: var(--color-primary); }
+
+/* ── Table container ── */
+.tableContainer {
+  border: 1px solid var(--border) !important;
+  border-radius: 0 0 4px 4px !important;
+}
+
+/* If no filter bar, round all corners */
+.wrapper:not(:has(.filterBar)) .tableContainer {
+  border-radius: 4px !important;
+}
+
+/* ── Table ── */
+.table {
+  table-layout: fixed;
+}

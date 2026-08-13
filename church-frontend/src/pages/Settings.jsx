@@ -21,18 +21,18 @@ import { PageHeader } from "../components/ui/PageHeader";
 // ── Componente de Sección ─────────────────────────────────────────────
 function Section({ icon, title, subtitle, children }) {
   return (
-    <Card variant="outlined" sx={{ borderRadius: 3, mb: 3, overflow: "visible" }}>
+    <Card variant="outlined" sx={{ borderRadius: 1, mb: 3, overflow: "visible" }}>
       <CardContent sx={{ p: 3 }}>
         <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 3 }}>
           <Box sx={{
-            p: 1.2, borderRadius: 2,
-            background: "linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%)",
+            p: 1.2, borderRadius: 1,
+            background: "rgba(34, 113, 177, 0.08)",
             color: "primary.main", display: "flex"
           }}>
             {icon}
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{title}</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2, fontSize: 15 }}>{title}</Typography>
             {subtitle && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.3 }}>{subtitle}</Typography>}
           </Box>
         </Box>
@@ -95,6 +95,7 @@ export default function Settings() {
     loadSettings(); 
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
     setCurrentUser(storedUser);
+    if (!storedUser?.is_admin) setTab(4);
   }, []);
 
   useEffect(() => {
@@ -241,17 +242,21 @@ export default function Settings() {
   );
 
   const TABS = [
-    { label: "Identidad",  icon: <Business fontSize="small" /> },
-    { label: "Finanzas",  icon: <AttachMoney fontSize="small" /> },
-    { label: "Versículo", icon: <MenuBook fontSize="small" /> },
-    { label: "Marca",     icon: <Palette fontSize="small" /> },
-    { label: "Seguridad", icon: <Lock fontSize="small" /> },
-    { label: "Datos",     icon: <Backup fontSize="small" /> },
-    { label: "Apariencia", icon: <SettingsIcon fontSize="small" /> },
-    { label: "Auditoría", icon: <History fontSize="small" />, adminOnly: true },
+    { id: 0, label: "Identidad",  icon: <Business fontSize="small" />, adminOnly: true },
+    { id: 1, label: "Finanzas",  icon: <AttachMoney fontSize="small" />, adminOnly: true },
+    { id: 2, label: "Versículo", icon: <MenuBook fontSize="small" />, adminOnly: true },
+    { id: 3, label: "Marca",     icon: <Palette fontSize="small" />, adminOnly: true },
+    { id: 4, label: "Seguridad", icon: <Lock fontSize="small" /> },
+    { id: 5, label: "Datos",     icon: <Backup fontSize="small" />, superAdminOnly: true },
+    { id: 6, label: "Apariencia", icon: <SettingsIcon fontSize="small" /> },
+    { id: 7, label: "Auditoría", icon: <History fontSize="small" />, superAdminOnly: true },
   ];
 
-  const filteredTabs = TABS.filter(t => !t.adminOnly || currentUser?.is_admin);
+  const filteredTabs = TABS.filter(t => {
+    if (t.superAdminOnly) return currentUser?.is_super_admin;
+    if (t.adminOnly) return currentUser?.is_admin || currentUser?.is_super_admin;
+    return true;
+  });
 
   return (
     <Box sx={{ pb: 6, maxWidth: 900, mx: "auto" }}>
@@ -276,9 +281,10 @@ export default function Settings() {
           scrollButtons="auto"
           sx={{ borderBottom: 1, borderColor: "divider", px: 1 }}
         >
-          {TABS.map((t, i) => (
+          {filteredTabs.map((t) => (
             <Tab
-              key={i}
+              key={t.id}
+              value={t.id}
               label={t.label}
               icon={t.icon}
               iconPosition="start"

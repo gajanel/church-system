@@ -9,8 +9,11 @@ export const createIncome = (data) => API.post("/finance/incomes", data);
 export const deleteIncome = (id) => API.delete(`/finance/incomes/${id}`);
 
 export const getExpenses = (p=1, s=50) => API.get(`/finance/expenses?page=${p}&size=${s}`);
-export const createExpense = (data) => API.post("/finance/expenses", data);
+export const createExpense = (formData) => API.post("/finance/expenses", formData, {
+  headers: { "Content-Type": "multipart/form-data" }
+});
 export const deleteExpense = (id) => API.delete(`/finance/expenses/${id}`);
+
 
 export const getMonthlySummary = (month, year) =>
   API.get(`/finance/summary?month=${month}&year=${year}&_t=${Date.now()}`);
@@ -18,6 +21,7 @@ export const getMonthlySummary = (month, year) =>
 export const getFixedExpenses = () => API.get("/finance/fixed-expenses");
 export const createFixedExpense = (data) => API.post("/finance/fixed-expenses", data);
 export const getFixedExpense = (id) => API.get(`/finance/fixed-expenses/${id}`);
+export const updateFixedExpense = (id, data) => API.put(`/finance/fixed-expenses/${id}`, data);
 export const deleteFixedExpense = (id) => API.delete(`/finance/fixed-expenses/${id}`);
 
 export const getDeposits = (p=1, s=50) => API.get(`/finance/deposits?page=${p}&size=${s}`);

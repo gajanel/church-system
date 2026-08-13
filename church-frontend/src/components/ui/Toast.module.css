@@ -1,75 +1,76 @@
-/* Toast.module.css */
+/* Toast.module.css — WordPress admin style notifications */
 
 .container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: 20px;
+  right: 20px;
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   pointer-events: none;
 }
 
 .toast {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: var(--radius-lg);
-  background: #1e293b;
-  color: #f8fafc;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
   font-family: var(--font);
   font-size: 13px;
   font-weight: 500;
-  min-width: 280px;
-  max-width: 380px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+  min-width: 260px;
+  max-width: 360px;
+  box-shadow: var(--shadow-md);
   pointer-events: all;
   cursor: pointer;
-  animation: slideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideIn 0.2s ease;
 }
 
 .toast.exiting {
-  animation: slideOut 0.2s ease forwards;
+  animation: slideOut 0.15s ease forwards;
 }
 
 .icon {
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.success { border-left: 3px solid #22c55e; }
-.error   { border-left: 3px solid #ef4444; }
-.warning { border-left: 3px solid #f59e0b; }
-.info    { border-left: 3px solid #3b82f6; }
+.success { border-left: 3px solid var(--color-success); }
+.error   { border-left: 3px solid var(--color-error); }
+.warning { border-left: 3px solid var(--color-warning); }
+.info    { border-left: 3px solid var(--color-primary); }
 
 .message { flex: 1; line-height: 1.4; }
 
 .close {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 14px;
   padding: 0;
   line-height: 1;
   flex-shrink: 0;
 }
-.close:hover { color: #f8fafc; }
+.close:hover { color: var(--text-primary); }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(40px) scale(0.95); }
-  to   { opacity: 1; transform: translateX(0)    scale(1);    }
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes slideOut {
-  from { opacity: 1; transform: translateX(0)    scale(1);    }
-  to   { opacity: 0; transform: translateX(40px) scale(0.95); }
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20px); }
 }

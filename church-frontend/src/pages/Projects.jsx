@@ -1,26 +1,27 @@
 import { useState, useEffect } from "react";
 import { getProjects, getProjectsSummary, createProject, updateProject, deleteProject } from "../api/projects";
 import {
-  Button, Dialog, DialogTitle, DialogContent, DialogActions,
-  Select, MenuItem, FormControl, InputLabel, LinearProgress, IconButton, Tooltip, TextField
+  Dialog, DialogContent, DialogActions,
+  Select, MenuItem, FormControl, InputLabel, TextField, Button
 } from "@mui/material";
-import {
-  Assignment, AddTask, Edit, Delete, AttachMoney, Handshake,
-  Timer, CheckCircle, PauseCircle, Cancel
-} from "@mui/icons-material";
-import { Card, CardHeader, CardBody } from "../components/ui/Card";
-import { Badge } from "../components/ui/Badge";
-import { PageHeader } from "../components/ui/PageHeader";
 import { useToast } from "../components/ui/Toast";
-import s from "../styles/page.module.css";
+import s from "./Projects.module.css";
 
+/* ── Constants ── */
 const STATUS_OPTIONS = ["Activo", "Pausado", "Completado", "Cancelado"];
-const STATUS_BADGE   = { Activo:"success", Pausado:"warning", Completado:"info", Cancelado:"error" };
-const STATUS_COLORS  = {
-  Activo:    "var(--color-success)",
-  Pausado:   "var(--color-warning)",
-  Completado:"var(--color-info)",
-  Cancelado: "var(--color-error)",
+
+const STATUS_COLORS = {
+  Activo:     "#10b981",
+  Pausado:    "#f59e0b",
+  Completado: "#3b82f6",
+  Cancelado:  "#ef4444",
+};
+
+const STATUS_PILL = {
+  Activo:     s.statusActivo,
+  Pausado:    s.statusPausado,
+  Completado: s.statusCompletado,
+  Cancelado:  s.statusCancelado,
 };
 
 const emptyForm = {
@@ -29,19 +30,30 @@ const emptyForm = {
   start_date:"", end_date:""
 };
 
+/* ── Helpers ── */
 const fmt     = n => new Intl.NumberFormat("es-GT", { style:"currency", currency:"GTQ", minimumFractionDigits:0 }).format(n || 0);
-const fmtDate = d => { if (!d) return "—"; return new Date(d + "T00:00:00").toLocaleDateString("es-GT", { day:"numeric", month:"long", year:"numeric" }); };
+const fmtDate = d => { if (!d) return "—"; return new Date(d + "T00:00:00").toLocaleDateString("es-GT", { day:"numeric", month:"short", year:"numeric" }); };
+const calcProg = (spent, budget) => (!budget || budget === 0) ? 0 : Math.min(100, Math.round((spent / budget) * 100));
+const progColor = pct => pct >= 100 ? "#ef4444" : pct >= 75 ? "#f59e0b" : "#10b981";
+
+/* ── KPI data ── */
+const KPI_META = [
+  { label: "Total / Estado" },
+  { label: "Presupuesto Meta" },
+  { label: "Aportes / Recaudado" },
+  { label: "Gastado / Ejecutado" },
+];
 
 export default function Projects() {
-  const [projects, setProjects]         = useState([]);
-  const [summary, setSummary]           = useState({ total:0, total_budget:0, total_contributions:0, total_spent:0 });
-  const [selectedProject, setSelected]  = useState(null);
-  const [showForm, setShowForm]         = useState(false);
-  const [editing, setEditing]           = useState(null);
-  const [form, setForm]                 = useState(emptyForm);
-  const [error, setError]               = useState("");
-  const [loading, setLoading]           = useState(true);
-  const [filterStatus, setFilter]       = useState("Todos");
+  const [projects, setProjects]        = useState([]);
+  const [summary, setSummary]          = useState({ total:0, total_budget:0, total_contributions:0, total_spent:0 });
+  const [selectedProject, setSelected] = useState(null);
+  const [showForm, setShowForm]        = useState(false);
+  const [editing, setEditing]          = useState(null);
+  const [form, setForm]                = useState(emptyForm);
+  const [error, setError]              = useState("");
+  const [loading, setLoading]          = useState(true);
+  const [filterStatus, setFilter]      = useState("Todos");
   const toast = useToast();
 
   const load = async () => {
@@ -51,10 +63,7 @@ export default function Projects() {
       const updated = projRes.data;
       setProjects(updated);
       setSummary(sumRes.data);
-      // Actualiza el proyecto seleccionado si aún existe
-      if (selectedProject) {
-        setSelected(updated.find(p => p.id === selectedProject.id) || null);
-      }
+      if (selectedProject) setSelected(updated.find(p => p.id === selectedProject.id) || null);
       setError("");
     } catch { setError("Error al cargar los proyectos"); }
     finally { setLoading(false); }
@@ -62,10 +71,15 @@ export default function Projects() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered   = filterStatus === "Todos" ? projects : projects.filter(p => p.status === filterStatus);
-  const handleChg  = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const calcProg   = (spent, budget) => (!budget || budget === 0) ? 0 : Math.min(100, Math.round((spent / budget) * 100));
+  const filtered  = filterStatus === "Todos" ? projects : projects.filter(p => p.status === filterStatus);
+  const handleChg = e => setForm({ ...form, [e.target.name]: e.target.value });
 
+  /* ── KPI data ── */
+  const kpiValues = selectedProject
+    ? [selectedProject.status, selectedProject.budget, selectedProject.contributions, selectedProject.spent]
+    : [summary.total, summary.total_budget, summary.total_contributions, summary.total_spent];
+
+  /* ── Submit ── */
   const handleSubmit = async e => {
     e.preventDefault();
     try {
@@ -85,10 +99,9 @@ export default function Projects() {
         toast.success("Proyecto creado correctamente");
       }
       setShowForm(false); setEditing(null); setForm(emptyForm); load();
-    } catch (err) { 
+    } catch (err) {
       const msg = err.response?.data?.detail || "Error al guardar el proyecto";
-      setError(msg); 
-      toast.error(msg);
+      setError(msg); toast.error(msg);
     }
   };
 
@@ -104,263 +117,210 @@ export default function Projects() {
 
   const handleDelete = async id => {
     if (!window.confirm("¿Eliminar este proyecto? Esta acción no se puede deshacer.")) return;
-    try { 
-      await deleteProject(id); 
-      if (selectedProject?.id === id) setSelected(null); 
+    try {
+      await deleteProject(id);
+      if (selectedProject?.id === id) setSelected(null);
       toast.success("Proyecto eliminado");
-      load(); 
-    }
-    catch { 
-      setError("Error al eliminar el proyecto"); 
+      load();
+    } catch {
       toast.error("Error al eliminar el proyecto");
     }
   };
 
-  // ── Datos de resumen: cambia entre globales y del proyecto seleccionado ──
-  const sumData = [
-    {
-      label: selectedProject ? "Estado del Proyecto" : "Total en curso",
-      value: selectedProject ? selectedProject.status : summary.total,
-      icon:  <Assignment sx={{ fontSize:16, color:"var(--color-primary)" }} />,
-      isMoney: false,
-    },
-    {
-      label: "Presupuesto (Meta)",
-      value: selectedProject ? selectedProject.budget        : summary.total_budget,
-      icon:  <AttachMoney sx={{ fontSize:16, color:"var(--text-secondary)" }} />,
-      isMoney: true,
-    },
-    {
-      label: "Aportes / Recaudado",
-      value: selectedProject ? selectedProject.contributions : summary.total_contributions,
-      icon:  <Handshake sx={{ fontSize:16, color:"var(--color-success)" }} />,
-      isMoney: true,
-    },
-    {
-      label: "Gastado / Ejecutado",
-      value: selectedProject ? selectedProject.spent         : summary.total_spent,
-      icon:  <Timer sx={{ fontSize:16, color:"var(--color-error)" }} />,
-      isMoney: true,
-    },
-  ];
-
   return (
     <div className={s.page}>
-      <PageHeader title="Gestión de Proyectos" subtitle="Administra proyectos de construcción o misiones con sus metas y presupuestos.">
-        <Button variant="contained" startIcon={<AddTask />}
-          onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}>
-          Nuevo Proyecto
-        </Button>
-      </PageHeader>
 
-      {error && !showForm && <div className={s.errorText}>{error}</div>}
-
-      {/* ── Resumen / Detalle ── */}
-      <div style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <p style={{ margin:0, fontSize:13, fontWeight:700, color:"var(--text-secondary)" }}>
-            {selectedProject
-              ? `📊 Detalle: ${selectedProject.name}`
-              : "🌍 Totales Generales de la Iglesia"}
-          </p>
-          {selectedProject && (
-            <Button size="small" variant="outlined" onClick={() => setSelected(null)}>
-              ← Ver Todos
-            </Button>
-          )}
+      {/* ── Header ── */}
+      <div className={s.header}>
+        <div className={s.headerLeft}>
+          <h1>Gestión de Proyectos</h1>
+          <p>Administra proyectos de construcción, misiones y actividades internas</p>
         </div>
-
-        <div className={s.cardGrid4}>
-          {sumData.map((sd, i) => (
-            <Card key={i} style={{ borderLeft: selectedProject ? "3px solid var(--color-primary)" : "none" }}>
-              <CardBody>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                  {sd.icon}
-                  <span style={{ fontSize:10, fontWeight:700, color:"var(--text-muted)", textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                    {sd.label}
-                  </span>
-                </div>
-                <div style={{ fontSize:20, fontWeight:800, color:"var(--text-primary)", letterSpacing:"-0.02em" }}>
-                  {sd.isMoney ? fmt(sd.value) : sd.value}
-                </div>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
+        <button className={s.newBtn} onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}>
+          <span style={{ fontSize:16 }}>+</span> Nuevo Proyecto
+        </button>
       </div>
 
-      {/* ── Filtros por estado ── */}
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
-        {["Todos", ...STATUS_OPTIONS].map(st => (
-          <button key={st} onClick={() => setFilter(st)}
-            style={{
-              padding:"4px 14px", border:"1px solid", borderRadius:99,
-              fontSize:12, fontWeight:600, cursor:"pointer",
-              borderColor: filterStatus === st ? "var(--color-primary)" : "var(--border)",
-              background:  filterStatus === st ? "var(--color-primary-light)" : "transparent",
-              color:       filterStatus === st ? "var(--color-primary)" : "var(--text-secondary)",
-            }}>
-            {st}
-          </button>
+      {/* ── KPI Row ── */}
+      <div className={s.kpiRow}>
+        {KPI_META.map((k, i) => (
+          <div
+            key={i}
+            className={`${s.kpiCard} ${selectedProject ? s.highlighted : ""}`}
+          >
+            <div className={s.kpiLabel}>
+              {i === 0 ? (selectedProject ? "Estado" : "Proyectos activos") : k.label}
+            </div>
+            <div className={s.kpiValue}>
+              {i === 0
+                ? kpiValues[0]
+                : fmt(kpiValues[i])}
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* ── Grid de proyectos ── */}
-      {loading ? (
-        <div className={s.empty}><p className={s.emptyText}>Cargando proyectos...</p></div>
-      ) : filtered.length === 0 ? (
-        <div className={s.empty}>
-          <Assignment sx={{ fontSize:48, color:"var(--border-strong)", marginBottom:8 }} />
-          <p className={s.emptyTitle}>
-            No hay proyectos {filterStatus !== "Todos" ? `con estado "${filterStatus}"` : "registrados"}
-          </p>
-        </div>
-      ) : (
-        <div className={s.cardGrid}>
-          {filtered.map(p => {
-            const prog       = calcProg(p.spent, p.budget);
-            const isSelected = selectedProject?.id === p.id;
-
-            return (
-              <Card key={p.id}
-                onClick={() => setSelected(isSelected ? null : p)}
-                style={{
-                  cursor: "pointer",
-                  borderTop: `3px solid ${STATUS_COLORS[p.status] || "var(--border-strong)"}`,
-                  transition: "transform 0.15s, box-shadow 0.15s",
-                }}>
-                <CardBody>
-                  {/* Nombre + badge */}
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                    <p style={{
-                      fontWeight:700, fontSize:14, margin:0, lineHeight:1.3,
-                      color: isSelected ? "var(--color-primary)" : "var(--text-primary)"
-                    }}>
-                      {p.name}
-                    </p>
-                    <Badge variant={STATUS_BADGE[p.status] || "default"}>{p.status}</Badge>
-                  </div>
-
-                  {/* Descripción */}
-                  <p style={{
-                    fontSize:12, color:"var(--text-secondary)", margin:"0 0 16px",
-                    display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical",
-                    overflow:"hidden", minHeight:34
-                  }}>
-                    {p.description || "Sin descripción"}
-                  </p>
-
-                  {/* Barra de progreso */}
-                  <div style={{ marginBottom:14 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                      <span style={{ fontSize:10, fontWeight:600, color:"var(--text-muted)", textTransform:"uppercase" }}>
-                        Ejecución del Presupuesto
-                      </span>
-                      <span style={{
-                        fontSize:11, fontWeight:700,
-                        color: prog >= 100 ? "var(--color-error)" : "var(--text-primary)"
-                      }}>
-                        {prog}%
-                      </span>
-                    </div>
-                    <LinearProgress
-                      variant="determinate"
-                      value={Math.min(prog, 100)}
-                      color={prog >= 100 ? "error" : prog >= 75 ? "warning" : "success"}
-                      sx={{ height:7, borderRadius:4 }}
-                    />
-                  </div>
-
-                  {/* Financiero */}
-                  <div style={{
-                    display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
-                    gap:6, background:"#f9fafb", padding:"10px 12px", borderRadius:8
-                  }}>
-                    {[
-                      ["Presupuesto", fmt(p.budget),        "var(--text-primary)"],
-                      ["Aportes",     fmt(p.contributions), "var(--color-success)"],
-                      ["Gastos",      fmt(p.spent),         "var(--color-error)"],
-                    ].map(([lbl, val, color]) => (
-                      <div key={lbl}>
-                        <span style={{ fontSize:9, color:"var(--text-muted)", display:"block", textTransform:"uppercase", letterSpacing:"0.04em" }}>{lbl}</span>
-                        <span style={{ fontSize:11, fontWeight:700, color }}>{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardBody>
-
-                {/* Footer */}
-                <div className={s.cardFooter}>
-                  <span style={{ fontSize:11, color:"var(--text-muted)" }}>
-                    {p.start_date ? `Inicio: ${fmtDate(p.start_date)}` : "Sin fecha de inicio"}
-                  </span>
-                  <div onClick={e => e.stopPropagation()} className={s.cardActions}>
-                    <Tooltip title="Editar Proyecto">
-                      <IconButton size="small" color="primary" onClick={() => handleEdit(p)}>
-                        <Edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Eliminar Proyecto">
-                      <IconButton size="small" color="error" onClick={() => handleDelete(p.id)}>
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+      {/* ── Detail banner (when a project is selected) ── */}
+      {selectedProject && (
+        <div className={s.detailBanner}>
+          <div>
+            <p className={s.detailBannerTitle}>{selectedProject.name}</p>
+            <p className={s.detailBannerSub}>Viendo datos específicos de este proyecto</p>
+          </div>
+          <button className={s.backBtn} onClick={() => setSelected(null)}>← Ver todos</button>
         </div>
       )}
 
-      {/* ── Dialog: Formulario ── */}
-      <Dialog open={showForm} onClose={() => setShowForm(false)} maxWidth="sm" fullWidth>
+      {/* ── Toolbar ── */}
+      <div className={s.toolbar}>
+        <div className={s.filterGroup}>
+          {["Todos", ...STATUS_OPTIONS].map(st => (
+            <button
+              key={st}
+              className={`${s.filterBtn} ${filterStatus === st ? s.active : ""}`}
+              onClick={() => setFilter(st)}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
+        <span className={s.countBadge}>
+          {filtered.length} {filtered.length === 1 ? "proyecto" : "proyectos"}
+        </span>
+      </div>
+
+      {/* ── Project grid ── */}
+      <div className={s.grid}>
+        {loading ? (
+          <div className={s.emptyState}>
+            <div className={s.emptyText}>Cargando proyectos…</div>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className={s.emptyState}>
+            <p className={s.emptyTitle}>
+              {filterStatus !== "Todos" ? `No hay proyectos "${filterStatus}"` : "Sin proyectos registrados"}
+            </p>
+            <p className={s.emptyText}>Crea tu primer proyecto haciendo clic en "Nuevo Proyecto".</p>
+          </div>
+        ) : (
+          filtered.map(p => {
+            const prog       = calcProg(p.spent, p.budget);
+            const isSelected = selectedProject?.id === p.id;
+            const accentColor = STATUS_COLORS[p.status] || "#94a3b8";
+
+            return (
+              <div
+                key={p.id}
+                className={`${s.projectCard} ${isSelected ? s.selected : ""}`}
+                onClick={() => setSelected(isSelected ? null : p)}
+              >
+                {/* Accent bar */}
+                <div className={s.cardAccent} style={{ background: accentColor }} />
+
+                <div className={s.cardBody}>
+                  {/* Name + status */}
+                  <div className={s.cardTop}>
+                    <p className={`${s.cardName} ${isSelected ? s.selectedText : ""}`}>{p.name}</p>
+                    <span className={`${s.statusPill} ${STATUS_PILL[p.status] || ""}`}>{p.status}</span>
+                  </div>
+
+                  {/* Description */}
+                  <p className={s.cardDesc}>{p.description || "Sin descripción"}</p>
+
+                  {/* Progress */}
+                  <div className={s.progressSection}>
+                    <div className={s.progressHeader}>
+                      <span className={s.progressLabel}>Ejecución del presupuesto</span>
+                      <span className={s.progressPct} style={{ color: progColor(prog) }}>{prog}%</span>
+                    </div>
+                    <div className={s.progressTrack}>
+                      <div
+                        className={s.progressFill}
+                        style={{ width: `${Math.min(prog, 100)}%`, background: progColor(prog) }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Finance cells */}
+                  <div className={s.finGrid}>
+                    {[
+                      ["Presupuesto", fmt(p.budget),        "#0f172a"],
+                      ["Aportes",     fmt(p.contributions), "#10b981"],
+                      ["Gastado",     fmt(p.spent),         "#ef4444"],
+                    ].map(([lbl, val, color]) => (
+                      <div key={lbl} className={s.finCell}>
+                        <span className={s.finCellLabel}>{lbl}</span>
+                        <span className={s.finCellValue} style={{ color }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className={s.cardFooter} onClick={e => e.stopPropagation()}>
+                  <span className={s.cardDate}>
+                    {p.start_date ? fmtDate(p.start_date) : "Sin fecha de inicio"}
+                  </span>
+                  <div className={s.cardActions}>
+                    <button className={`${s.actionBtn} ${s.edit}`} title="Editar" onClick={() => handleEdit(p)}>Editar</button>
+                    <button className={`${s.actionBtn} ${s.delete}`} title="Eliminar" onClick={() => handleDelete(p.id)}>Eliminar</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ── Dialog: Form ── */}
+      <Dialog open={showForm} onClose={() => setShowForm(false)} maxWidth="sm" fullWidth
+        PaperProps={{ sx: { borderRadius: "14px" } }}>
         <form onSubmit={handleSubmit}>
-          <DialogTitle sx={{ fontWeight:800 }}>
+          <div className={s.dialogTitle}>
             {editing ? "Editar Proyecto" : "Nuevo Proyecto"}
-          </DialogTitle>
-          <DialogContent dividers sx={{ display:"flex", flexDirection:"column", gap:2 }}>
-            {error && <div className={s.errorText}>{error}</div>}
+          </div>
+          <DialogContent sx={{ display:"flex", flexDirection:"column", gap:2, pt:"4px !important" }}>
+            {error && <div className={s.errorBanner}>{error}</div>}
 
-            <TextField name="name" label="Nombre del proyecto *" value={form.name}
-              onChange={handleChg} required fullWidth />
+            <TextField size="small" name="name" label="Nombre del proyecto *"
+              value={form.name} onChange={handleChg} required fullWidth />
 
-            <TextField name="description" label="Descripción" value={form.description}
-              onChange={handleChg} fullWidth multiline rows={3} />
+            <TextField size="small" name="description" label="Descripción"
+              value={form.description} onChange={handleChg} fullWidth multiline rows={3} />
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div className={s.formGrid2}>
               <FormControl fullWidth size="small">
                 <InputLabel>Estado</InputLabel>
                 <Select name="status" value={form.status} label="Estado" onChange={handleChg}>
-                  {STATUS_OPTIONS.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                  {STATUS_OPTIONS.map(st => <MenuItem key={st} value={st}>{st}</MenuItem>)}
                 </Select>
               </FormControl>
-              <TextField name="budget" type="number" label="Presupuesto (Meta Q) *"
-                value={form.budget} onChange={handleChg} required
-                inputProps={{ step:"0.01", min:"0" }} />
+              <TextField size="small" name="budget" type="number" label="Presupuesto (Q) *"
+                value={form.budget} onChange={handleChg} required inputProps={{ step:"0.01", min:"0" }} />
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <TextField name="contributions" type="number" label="Aportaciones (Q)"
-                value={form.contributions} onChange={handleChg}
-                inputProps={{ step:"0.01", min:"0" }} />
-              <TextField name="spent" type="number" label="Gastado (Q)"
-                value={form.spent} onChange={handleChg}
-                inputProps={{ step:"0.01", min:"0" }} />
+            <div className={s.formGrid2}>
+              <TextField size="small" name="contributions" type="number" label="Aportaciones (Q)"
+                value={form.contributions} onChange={handleChg} inputProps={{ step:"0.01", min:"0" }} />
+              <TextField size="small" name="spent" type="number" label="Gastado (Q)"
+                value={form.spent} onChange={handleChg} inputProps={{ step:"0.01", min:"0" }} />
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <TextField name="start_date" type="date" label="Fecha de inicio"
+            <div className={s.formGrid2}>
+              <TextField size="small" name="start_date" type="date" label="Fecha de inicio"
                 value={form.start_date} onChange={handleChg} InputLabelProps={{ shrink:true }} />
-              <TextField name="end_date" type="date" label="Fecha de fin estimado"
+              <TextField size="small" name="end_date" type="date" label="Fecha de fin estimado"
                 value={form.end_date} onChange={handleChg} InputLabelProps={{ shrink:true }} />
             </div>
           </DialogContent>
-          <DialogActions sx={{ px:3, py:2 }}>
-            <Button onClick={() => { setShowForm(false); setEditing(null); }} color="inherit">
+          <DialogActions sx={{ px:3, py:2, gap:1 }}>
+            <Button onClick={() => { setShowForm(false); setEditing(null); }} color="inherit" size="small">
               Cancelar
             </Button>
-            <Button type="submit" variant="contained">Guardar Proyecto</Button>
+            <Button type="submit" variant="contained" disableElevation size="small"
+              sx={{ bgcolor:"#0f172a", textTransform:"none", fontWeight:600, borderRadius:"8px", '&:hover':{bgcolor:"#1e3a5f"} }}>
+              {editing ? "Guardar Cambios" : "Crear Proyecto"}
+            </Button>
           </DialogActions>
         </form>
       </Dialog>

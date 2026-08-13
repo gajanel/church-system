@@ -215,7 +215,7 @@ export default function Events() {
   return (
     <div className={s.page}>
       <PageHeader title="Calendario y Eventos" subtitle="Planifica servicios, actividades, retiros y conferencias del ministerio.">
-        <Button variant="contained" startIcon={<AddAlarm />} onClick={() => openForm()}>Nuevo Evento</Button>
+        <Button variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }} size="small" startIcon={<AddAlarm />} onClick={() => openForm()}>Nuevo Evento</Button>
       </PageHeader>
 
       {error && !showForm && <div className={s.errorText}>{error}</div>}
@@ -300,7 +300,7 @@ export default function Events() {
           </DialogContent>
           <DialogActions sx={{ px:3, py:2 }}>
             <Button onClick={() => setShowForm(false)} color="inherit">Cancelar</Button>
-            <Button type="submit" variant="contained">Guardar Evento</Button>
+            <Button type="submit" variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }}>Guardar Evento</Button>
           </DialogActions>
         </form>
       </Dialog>
@@ -342,7 +342,7 @@ export default function Events() {
             <DialogActions sx={{ px:3, py:2 }}>
               <Button color="error" startIcon={<Delete />} onClick={() => handleDelete(selected.id)} sx={{ mr:"auto" }}>Eliminar</Button>
               <Button variant="outlined" startIcon={<Edit />} onClick={() => { setSelected(null); openForm(selected); }}>Editar</Button>
-              <Button onClick={() => setSelected(null)} variant="contained">Cerrar</Button>
+              <Button onClick={() => setSelected(null)} variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }}>Cerrar</Button>
             </DialogActions>
           </>
         )}

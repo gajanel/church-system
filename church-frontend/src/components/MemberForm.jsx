@@ -125,6 +125,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
 
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="first_name" label="Nombre *" value={form.first_name} 
             onChange={handleChange} fullWidth
             error={!!formErrors.first_name}
@@ -133,6 +134,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="last_name" label="Apellido *" value={form.last_name} 
             onChange={handleChange} fullWidth
             error={!!formErrors.last_name}
@@ -141,12 +143,14 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="phone" label="Teléfono" value={form.phone} 
             onChange={handleChange} fullWidth 
           />
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="email" label="Email" value={form.email} 
             onChange={handleChange} fullWidth type="email"
             error={!!formErrors.email}
@@ -155,12 +159,14 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12}>
           <TextField 
+            size="small"
             name="address" label="Dirección" value={form.address} 
             onChange={handleChange} fullWidth 
           />
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="birth_date" label="Fecha de nacimiento" value={form.birth_date || ""} 
             onChange={handleChange} fullWidth type="date"
             InputLabelProps={{ shrink: true }}
@@ -168,6 +174,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="baptism_date" label="Fecha de bautismo" value={form.baptism_date || ""} 
             onChange={handleChange} fullWidth type="date"
             InputLabelProps={{ shrink: true }}
@@ -175,6 +182,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12} sm={4}>
           <TextField 
+            size="small"
             name="gender" label="Género" value={form.gender || ""} 
             onChange={handleChange} fullWidth select
           >
@@ -185,6 +193,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12} sm={4}>
           <TextField 
+            size="small"
             name="marital_status" label="Estado Civil" value={form.marital_status || ""} 
             onChange={handleChange} fullWidth select
           >
@@ -198,6 +207,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12} sm={4}>
           <TextField 
+            size="small"
             name="join_date" label="Fecha Ingreso a Iglesia" value={form.join_date || ""} 
             onChange={handleChange} fullWidth type="date"
             InputLabelProps={{ shrink: true }}
@@ -205,18 +215,21 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="occupation" label="Ocupación / Profesión" value={form.occupation || ""} 
             onChange={handleChange} fullWidth 
           />
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField 
+            size="small"
             name="emergency_contact" label="Contacto de Emergencia" value={form.emergency_contact || ""} 
             onChange={handleChange} fullWidth 
           />
         </Grid>
         <Grid item xs={12}>
           <TextField 
+            size="small"
             name="status" label="Estado" value={form.status} 
             onChange={handleChange} fullWidth select
           >
@@ -233,7 +246,8 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
         <Button 
           type="submit" 
           variant="contained" 
-          sx={{ px: 4, minWidth: 120 }} 
+          disableElevation
+          sx={{ px: 4, minWidth: 120, bgcolor: "#0F172A", textTransform: "none", fontWeight: 600, '&:hover': { bgcolor: "#1E293B" } }} 
           disabled={submitting}
           startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : null}
         >
