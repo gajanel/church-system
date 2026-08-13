@@ -8,6 +8,7 @@ class AuditLogBase(BaseModel):
     description: Optional[str] = None
     details: Optional[Dict[str, Any]] = None
     ip_address: Optional[str] = None
+    device: Optional[str] = None
 
 class AuditLogCreate(AuditLogBase):
     user_id: Optional[int] = None

@@ -24,11 +24,13 @@ from app.routers import (
     report_router, privilege_router, announcement_router,
     attendance_router, settings_router, audit_router
 )
+from app.routers.ministry_workspace_router import router as ministry_workspace_router
 from app.models import (
     user_model, member_model, ministry_model,
     member_ministry_model, finance_model, project_model,
     privilege_model, announcement_model, event_model,
-    attendance_model, settings_model, audit_model
+    attendance_model, settings_model, audit_model,
+    ministry_workspace_model
 )
 import migrate_users
 import migrate_photo
@@ -36,6 +38,10 @@ import migrate_ministry_days
 import migrate_privileges_dynamic
 import migrate_settings_verse
 import migrate_member_fields
+import migrate_expense_document
+import migrate_ministry_workspace
+import migrate_fix_ministry_delete
+import migrate_audit_device
 
 
 load_dotenv()
@@ -84,6 +90,10 @@ async def lifespan(app: FastAPI):
         migrate_privileges_dynamic.migrate(engine)
         migrate_settings_verse.migrate(engine)
         migrate_member_fields.migrate(engine)
+        migrate_expense_document.migrate(engine)
+        migrate_ministry_workspace.migrate(engine)
+        migrate_fix_ministry_delete.migrate(engine)
+        migrate_audit_device.migrate()
         
         # Crear admin inicial si no existe
         db = SessionLocal()
@@ -165,6 +175,7 @@ app.include_router(announcement_router.router)
 app.include_router(attendance_router.router)
 app.include_router(settings_router.router)
 app.include_router(audit_router.router)
+app.include_router(ministry_workspace_router)
 
 
 # ── Health check robusto ───────────────────────────────────────────

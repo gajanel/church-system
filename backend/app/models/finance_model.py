@@ -45,6 +45,7 @@ class ChurchExpense(Base):
     amount = Column(Float, nullable=False)
     date = Column(Date, nullable=False, index=True)
     observations = Column(String(300), nullable=True)
+    document_url = Column(String(255), nullable=True)  # URL del comprobante/factura adjunto
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     created_by_user = relationship("User", foreign_keys=[created_by])
@@ -58,7 +59,6 @@ class FixedExpense(Base):
     amount = Column(Float, nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    image_url = Column(String(255), nullable=True)
 
     created_by_user = relationship("User", foreign_keys=[created_by])
 
@@ -72,6 +72,7 @@ class BankDeposit(Base):
     amount = Column(Float, nullable=False)
     date = Column(Date, nullable=False, index=True)
     observations = Column(String(300), nullable=True)
+    image_url = Column(String(255), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

@@ -84,7 +84,7 @@ def get_expenses(db: Session, skip: int = 0, limit: int = 50):
     rows = query.order_by(ChurchExpense.date.desc()).offset(skip).limit(limit).all()
     return [_format_expense(r) for r in rows], total
 
-def create_expense(db: Session, data: ExpenseCreate, user_id: int):
+def create_expense(db: Session, data: ExpenseCreate, user_id: int, document_url: str = None):
     if data.expense_type == "Diezmo de Ofrendas":
         today = data.date
         total = db.query(func.sum(ChurchOffering.amount)).filter(
@@ -101,6 +101,7 @@ def create_expense(db: Session, data: ExpenseCreate, user_id: int):
         amount=amount,
         date=data.date,
         observations=data.observations,
+        document_url=document_url,
         created_by=user_id
     )
     db.add(obj)
@@ -123,6 +124,7 @@ def _format_expense(r):
         "amount": r.amount,
         "date": r.date,
         "observations": r.observations,
+        "document_url": r.document_url,
         "created_by": r.created_by,
         "created_at": r.created_at,
         "created_by_name": r.created_by_user.name if r.created_by_user else None,
@@ -216,6 +218,16 @@ def delete_fixed_expense(db: Session, expense_id: int):
     db.delete(obj)
     db.commit()
     return True
+
+def update_fixed_expense(db: Session, expense_id: int, name: str, amount: float):
+    obj = db.query(FixedExpense).filter(FixedExpense.id == expense_id).first()
+    if not obj:
+        return None
+    obj.name = name
+    obj.amount = amount
+    db.commit()
+    db.refresh(obj)
+    return _format_fixed_expense(obj)
 
 def _format_fixed_expense(r):
     return {

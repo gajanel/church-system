@@ -79,6 +79,7 @@ class ExpenseResponse(BaseModel):
     amount: float
     date: date
     observations: Optional[str]
+    document_url: Optional[str] = None
     created_by: int
     created_at: datetime
     created_by_name: Optional[str] = None

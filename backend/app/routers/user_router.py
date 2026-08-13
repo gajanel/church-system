@@ -39,7 +39,8 @@ def login(request: Request, data: LoginSchema, db: Session = Depends(get_db)):
         action="LOGIN",
         module="Seguridad",
         description="Inicio de sesión exitoso",
-        ip_address=request.client.host
+        ip_address=request.client.host,
+        device=request.headers.get("user-agent", "Desconocido")
     ))
     
     return {

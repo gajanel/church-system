@@ -87,14 +87,56 @@ def get_expenses(page: int = 1, size: int = 50, db: Session = Depends(get_db), u
         "pages": math.ceil(total / size) if total > 0 else 0
     }
 
+# Límite máximo para comprobantes/facturas de gastos: 10 MB
+MAX_EXPENSE_FILE_SIZE = 10 * 1024 * 1024
+ALLOWED_EXPENSE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".pdf"]
+
 @router.post("/finance/expenses")
-def create_expense(data: ExpenseCreate, db: Session = Depends(get_db), user=Depends(only_finance)):
-    expense = finance_service.create_expense(db, data, user.id)
+async def create_expense(
+    expense_type: str = Form(...),
+    amount: float = Form(...),
+    date: str = Form(...),
+    observations: str = Form(None),
+    file: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    user=Depends(only_finance)
+):
+    document_url = None
+    if file and file.filename:
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in ALLOWED_EXPENSE_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail="Tipo de archivo no permitido. Use JPG, PNG, WEBP o PDF."
+            )
+        contents = await file.read()
+        if len(contents) > MAX_EXPENSE_FILE_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail="El archivo supera el tamaño máximo de 10 MB."
+            )
+        upload_dir = "static/uploads/expenses"
+        os.makedirs(upload_dir, exist_ok=True)
+        file_name = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(upload_dir, file_name)
+        with open(file_path, "wb") as buffer:
+            buffer.write(contents)
+        document_url = f"/static/uploads/expenses/{file_name}"
+
+    from app.schemas.finance_schema import ExpenseCreate
+    from datetime import date as date_type
+    data = ExpenseCreate(
+        expense_type=expense_type,
+        amount=amount,
+        date=date_type.fromisoformat(date),
+        observations=observations
+    )
+    expense = finance_service.create_expense(db, data, user.id, document_url=document_url)
     audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
         user_id=user.id,
         action="CREATE",
         module="Finanzas",
-        description=f"Registró un gasto de Q{data.amount} ({data.expense_type})"
+        description=f"Registró un gasto de Q{amount} ({expense_type})" + (" con comprobante" if document_url else "")
     ))
     return expense
 
@@ -103,6 +145,7 @@ def delete_expense(expense_id: int, db: Session = Depends(get_db), user=Depends(
     if not finance_service.delete_expense(db, expense_id):
         raise HTTPException(status_code=404, detail="Gasto no encontrado")
     return {"message": "Eliminado correctamente"}
+
 
 # ── Resumen mensual ──
 @router.get("/finance/summary")
@@ -123,6 +166,13 @@ def delete_fixed_expense(expense_id: int, db: Session = Depends(get_db), user=De
     if not finance_service.delete_fixed_expense(db, expense_id):
         raise HTTPException(status_code=404, detail="Gasto fijo no encontrado")
     return {"message": "Eliminado correctamente"}
+
+@router.put("/finance/fixed-expenses/{expense_id}")
+def update_fixed_expense(expense_id: int, data: FixedExpenseCreate, db: Session = Depends(get_db), user=Depends(only_finance)):
+    updated = finance_service.update_fixed_expense(db, expense_id, data.name, data.amount)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Gasto fijo no encontrado")
+    return updated
 
 # ── Boletas de Depósito ──
 @router.get("/finance/deposits", response_model=BankDepositPaginatedResponse)

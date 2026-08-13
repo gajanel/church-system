@@ -15,7 +15,7 @@ class MinistryRole(Base):
     __tablename__ = "ministry_roles"
 
     id = Column(Integer, primary_key=True, index=True)
-    ministry_id = Column(Integer, ForeignKey("ministries.id"), nullable=False)
+    ministry_id = Column(Integer, ForeignKey("ministries.id", ondelete="CASCADE"), nullable=False)
     role = Column(String(50), nullable=False)
 
     ministry = relationship("Ministry", back_populates="roles")

@@ -12,4 +12,5 @@ class AuditLog(Base):
     description = Column(String, nullable=True) # human readable description
     details = Column(JSON, nullable=True)    # optional technical details (old/new values)
     ip_address = Column(String, nullable=True)
+    device = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
