@@ -22,11 +22,12 @@ class MinistryModuleConfig(Base):
 
     id            = Column(Integer, primary_key=True, index=True)
     ministry_id   = Column(Integer, ForeignKey("ministries.id", ondelete="CASCADE"), unique=True, nullable=False)
-    finance       = Column(Boolean, default=True)
-    attendance    = Column(Boolean, default=True)
-    work_plans    = Column(Boolean, default=True)
-    gallery       = Column(Boolean, default=True)
-    updated_at    = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    finance        = Column(Boolean, default=True)
+    attendance     = Column(Boolean, default=True)
+    work_plans     = Column(Boolean, default=True)
+    gallery        = Column(Boolean, default=True)
+    monthly_report = Column(Boolean, default=True)
+    updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     ministry = relationship("Ministry")
 

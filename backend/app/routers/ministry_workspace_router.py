@@ -5,6 +5,7 @@ Admin-only endpoints: config toggle
 """
 import os
 import shutil
+import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
@@ -17,6 +18,7 @@ from app.models.ministry_workspace_model import (
     MinistryAttendanceSession, MinistryAttendanceRecord,
     MinistryWorkPlan, MinistryWorkTask, MinistryGalleryItem,
 )
+from app.models.ministry_monthly_report_model import MinistryMonthlyReport
 from app.models.ministry_model import Ministry
 from app.models.member_ministry_model import MemberMinistry
 from app.models.member_model import Member
@@ -27,11 +29,14 @@ from app.schemas.ministry_workspace_schema import (
     WorkPlanIn, WorkPlanOut, WorkTaskIn, WorkTaskOut,
     GalleryItemOut,
 )
+from app.schemas.ministry_monthly_report_schema import MonthlyReportOut
 
 router = APIRouter(prefix="/ministry-workspace", tags=["Ministry Workspace"])
 
-UPLOAD_DIR = "static/uploads/ministry_gallery"
+UPLOAD_DIR         = "static/uploads/ministry_gallery"
+REPORT_UPLOAD_DIR  = "static/uploads/ministry_reports"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(REPORT_UPLOAD_DIR, exist_ok=True)
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────
@@ -95,10 +100,11 @@ def list_ministries_workspace(db: Session = Depends(get_db), current_user=Depend
             "name":        m.name,
             "service_day": m.service_day,
             "config": {
-                "finance":    cfg.finance,
-                "attendance": cfg.attendance,
-                "work_plans": cfg.work_plans,
-                "gallery":    cfg.gallery,
+                "finance":        cfg.finance,
+                "attendance":     cfg.attendance,
+                "work_plans":     cfg.work_plans,
+                "gallery":        cfg.gallery,
+                "monthly_report": getattr(cfg, "monthly_report", True),
             }
         })
     return result
@@ -374,4 +380,187 @@ def delete_gallery_item(
     if os.path.exists(path):
         os.remove(path)
     db.delete(item); db.commit()
+    return {"ok": True}
+
+
+# ══════════════════════════════════════════════════════════════
+#  MONTHLY REPORTS
+# ══════════════════════════════════════════════════════════════
+
+@router.get("/all-monthly-reports", response_model=List[MonthlyReportOut])
+def list_all_monthly_reports(
+    month: Optional[str] = None,
+    ministry_name: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Admin endpoint: returns monthly reports across all ministries."""
+    q = db.query(MinistryMonthlyReport)
+    if month:
+        q = q.filter(MinistryMonthlyReport.report_month == month)
+    if ministry_name:
+        q = q.filter(MinistryMonthlyReport.ministry_name == ministry_name)
+    return q.order_by(MinistryMonthlyReport.created_at.desc()).all()
+
+
+@router.get("/{ministry_id}/monthly-reports", response_model=List[MonthlyReportOut])
+def list_monthly_reports(
+    ministry_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    cfg = get_config(ministry_id, db)
+    require_module(cfg, "monthly_report")
+    return (
+        db.query(MinistryMonthlyReport)
+        .filter(MinistryMonthlyReport.ministry_id == ministry_id)
+        .order_by(MinistryMonthlyReport.created_at.desc())
+        .all()
+    )
+
+
+@router.post("/{ministry_id}/monthly-reports", response_model=MonthlyReportOut)
+async def create_monthly_report(
+    ministry_id: int,
+    # ── Sección 1
+    reporter_name:       str = Form(...),
+    report_month:        str = Form(...),
+    ministry_name:       str = Form(...),
+    # ── Sección 2 — Membresía
+    mem_children:        int = Form(0),
+    mem_teens:           int = Form(0),
+    mem_youth:           int = Form(0),
+    mem_women:           int = Form(0),
+    mem_men:             int = Form(0),
+    mem_seniors:         int = Form(0),
+    # ── Sección 3 — Asistencia
+    att_children:        int = Form(0),
+    att_teens:           int = Form(0),
+    att_youth:           int = Form(0),
+    att_women:           int = Form(0),
+    att_men:             int = Form(0),
+    att_seniors:         int = Form(0),
+    # ── Sección 4 — Actividades
+    act_scheduled:       int = Form(0),
+    act_done:            int = Form(0),
+    act_services:        int = Form(0),
+    act_fasts:           int = Form(0),
+    act_visits:          int = Form(0),
+    act_sales:           int = Form(0),
+    act_reconciled:      int = Form(0),
+    act_meetings:        int = Form(0),
+    # ── Sección 5 — Sermones
+    sermon_week1:        Optional[str] = Form(None),
+    sermon_week2:        Optional[str] = Form(None),
+    sermon_week3:        Optional[str] = Form(None),
+    sermon_week4:        Optional[str] = Form(None),
+    sermon_week5:        Optional[str] = Form(None),
+    # ── Sección 6 — Financiero
+    fin_offerings:       float = Form(0.0),
+    fin_sales:           float = Form(0.0),
+    fin_special:         float = Form(0.0),
+    fin_social_expense:  float = Form(0.0),
+    fin_project_expense: float = Form(0.0),
+    # ── Adjunto
+    financial_report:    Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    get_ministry_or_404(ministry_id, db)
+    cfg = get_config(ministry_id, db)
+    require_module(cfg, "monthly_report")
+
+    # Handle optional file upload
+    fin_report_url = None
+    if financial_report and financial_report.filename:
+        allowed_types = {"application/pdf", "image/jpeg", "image/png", "image/webp"}
+        if financial_report.content_type not in allowed_types:
+            raise HTTPException(400, "Solo se permiten PDF o imágenes para el reporte financiero")
+        ext = financial_report.filename.rsplit(".", 1)[-1].lower()
+        unique_name = f"{ministry_id}_{uuid.uuid4().hex}.{ext}"
+        path = os.path.join(REPORT_UPLOAD_DIR, unique_name)
+        with open(path, "wb") as f:
+            shutil.copyfileobj(financial_report.file, f)
+        fin_report_url = f"/static/uploads/ministry_reports/{unique_name}"
+
+    report = MinistryMonthlyReport(
+        ministry_id=ministry_id,
+        reporter_name=reporter_name,
+        report_month=report_month,
+        ministry_name=ministry_name,
+        mem_children=mem_children,
+        mem_teens=mem_teens,
+        mem_youth=mem_youth,
+        mem_women=mem_women,
+        mem_men=mem_men,
+        mem_seniors=mem_seniors,
+        att_children=att_children,
+        att_teens=att_teens,
+        att_youth=att_youth,
+        att_women=att_women,
+        att_men=att_men,
+        att_seniors=att_seniors,
+        act_scheduled=act_scheduled,
+        act_done=act_done,
+        act_services=act_services,
+        act_fasts=act_fasts,
+        act_visits=act_visits,
+        act_sales=act_sales,
+        act_reconciled=act_reconciled,
+        act_meetings=act_meetings,
+        sermon_week1=sermon_week1,
+        sermon_week2=sermon_week2,
+        sermon_week3=sermon_week3,
+        sermon_week4=sermon_week4,
+        sermon_week5=sermon_week5,
+        fin_offerings=fin_offerings,
+        fin_sales=fin_sales,
+        fin_special=fin_special,
+        fin_social_expense=fin_social_expense,
+        fin_project_expense=fin_project_expense,
+        fin_report_url=fin_report_url,
+        created_by=current_user.name,
+    )
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+    return report
+
+
+@router.get("/{ministry_id}/monthly-reports/{report_id}", response_model=MonthlyReportOut)
+def get_monthly_report(
+    ministry_id: int,
+    report_id:   int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    report = db.query(MinistryMonthlyReport).filter(
+        MinistryMonthlyReport.id == report_id,
+        MinistryMonthlyReport.ministry_id == ministry_id,
+    ).first()
+    if not report:
+        raise HTTPException(404, "Reporte no encontrado")
+    return report
+
+
+@router.delete("/{ministry_id}/monthly-reports/{report_id}")
+def delete_monthly_report(
+    ministry_id: int,
+    report_id:   int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    report = db.query(MinistryMonthlyReport).filter(
+        MinistryMonthlyReport.id == report_id,
+        MinistryMonthlyReport.ministry_id == ministry_id,
+    ).first()
+    if not report:
+        raise HTTPException(404, "Reporte no encontrado")
+    # Delete attached file if any
+    if report.fin_report_url:
+        path = report.fin_report_url.lstrip("/")
+        if os.path.exists(path):
+            os.remove(path)
+    db.delete(report)
+    db.commit()
     return {"ok": True}

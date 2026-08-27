@@ -27,6 +27,7 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { Badge } from "../components/ui/Badge";
 import DataTable from "../components/ui/DataTable";
 import { TableRow, TableCell } from "@mui/material";
+import MonthlyReportTab from "./ministry/MonthlyReportTab";
 import s from "../styles/page.module.css";
 
 const FIN_CATS_INCOME  = ["Ofrenda","Diezmo","Donación","Actividad","Otro"];
@@ -159,10 +160,11 @@ export default function MinistryDetail() {
   if (loading) return <div className={s.page} style={{ display:"flex", justifyContent:"center", paddingTop:60 }}><CircularProgress size={28} /></div>;
 
   const TABS = [
-    { label:"Finanzas",   key:"finance",    icon:<ReceiptLongOutlined sx={{ fontSize:15 }} /> },
-    { label:"Asistencia", key:"attendance", icon:<HowToRegOutlined sx={{ fontSize:15 }} /> },
-    { label:"Planes",     key:"work_plans", icon:<ViewKanbanOutlined sx={{ fontSize:15 }} /> },
-    { label:"Galería",    key:"gallery",    icon:<PhotoLibraryOutlined sx={{ fontSize:15 }} /> },
+    { label:"Finanzas",        key:"finance",        icon:<ReceiptLongOutlined sx={{ fontSize:15 }} /> },
+    { label:"Asistencia",      key:"attendance",     icon:<HowToRegOutlined sx={{ fontSize:15 }} /> },
+    { label:"Planes",          key:"work_plans",     icon:<ViewKanbanOutlined sx={{ fontSize:15 }} /> },
+    { label:"Galería",         key:"gallery",        icon:<PhotoLibraryOutlined sx={{ fontSize:15 }} /> },
+    { label:"Reporte Mensual", key:"monthly_report", icon:<ReceiptLongOutlined sx={{ fontSize:15 }} /> },
   ].filter(t => config?.[t.key]);
 
   return (
@@ -415,13 +417,18 @@ export default function MinistryDetail() {
                     <div style={{ padding:"4px 8px", fontSize:11, color:"var(--text-secondary)", background:"#fff", borderTop:"1px solid var(--border)" }}>{item.caption}</div>
                   )}
                   {item.activity_date && (
-                    <div style={{ padding:"0 8px 4px", fontSize:10, color:"var(--text-muted)" }}>{item.activity_date}</div>
+                  <div style={{ padding:"0 8px 4px", fontSize:10, color:"var(--text-muted)" }}>{item.activity_date}</div>
                   )}
                 </div>
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {/* ── MONTHLY REPORT ── */}
+      {TABS[tab]?.key === "monthly_report" && (
+        <MonthlyReportTab ministryId={mid} />
       )}
     </div>
   );

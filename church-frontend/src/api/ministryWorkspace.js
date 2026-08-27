@@ -33,3 +33,11 @@ export const uploadGalleryItem       = (id, formData) => api.post(`${BASE(id)}/g
   headers: { "Content-Type": "multipart/form-data" }
 });
 export const deleteGalleryItem       = (id, itemId) => api.delete(`${BASE(id)}/gallery/${itemId}`);
+
+// ── Monthly Reports ──────────────────────────────────────
+export const getMonthlyReports       = (id)         => api.get(`${BASE(id)}/monthly-reports`);
+export const createMonthlyReport     = (id, formData) => api.post(`${BASE(id)}/monthly-reports`, formData, {
+  headers: { "Content-Type": "multipart/form-data" }
+});
+export const deleteMonthlyReport     = (id, reportId) => api.delete(`${BASE(id)}/monthly-reports/${reportId}`);
+export const getAllMonthlyReports     = (params = {}) => api.get("/ministry-workspace/all-monthly-reports", { params });

@@ -17,6 +17,7 @@ def create_ministry(db: Session, data: MinistryCreate):
 
     ministry = Ministry(name=data.name, service_day=data.service_day)
     db.add(ministry)
+    db.flush()  # Obtener el ID del ministerio antes de agregar los roles
     for role in data.roles:
         db.add(MinistryRole(ministry_id=ministry.id, role=role))
     db.commit()

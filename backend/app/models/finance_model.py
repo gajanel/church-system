@@ -63,12 +63,26 @@ class FixedExpense(Base):
     created_by_user = relationship("User", foreign_keys=[created_by])
 
 
+class BankAccount(Base):
+    __tablename__ = "bank_accounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bank_name = Column(String(100), nullable=False)
+    account_name = Column(String(100), nullable=False)
+    account_number = Column(String(100), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    created_by_user = relationship("User", foreign_keys=[created_by])
+
+
 class BankDeposit(Base):
     __tablename__ = "bank_deposits"
 
     id = Column(Integer, primary_key=True, index=True)
     slip_number = Column(String(50), nullable=False)
-    bank_name = Column(String(100), nullable=False)
+    bank_name = Column(String(100), nullable=True) # Mantenido por historial
+    bank_account_id = Column(Integer, ForeignKey("bank_accounts.id"), nullable=True, index=True)
     amount = Column(Float, nullable=False)
     date = Column(Date, nullable=False, index=True)
     observations = Column(String(300), nullable=True)
@@ -77,3 +91,23 @@ class BankDeposit(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     created_by_user = relationship("User", foreign_keys=[created_by])
+    bank_account = relationship("BankAccount")
+
+
+class BankInjection(Base):
+    """Transferencia de dinero de Caja General hacia un banco (resta del saldo de caja)."""
+    __tablename__ = "bank_injections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bank_name = Column(String(100), nullable=True) # Mantenido por historial
+    bank_account_id = Column(Integer, ForeignKey("bank_accounts.id"), nullable=True, index=True)
+    amount = Column(Float, nullable=False)
+    date = Column(Date, nullable=False, index=True)
+    slip_number = Column(String(50), nullable=True)
+    observations = Column(String(300), nullable=True)
+    image_url = Column(String(255), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    created_by_user = relationship("User", foreign_keys=[created_by])
+    bank_account = relationship("BankAccount")

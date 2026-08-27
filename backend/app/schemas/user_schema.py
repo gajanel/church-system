@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     is_admin: bool = False
     is_super_admin: bool = False
     modules: List[str] = Field(default_factory=list)
+    member_id: Optional[int] = None
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -18,6 +19,7 @@ class UserUpdate(BaseModel):
     is_admin: Optional[bool] = None
     is_super_admin: Optional[bool] = None
     modules: Optional[List[str]] = None
+    member_id: Optional[int] = None
 
 class UserResponse(BaseModel):
     id: int
@@ -28,6 +30,7 @@ class UserResponse(BaseModel):
     is_super_admin: bool
     modules: List[str]
     must_change_password: bool
+    member_id: Optional[int] = None
 
     class Config:
         from_attributes = True

@@ -10,7 +10,8 @@ from app.database.connection import get_db
 from app.utils.dependencies import get_current_user, only_finance
 from app.schemas.finance_schema import (
     OfferingCreate, IncomeCreate, ExpenseCreate, FixedExpenseCreate, BankDepositCreate,
-    OfferingPaginatedResponse, IncomePaginatedResponse, ExpensePaginatedResponse, BankDepositPaginatedResponse
+    OfferingPaginatedResponse, IncomePaginatedResponse, ExpensePaginatedResponse, BankDepositPaginatedResponse,
+    BankInjectionPaginatedResponse, BankAccountCreate, BankAccountResponse
 )
 from app.services import finance_service
 from app.services import audit_service
@@ -190,7 +191,7 @@ def get_deposits(page: int = 1, size: int = 50, db: Session = Depends(get_db), u
 @router.post("/finance/deposits")
 async def create_deposit(
     slip_number: str = Form(...),
-    bank_name: str = Form(...),
+    bank_account_id: int = Form(...),
     amount: float = Form(...),
     date: str = Form(...),
     observations: str = Form(None),
@@ -223,7 +224,7 @@ async def create_deposit(
 
     data = {
         "slip_number": slip_number,
-        "bank_name": bank_name,
+        "bank_account_id": bank_account_id,
         "amount": amount,
         "date": date,
         "observations": observations,
@@ -243,3 +244,104 @@ def delete_deposit(deposit_id: int, db: Session = Depends(get_db), user=Depends(
     if not finance_service.delete_deposit(db, deposit_id):
         raise HTTPException(status_code=404, detail="Boleta no encontrada")
     return {"message": "Eliminada correctamente"}
+
+
+# ── Caja General ──
+@router.get("/finance/cash-register")
+def get_cash_register(
+    month: int = None,
+    year: int = None,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    return finance_service.get_cash_register(db, month=month, year=year)
+
+
+# ── Inyecciones Caja → Banco ──
+@router.get("/finance/injections", response_model=BankInjectionPaginatedResponse)
+def get_injections(page: int = 1, size: int = 50, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    skip = (page - 1) * size
+    items, total = finance_service.get_injections(db, skip=skip, limit=size)
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": math.ceil(total / size) if total > 0 else 0
+    }
+
+
+@router.post("/finance/injections")
+async def create_injection(
+    bank_account_id: int = Form(...),
+    amount: float = Form(...),
+    date: str = Form(...),
+    slip_number: str = Form(None),
+    observations: str = Form(None),
+    file: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    user=Depends(only_finance)
+):
+    image_url = None
+    if file and file.filename:
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        allowed_extensions = [".jpg", ".jpeg", ".png", ".webp"]
+        if file_ext not in allowed_extensions:
+            raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Use JPG, PNG o WEBP.")
+        contents = await file.read()
+        if len(contents) > MAX_DEPOSIT_FILE_SIZE:
+            raise HTTPException(status_code=413, detail="El archivo supera el maximo de 5 MB.")
+        upload_dir = "static/uploads/injections"
+        os.makedirs(upload_dir, exist_ok=True)
+        file_name = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(upload_dir, file_name)
+        with open(file_path, "wb") as buffer:
+            buffer.write(contents)
+        image_url = f"/static/uploads/injections/{file_name}"
+
+    data = {
+        "bank_account_id": bank_account_id,
+        "amount":       amount,
+        "date":         date,
+        "slip_number":  slip_number,
+        "observations": observations,
+        "image_url":    image_url,
+    }
+    injection = finance_service.create_injection(db, data, user.id)
+    audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
+        user_id=user.id,
+        action="CREATE",
+        module="Finanzas",
+        description=f"Inyeccion a banco por Q{amount}"
+    ))
+    return injection
+
+
+@router.delete("/finance/injections/{injection_id}")
+def delete_injection(injection_id: int, db: Session = Depends(get_db), user=Depends(only_finance)):
+    if not finance_service.delete_injection(db, injection_id):
+        raise HTTPException(status_code=404, detail="Inyeccion no encontrada")
+    return {"message": "Eliminada correctamente"}
+
+
+# ── Cuentas Bancarias ──
+@router.get("/finance/bank-accounts")
+def get_bank_accounts(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return finance_service.get_bank_accounts(db)
+
+@router.post("/finance/bank-accounts", response_model=BankAccountResponse)
+def create_bank_account(data: BankAccountCreate, db: Session = Depends(get_db), user=Depends(only_finance)):
+    account = finance_service.create_bank_account(db, data, user.id)
+    audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
+        user_id=user.id,
+        action="CREATE",
+        module="Finanzas",
+        description=f"Creó la cuenta bancaria {data.account_number} ({data.bank_name})"
+    ))
+    return account
+
+@router.delete("/finance/bank-accounts/{account_id}")
+def delete_bank_account(account_id: int, db: Session = Depends(get_db), user=Depends(only_finance)):
+    if not finance_service.delete_bank_account(db, account_id):
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+    return {"message": "Cuenta eliminada"}

@@ -18,6 +18,7 @@ class MemberCreate(BaseModel):
     occupation: Optional[str] = None
     join_date: Optional[date] = None
     emergency_contact: Optional[str] = None
+    church_role: Optional[str] = None
 
 class MemberUpdate(BaseModel):
     first_name: Optional[str] = None
@@ -35,6 +36,7 @@ class MemberUpdate(BaseModel):
     occupation: Optional[str] = None
     join_date: Optional[date] = None
     emergency_contact: Optional[str] = None
+    church_role: Optional[str] = None
 
 class MemberResponse(BaseModel):
     id: int
@@ -53,6 +55,7 @@ class MemberResponse(BaseModel):
     occupation: Optional[str]
     join_date: Optional[date]
     emergency_contact: Optional[str]
+    church_role: Optional[str] = None
     created_at: datetime
 
     class Config:

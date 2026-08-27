@@ -21,7 +21,8 @@ def create_user(db: Session, data: UserCreate):
         is_admin=data.is_admin,
         is_super_admin=data.is_super_admin,
         modules=data.modules,
-        must_change_password=True
+        must_change_password=True,
+        member_id=data.member_id
     )
     db.add(user)
     db.commit()

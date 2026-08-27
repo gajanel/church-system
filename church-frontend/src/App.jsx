@@ -11,7 +11,9 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Members = lazy(() => import("./pages/Members"));
 const Login = lazy(() => import("./pages/Login"));
 const Ministries = lazy(() => import("./pages/Ministries"));
-const FinanceLayout = lazy(() => import("./pages/finance/FinanceLayout"));
+const FinanceLanding    = lazy(() => import("./pages/finance/FinanceLanding"));
+const FinanceLayout    = lazy(() => import("./pages/finance/FinanceLayout"));
+const CashRegister     = lazy(() => import("./pages/finance/CashRegister"));
 const FinanceOfferings = lazy(() => import("./pages/finance/Offerings"));
 const FinanceIncomes = lazy(() => import("./pages/finance/Incomes"));
 const FinanceExpenses = lazy(() => import("./pages/finance/Expenses"));
@@ -19,6 +21,7 @@ const FinanceGoals = lazy(() => import("./pages/finance/Goals"));
 const FinanceDeposits = lazy(() => import("./pages/finance/Deposits"));
 const Projects = lazy(() => import("./pages/Projects"));
 const Events = lazy(() => import("./pages/Events"));
+const ReportsLanding = lazy(() => import("./pages/reports/ReportsLanding"));
 const ReportsLayout = lazy(() => import("./pages/reports/ReportsLayout"));
 const FinancialMonthly = lazy(() => import("./pages/reports/FinancialMonthly"));
 const FinancialAnnual = lazy(() => import("./pages/reports/FinancialAnnual"));
@@ -26,11 +29,13 @@ const MembersReport = lazy(() => import("./pages/reports/MembersReport"));
 const ProjectsReport = lazy(() => import("./pages/reports/ProjectsReport"));
 const MemberContributions = lazy(() => import("./pages/reports/MemberContributions"));
 const AttendanceReport = lazy(() => import("./pages/reports/AttendanceReport"));
+const MinistriesReport = lazy(() => import("./pages/reports/MinistriesReport"));
 const Users = lazy(() => import("./pages/Users"));
 const Privileges = lazy(() => import("./pages/Privileges"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Projection = lazy(() => import("./pages/Projection"));
 const Attendance = lazy(() => import("./pages/Attendance"));
+const SettingsLanding = lazy(() => import("./pages/settings/SettingsLanding"));
 const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout"));
 const IdentitySettings = lazy(() => import("./pages/settings/Identity"));
 const FinanceSettings = lazy(() => import("./pages/settings/FinanceSettings"));
@@ -43,6 +48,7 @@ const AuditSettings = lazy(() => import("./pages/settings/AuditSettings"));
 const NotFound  = lazy(() => import("./pages/NotFound"));
 const MinistryWorkspace = lazy(() => import("./pages/MinistryWorkspace"));
 const MinistryDetail    = lazy(() => import("./pages/MinistryDetail"));
+const MinistriesLanding = lazy(() => import("./pages/MinistriesLanding"));
 
 // Loading Component
 const PageLoader = () => (
@@ -122,11 +128,14 @@ function App() {
         >
           <Route path="/" element={<Dashboard />} />
           <Route path="/members" element={<Members />} />
-          <Route path="/ministries" element={<Ministries />} />
+          <Route path="/ministries" element={<MinistriesLanding />} />
+          <Route path="/ministries/admin" element={<Ministries />} />
           <Route path="/ministry-workspace" element={<MinistryWorkspace />} />
           <Route path="/ministry-workspace/:ministrySlug" element={<MinistryDetail />} />
           <Route path="/finance" element={<FinanceLayout />}>
-            <Route index element={<FinanceOfferings />} />
+            <Route index element={<FinanceLanding />} />
+            <Route path="cash" element={<CashRegister />} />
+            <Route path="offerings" element={<FinanceOfferings />} />
             <Route path="incomes" element={<FinanceIncomes />} />
             <Route path="expenses" element={<FinanceExpenses />} />
             <Route path="goals" element={<FinanceGoals />} />
@@ -135,19 +144,22 @@ function App() {
           <Route path="/projects" element={<Projects />} />
           <Route path="/events" element={<Events />} />
           <Route path="/reports" element={<ReportsLayout />}>
-            <Route index element={<FinancialMonthly />} />
+            <Route index element={<ReportsLanding />} />
+            <Route path="monthly" element={<FinancialMonthly />} />
             <Route path="annual" element={<FinancialAnnual />} />
             <Route path="members" element={<MembersReport />} />
             <Route path="projects" element={<ProjectsReport />} />
             <Route path="contributions" element={<MemberContributions />} />
             <Route path="attendance" element={<AttendanceReport />} />
+            <Route path="ministries" element={<MinistriesReport />} />
           </Route>
           <Route path="/privileges" element={<Privileges />} />
           <Route path="/announcements" element={<Announcements />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/usuarios" element={<Users />} />
           <Route path="/settings" element={<SettingsLayout />}>
-            <Route index element={<IdentitySettings />} />
+            <Route index element={<SettingsLanding />} />
+            <Route path="identity" element={<IdentitySettings />} />
             <Route path="finance" element={<FinanceSettings />} />
             <Route path="verse" element={<VerseSettings />} />
             <Route path="brand" element={<BrandSettings />} />

@@ -7,8 +7,9 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton,
   Dialog, DialogTitle, DialogContent, DialogActions, Chip
 } from "@mui/material";
-import { ChevronLeft, ChevronRight, Delete, Add } from "@mui/icons-material";
+import { ChevronLeft, ChevronRight, Delete, Add, Remove } from "@mui/icons-material";
 import { TableSkeleton } from "../../components/ui/SkeletonLoader";
+import ConfirmDialog from "../../components/ConfirmDialog";
 
 /* ── Default income types (protected, cannot be deleted) ── */
 const DEFAULT_TYPES = ["Donación", "Venta", "Rifa", "Colaboración", "Otros ingresos"];
@@ -56,14 +57,17 @@ export default function Incomes() {
 
   /* ── Custom types state ── */
   const [incomeTypes, setIncomeTypes] = useState(loadTypes);
-  const [manageOpen, setManageOpen]   = useState(false);
-  const [newTypeName, setNewTypeName] = useState("");
-  const [typeError, setTypeError]     = useState("");
 
   const [form, setForm] = useState({
     income_type: loadTypes()[0] || DEFAULT_TYPES[0],
     amount:"", date:getToday(), member_id:"", donor_name:"", observations:""
   });
+
+  /* ── Custom Types state ── */
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState({ title: "", content: "", onConfirm: () => {} });
+  const [addPromptOpen, setAddPromptOpen] = useState(false);
+  const [newTypeTemp, setNewTypeTemp] = useState("");
 
   /* ── Persist types ── */
   useEffect(() => { saveTypes(incomeTypes); }, [incomeTypes]);
@@ -102,26 +106,40 @@ export default function Incomes() {
   };
 
   /* ── Manage types handlers ── */
-  const handleAddType = () => {
-    const trimmed = newTypeName.trim();
-    if (!trimmed) { setTypeError("El nombre no puede estar vacío."); return; }
-    if (incomeTypes.map(t => t.toLowerCase()).includes(trimmed.toLowerCase())) {
-      setTypeError("Este tipo ya existe."); return;
-    }
-    setIncomeTypes(prev => [...prev, trimmed]);
-    setNewTypeName("");
-    setTypeError("");
+  const handleQuickAdd = () => {
+    setNewTypeTemp("");
+    setAddPromptOpen(true);
   };
 
-  const handleRemoveType = (type) => {
-    if (DEFAULT_TYPES.includes(type)) { setTypeError("No puedes eliminar los tipos predeterminados."); return; }
-    if (incomeTypes.length <= 1) { setTypeError("Debe quedar al menos un tipo."); return; }
-    const remaining = incomeTypes.filter(t => t !== type);
-    setIncomeTypes(remaining);
-    if (form.income_type === type) {
-      setForm(f => ({ ...f, income_type: remaining[0] }));
+  const confirmAddType = () => {
+    const trimmed = newTypeTemp.trim();
+    if (!trimmed) { setAddPromptOpen(false); return; }
+    if (incomeTypes.map(t => t.toLowerCase()).includes(trimmed.toLowerCase())) {
+      setError("Este tipo ya existe."); setAddPromptOpen(false); return;
     }
-    setTypeError("");
+    setIncomeTypes(prev => [...prev, trimmed]);
+    setForm(f => ({ ...f, income_type: trimmed }));
+    setAddPromptOpen(false);
+  };
+
+  const handleQuickRemove = () => {
+    if (DEFAULT_TYPES.includes(form.income_type)) {
+      setError("No puedes eliminar los tipos predeterminados."); return;
+    }
+    if (incomeTypes.length <= 1) {
+      setError("Debe quedar al menos un tipo."); return;
+    }
+    setConfirmConfig({
+      title: "¿Eliminar tipo?",
+      content: `¿Seguro que deseas eliminar el tipo "${form.income_type}"?`,
+      onConfirm: () => {
+        const remaining = incomeTypes.filter(t => t !== form.income_type);
+        setIncomeTypes(remaining);
+        setForm(f => ({ ...f, income_type: remaining[0] }));
+        setConfirmOpen(false);
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const memberSelect = (
@@ -142,24 +160,20 @@ export default function Incomes() {
       <div style={{ marginBottom:24, boxShadow:"none", border:"1px solid #e5e7eb", borderRadius:"4px", background:"#fff" }}>
         <div style={{ padding:"12px 16px", borderBottom:"1px solid #e5e7eb", fontWeight:600, fontSize:"0.875rem", color:"#374151", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <span>Registrar Ingreso Adicional</span>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={() => { setManageOpen(true); setTypeError(""); setNewTypeName(""); }}
-            sx={{ fontSize:"0.75rem", textTransform:"none", borderColor:"#e5e7eb", color:"#374151", '&:hover':{ borderColor:"#9ca3af" } }}
-          >
-            Gestionar tipos
-          </Button>
         </div>
         <div style={{ padding:"16px" }}>
           <form onSubmit={onSubmit}>
             <div style={G2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Tipo de Ingreso *</InputLabel>
-                <Select value={form.income_type} label="Tipo de Ingreso *" onChange={e => setForm({...form, income_type:e.target.value})}>
-                  {incomeTypes.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Tipo de Ingreso *</InputLabel>
+                  <Select value={form.income_type} label="Tipo de Ingreso *" onChange={e => setForm({...form, income_type:e.target.value})}>
+                    {incomeTypes.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                  </Select>
+                </FormControl>
+                <IconButton size="small" onClick={handleQuickAdd} color="primary" title="Agregar tipo" sx={{ bgcolor: "#f1f5f9" }}><Add fontSize="small" /></IconButton>
+                <IconButton size="small" onClick={handleQuickRemove} color="error" title="Quitar tipo seleccionado" sx={{ bgcolor: "#f1f5f9" }}><Remove fontSize="small" /></IconButton>
+              </div>
               <TextField required type="number" size="small" label="Monto *" inputProps={{ step:"0.01", min:"0" }} value={form.amount} onChange={e => setForm({...form, amount:e.target.value})} />
               <TextField required type="date" size="small" label="Fecha *" InputLabelProps={{ shrink:true }} value={form.date} onChange={e => setForm({...form, date:e.target.value})} />
               <TextField fullWidth size="small" label="Observaciones" value={form.observations} onChange={e => setForm({...form, observations:e.target.value})} />
@@ -206,68 +220,33 @@ export default function Incomes() {
       )}
       <Pager page={page} total={total} onPage={setPage} />
 
-      {/* ── Manage Types Dialog ── */}
-      <Dialog open={manageOpen} onClose={() => setManageOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight:700, fontSize:"1rem", pb:1 }}>Gestionar Tipos de Ingreso</DialogTitle>
-        <DialogContent sx={{ pt:"8px !important" }}>
-          {typeError && (
-            <div style={{ color:"var(--color-error)", fontSize:"0.8rem", marginBottom:12, padding:"8px 12px", background:"#fff5f5", borderRadius:4, border:"1px solid #fecaca" }}>
-              {typeError}
-            </div>
-          )}
-
-          {/* Existing types */}
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:20 }}>
-            {incomeTypes.map(t => (
-              <Chip
-                key={t}
-                label={t}
-                size="small"
-                onDelete={DEFAULT_TYPES.includes(t) ? undefined : () => handleRemoveType(t)}
-                deleteIcon={<Delete fontSize="small" />}
-                sx={{
-                  bgcolor: DEFAULT_TYPES.includes(t) ? "#f1f5f9" : "#fff",
-                  border: "1px solid #e2e8f0",
-                  fontWeight: 600,
-                  fontSize: "0.78rem",
-                  color: "#374151",
-                  '& .MuiChip-deleteIcon': { color:"#ef4444" }
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Add new type */}
-          <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
-            <TextField
-              size="small"
-              label="Nuevo tipo de ingreso"
-              placeholder="Ej: Subsidio, Patrocinio…"
-              value={newTypeName}
-              onChange={e => { setNewTypeName(e.target.value); setTypeError(""); }}
-              onKeyDown={e => e.key === "Enter" && (e.preventDefault(), handleAddType())}
-              fullWidth
-            />
-            <Button
-              variant="contained"
-              disableElevation
-              onClick={handleAddType}
-              startIcon={<Add />}
-              sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, height:40, whiteSpace:"nowrap", '&:hover':{bgcolor:"#1E293B"} }}
-            >
-              Agregar
-            </Button>
-          </div>
-          <p style={{ fontSize:"0.72rem", color:"#9ca3af", margin:"10px 0 0" }}>
-            Los tipos predeterminados no pueden eliminarse.
-          </p>
+      <Dialog open={addPromptOpen} onClose={() => setAddPromptOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: "1rem" }}>Nuevo Tipo de Ingreso</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Nombre del tipo"
+            fullWidth
+            size="small"
+            value={newTypeTemp}
+            onChange={e => setNewTypeTemp(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && confirmAddType()}
+          />
         </DialogContent>
-        <DialogActions sx={{ px:3, pb:2 }}>
-          <Button onClick={() => setManageOpen(false)} variant="outlined" size="small" sx={{ textTransform:"none" }}>
-            Cerrar
-          </Button>
+        <DialogActions>
+          <Button onClick={() => setAddPromptOpen(false)} sx={{ textTransform:"none" }}>Cancelar</Button>
+          <Button onClick={confirmAddType} variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none" }}>Agregar</Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog 
+        open={confirmOpen} 
+        title={confirmConfig.title} 
+        content={confirmConfig.content} 
+        onConfirm={confirmConfig.onConfirm} 
+        onCancel={() => setConfirmOpen(false)} 
+      />
     </>
   );
 }

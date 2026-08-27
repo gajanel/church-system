@@ -1,63 +1,85 @@
 /* ══════════════════════════════════════════════════════
    Login.module.css
-   Aranda-style enterprise login
-   Dark geometric background · Floating dark card
+   Clean Enterprise — White light layout
+   Soft gradient orbs · White card · Coral accents
    ══════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@700;800&display=swap');
 
 /* ── Full-page backdrop ── */
 .page {
   min-height: 100vh;
   width: 100%;
-  background-color: #1a1a1a;
-  background-image: 
-    linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
-    url('../assets/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-color: #f5f6fa;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(224, 112, 96, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 85% 75%, rgba(108, 99, 255, 0.07) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.04) 0%, transparent 60%);
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 40px 80px;
+  justify-content: center;
+  padding: 40px 24px;
   position: relative;
   overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* ── Geometric decorative shapes (like the diagonal panels in the screenshot) ── */
+/* ── Subtle dot grid overlay ── */
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+/* ── Decorative blurred orbs ── */
 .geo1 {
   position: absolute;
-  top: -60px;
-  right: 80px;
-  width: 420px;
-  height: 420px;
-  background: rgba(255,255,255,0.03);
-  transform: rotate(30deg);
-  border-radius: 2px;
+  top: -140px;
+  left: -120px;
+  width: 560px;
+  height: 560px;
+  background: radial-gradient(circle, rgba(224, 112, 96, 0.14) 0%, transparent 65%);
+  border-radius: 50%;
   pointer-events: none;
+  animation: floatA 10s ease-in-out infinite;
 }
 
 .geo2 {
   position: absolute;
-  bottom: -80px;
-  right: 200px;
-  width: 300px;
-  height: 500px;
-  background: rgba(255,255,255,0.02);
-  transform: rotate(20deg);
-  border-radius: 2px;
+  bottom: -180px;
+  right: -120px;
+  width: 640px;
+  height: 640px;
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.11) 0%, transparent 65%);
+  border-radius: 50%;
   pointer-events: none;
+  animation: floatB 13s ease-in-out infinite;
 }
 
 .geo3 {
   position: absolute;
-  top: 30%;
-  right: 60px;
-  width: 250px;
-  height: 250px;
-  background: rgba(255,255,255,0.015);
-  transform: rotate(45deg);
-  border-radius: 2px;
+  top: 40%;
+  left: 60%;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.07) 0%, transparent 65%);
+  border-radius: 50%;
   pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: floatA 16s ease-in-out infinite reverse;
+}
+
+@keyframes floatA {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-20px) scale(1.03); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(18px) scale(1.02); }
 }
 
 /* ── Login card ── */
@@ -66,61 +88,82 @@
   z-index: 10;
   width: 100%;
   max-width: 420px;
-  background: #2c2c2c;
-  border-radius: 2px;
-  padding: 64px 40px; /* Increased vertical padding to make it taller */
-  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 52px 40px 42px;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 12px 48px rgba(0, 0, 0, 0.10),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  animation: cardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Coral accent bar at top of card ── */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #c0504a, #e07060, #f09a8a);
+  border-radius: 18px 18px 0 0;
 }
 
 /* ── Brand area ── */
 .brand {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center everything for a modern portal look */
+  align-items: center;
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
-
-/* Icon styles removed for text-only branding */
 
 .brandText {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
 }
 
 .brandName {
-  font-family: "Montserrat", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 34px;
-  font-weight: 700; /* Bold but not extremely heavy */
-  color: #ffffff;
+  font-family: 'Montserrat', 'Inter', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
   line-height: 1.1;
-  letter-spacing: 0.15em; /* Moderately spaced for a premium look */
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  margin-right: -0.15em;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 0.15); /* Very subtle glow, almost invisible */
+  margin-right: -0.18em;
+  background: linear-gradient(135deg, #1a1a2e 0%, #4a4a6a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .brandSub {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
-  font-weight: 300;
+  color: #a0a0b8;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.3em;
-  margin-top: 8px;
-  margin-right: -0.3em; /* Offset for centering */
+  margin-top: 4px;
 }
 
 /* ── Panel title ── */
 .panelTitle {
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 24px;
+  color: #b0b0c8;
+  margin-bottom: 22px;
   padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #eeeef4;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-align: center;
 }
 
@@ -130,26 +173,29 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: rgba(224, 112, 96, 0.15);
-  border: 1px solid rgba(224, 112, 96, 0.3);
+  background: rgba(224, 112, 96, 0.08);
+  border: 1px solid rgba(224, 112, 96, 0.25);
   border-left: 3px solid #e07060;
-  border-radius: 2px;
-  padding: 8px 12px;
+  border-radius: 8px;
+  padding: 9px 12px;
   font-size: 12px;
-  color: #f5a898;
+  color: #c0503e;
   margin-bottom: 16px;
 }
 
 .errorClose {
   background: none;
   border: none;
-  color: #f5a898;
+  color: #c0503e;
   cursor: pointer;
   font-size: 12px;
   padding: 0;
   line-height: 1;
   flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s;
 }
+.errorClose:hover { opacity: 1; }
 
 /* ── Form layout — fields + button side by side ── */
 .formStack {
@@ -168,38 +214,40 @@
 .fieldWrap {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
+  gap: 5px;
+  margin-bottom: 14px;
 }
 
 .label {
   font-size: 11px;
-  color: #a0a0a0;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  color: #8080a0;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .input {
   width: 100%;
-  height: 34px;
-  background: #404040;
-  border: 1px solid #555;
-  border-radius: 2px;
-  color: #e8e8e8;
-  font-size: 13px;
-  font-family: var(--font);
-  padding: 0 10px;
+  height: 38px;
+  background: #f8f8fc;
+  border: 1.5px solid #e2e2ee;
+  border-radius: 8px;
+  color: #1a1a2e;
+  font-size: 13.5px;
+  font-family: 'Inter', var(--font), sans-serif;
+  padding: 0 12px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
   border-color: #e07060;
-  background: #444;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(224, 112, 96, 0.12);
 }
 
 .input::placeholder {
-  color: #666;
+  color: #c4c4d8;
 }
 
 /* password field wrapper */
@@ -210,37 +258,38 @@
 }
 
 .pwWrap .input {
-  padding-right: 32px;
+  padding-right: 36px;
 }
 
 .eyeBtn {
   position: absolute;
-  right: 8px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #888;
+  color: #b0b0c8;
   cursor: pointer;
   padding: 0;
   display: flex;
   align-items: center;
   line-height: 1;
+  transition: color 0.15s;
 }
 
-.eyeBtn:hover { color: #bbb; }
+.eyeBtn:hover { color: #7070a0; }
 
 /* ── Login button — coral, tall, beside the fields ── */
 .loginBtn {
   width: 80px;
   flex-shrink: 0;
   margin-left: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   background: #e07060;
   border: none;
-  border-radius: 2px;
+  border-radius: 8px;
   color: #fff;
-  font-family: var(--font);
+  font-family: 'Inter', var(--font), sans-serif;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -251,13 +300,22 @@
   gap: 6px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  transition: background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
   align-self: stretch;
+  box-shadow: 0 4px 14px rgba(224, 112, 96, 0.35);
 }
 
-.loginBtn:hover:not(:disabled) { background: #d05e4e; }
-.loginBtn:active:not(:disabled) { background: #c0504a; }
-.loginBtn:disabled { background: #555; cursor: not-allowed; }
+.loginBtn:hover:not(:disabled) {
+  background: #d05e4e;
+  box-shadow: 0 6px 18px rgba(224, 112, 96, 0.45);
+  transform: translateY(-1px);
+}
+.loginBtn:active:not(:disabled) {
+  background: #c0504a;
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(224, 112, 96, 0.3);
+}
+.loginBtn:disabled { background: #d0d0e0; cursor: not-allowed; box-shadow: none; }
 
 .btnArrow {
   font-size: 16px;
@@ -268,12 +326,12 @@
 .cardFooter {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid #f0f0f5;
 }
 
 .footerHint {
   font-size: 11px;
-  color: #888;
+  color: #b0b0c8;
 }
 
 /* ── Page footer ── */
@@ -282,7 +340,7 @@
   bottom: 16px;
   right: 24px;
   font-size: 11px;
-  color: rgba(255,255,255,0.25);
+  color: #b0b0c8;
   letter-spacing: 0.03em;
 }
 
@@ -290,13 +348,14 @@
 @media (max-width: 600px) {
   .page {
     padding: 24px 16px;
-    justify-content: center;
+    align-items: flex-start;
+    padding-top: 60px;
   }
 
   .geo1, .geo2, .geo3 { display: none; }
 
   .card {
-    padding: 24px 20px 20px;
+    padding: 36px 24px 28px;
   }
 
   .loginBtn {

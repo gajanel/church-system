@@ -47,12 +47,19 @@ API.interceptors.response.use(
           localStorage.removeItem("token");
           localStorage.removeItem("refresh_token");
           localStorage.removeItem("user");
-          window.location.href = "/login";
+          if (window.location.pathname !== "/login") {
+            window.location.href = "/login";
+          }
           return Promise.reject(refreshError);
         }
       } else {
-        // No hay refresh token, redirigir al login
-        window.location.href = "/login";
+        // No hay refresh token, redirigir al login limpiando la sesión
+        localStorage.removeItem("token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
       }
     }
 

@@ -30,18 +30,19 @@ from app.models import (
     member_ministry_model, finance_model, project_model,
     privilege_model, announcement_model, event_model,
     attendance_model, settings_model, audit_model,
-    ministry_workspace_model
+    ministry_workspace_model, ministry_monthly_report_model
 )
-import migrate_users
-import migrate_photo
-import migrate_ministry_days
-import migrate_privileges_dynamic
-import migrate_settings_verse
-import migrate_member_fields
-import migrate_expense_document
-import migrate_ministry_workspace
-import migrate_fix_ministry_delete
-import migrate_audit_device
+from migrations import migrate_users
+from migrations import migrate_photo
+from migrations import migrate_ministry_days
+from migrations import migrate_privileges_dynamic
+from migrations import migrate_settings_verse
+from migrations import migrate_member_fields
+from migrations import migrate_expense_document
+from migrations import migrate_ministry_workspace
+from migrations import migrate_fix_ministry_delete
+from migrations import migrate_audit_device
+from migrations import migrate_ministry_monthly_reports
 
 
 load_dotenv()
@@ -94,6 +95,7 @@ async def lifespan(app: FastAPI):
         migrate_ministry_workspace.migrate(engine)
         migrate_fix_ministry_delete.migrate(engine)
         migrate_audit_device.migrate()
+        migrate_ministry_monthly_reports.migrate(engine)
         
         # Crear admin inicial si no existe
         db = SessionLocal()

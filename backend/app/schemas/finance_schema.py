@@ -111,10 +111,28 @@ class FixedExpenseResponse(BaseModel):
         from_attributes = True
 
 
+# ── Cuentas Bancarias ──
+class BankAccountCreate(BaseModel):
+    bank_name: str
+    account_name: str
+    account_number: str
+
+class BankAccountResponse(BaseModel):
+    id: int
+    bank_name: str
+    account_name: str
+    account_number: str
+    created_by: int
+    created_at: datetime
+    created_by_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 # ── Boletas de Depósito ──
 class BankDepositCreate(BaseModel):
     slip_number: str
-    bank_name: str
+    bank_account_id: int
     amount: float
     date: date
     observations: Optional[str] = None
@@ -122,7 +140,9 @@ class BankDepositCreate(BaseModel):
 class BankDepositResponse(BaseModel):
     id: int
     slip_number: str
-    bank_name: str
+    bank_name: Optional[str] = None
+    bank_account_id: Optional[int] = None
+    bank_account: Optional[BankAccountResponse] = None
     amount: float
     date: date
     observations: Optional[str]
@@ -136,6 +156,39 @@ class BankDepositResponse(BaseModel):
 
 class BankDepositPaginatedResponse(BaseModel):
     items: List[BankDepositResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
+# ── Inyecciones Caja → Banco ──
+class BankInjectionCreate(BaseModel):
+    bank_account_id: int
+    amount: float
+    date: date
+    slip_number: Optional[str] = None
+    observations: Optional[str] = None
+
+class BankInjectionResponse(BaseModel):
+    id: int
+    bank_name: Optional[str] = None
+    bank_account_id: Optional[int] = None
+    bank_account: Optional[BankAccountResponse] = None
+    amount: float
+    date: date
+    slip_number: Optional[str]
+    observations: Optional[str]
+    image_url: Optional[str] = None
+    created_by: int
+    created_at: datetime
+    created_by_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class BankInjectionPaginatedResponse(BaseModel):
+    items: List[BankInjectionResponse]
     total: int
     page: int
     size: int

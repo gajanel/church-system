@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
-import { Box, CircularProgress, Alert } from "@mui/material";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Box, CircularProgress, Alert, Button } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import { getSettings, updateSettings } from "../../api/settings";
 import { PageHeader } from "../../components/ui/PageHeader";
 
 export default function SettingsLayout() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+
+  const isLanding = location.pathname === "/settings" || location.pathname === "/settings/";
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ type: null, text: null });
   const [data, setData] = useState({
@@ -75,10 +80,22 @@ export default function SettingsLayout() {
 
   return (
     <Box sx={{ pb: 6, maxWidth: 900, mx: "auto" }}>
-      <PageHeader
-        title="Configuración del Sistema"
-        subtitle="Administra los parámetros globales, la identidad corporativa y la seguridad."
-      />
+      {!isLanding && (
+        <PageHeader
+          title="Configuración del Sistema"
+          subtitle="Administra los parámetros globales, la identidad corporativa y la seguridad."
+        >
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate("/settings")}
+            variant="outlined"
+            size="small"
+            sx={{ textTransform: "none", borderRadius: "8px", color: "#374151", borderColor: "#d1d5db" }}
+          >
+            Volver al Menú
+          </Button>
+        </PageHeader>
+      )}
 
       {msg.text && (
         <Alert severity={msg.type} sx={{ mb: 3, borderRadius: 2 }} onClose={() => setMsg({ type: null, text: null })}>

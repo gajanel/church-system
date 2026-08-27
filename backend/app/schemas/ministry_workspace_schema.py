@@ -10,22 +10,24 @@ from datetime import datetime
 #  MODULE CONFIG
 # ═══════════════════════════════════════════════
 class ModuleConfigOut(BaseModel):
-    ministry_id: int
-    finance:     bool
-    attendance:  bool
-    work_plans:  bool
-    gallery:     bool
-    updated_at:  Optional[datetime] = None
+    ministry_id:    int
+    finance:        bool
+    attendance:     bool
+    work_plans:     bool
+    gallery:        bool
+    monthly_report: bool = True
+    updated_at:     Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
 
 class ModuleConfigUpdate(BaseModel):
-    finance:    Optional[bool] = None
-    attendance: Optional[bool] = None
-    work_plans: Optional[bool] = None
-    gallery:    Optional[bool] = None
+    finance:        Optional[bool] = None
+    attendance:     Optional[bool] = None
+    work_plans:     Optional[bool] = None
+    gallery:        Optional[bool] = None
+    monthly_report: Optional[bool] = None
 
 
 # ═══════════════════════════════════════════════

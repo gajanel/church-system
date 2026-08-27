@@ -49,7 +49,7 @@ function Attendance() {
   const [formData, setForm] = useState({
     date: new Date().toISOString().split("T")[0],
     service_type: "Culto general",
-    men: 0, women: 0, youth: 0, children: 0, visitors: 0, converts: 0, notes: ""
+    men: "", women: "", youth: "", children: "", visitors: "", converts: "", notes: ""
   });
 
   useEffect(() => { 
@@ -65,7 +65,7 @@ function Attendance() {
 
   const handleOpen = () => {
     setEditingId(null);
-    setForm({ date: new Date().toISOString().split("T")[0], service_type: "Culto general", men: 0, women: 0, youth: 0, children: 0, visitors: 0, converts: 0, notes: "" });
+    setForm({ date: new Date().toISOString().split("T")[0], service_type: "Culto general", men: "", women: "", youth: "", children: "", visitors: "", converts: "", notes: "" });
     setOpen(true);
   };
 

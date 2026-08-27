@@ -50,8 +50,8 @@ def delete_member(db: Session, member_id: int):
     db.query(MemberPrivilegeProfile).filter(MemberPrivilegeProfile.member_id == member_id).delete()
     db.query(WeeklyPrivilegeSchedule).filter(WeeklyPrivilegeSchedule.member_id == member_id).update({"member_id": None})
 
-    # 4. Borrar miembro principal
-    db.delete(member)
+    # 4. Pasar a estado inactivo en lugar de eliminar
+    member.status = "inactive"
     db.commit()
     return True
 

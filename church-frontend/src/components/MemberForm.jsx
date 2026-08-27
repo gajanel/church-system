@@ -7,7 +7,7 @@ const emptyForm = {
   first_name: "", last_name: "", phone: "", email: "",
   address: "", birth_date: "", baptism_date: "", status: "active",
   photo_url: "", gender: "", marital_status: "", occupation: "",
-  join_date: "", emergency_contact: ""
+  join_date: "", emergency_contact: "", church_role: ""
 };
 
 export default function MemberForm({ initial, onSubmit, onCancel, submitting }) {
@@ -185,6 +185,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
             size="small"
             name="gender" label="Género" value={form.gender || ""} 
             onChange={handleChange} fullWidth select
+            InputLabelProps={{ shrink: true }}
           >
             <MenuItem value=""><em>—</em></MenuItem>
             <MenuItem value="Masculino">Masculino</MenuItem>
@@ -196,6 +197,7 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
             size="small"
             name="marital_status" label="Estado Civil" value={form.marital_status || ""} 
             onChange={handleChange} fullWidth select
+            InputLabelProps={{ shrink: true }}
           >
             <MenuItem value=""><em>—</em></MenuItem>
             <MenuItem value="Soltero/a">Soltero/a</MenuItem>
@@ -227,11 +229,28 @@ export default function MemberForm({ initial, onSubmit, onCancel, submitting }) 
             onChange={handleChange} fullWidth 
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={12} sm={6}>
+          <TextField 
+            size="small"
+            name="church_role" label="Cargo Oficial / Rol Principal" value={form.church_role || ""} 
+            onChange={handleChange} fullWidth select
+            InputLabelProps={{ shrink: true }}
+          >
+            <MenuItem value=""><em>(Ninguno / Miembro Regular)</em></MenuItem>
+            <MenuItem value="Pastor">Pastor</MenuItem>
+            <MenuItem value="Co-Pastor">Co-Pastor</MenuItem>
+            <MenuItem value="Tesorero">Tesorero General</MenuItem>
+            <MenuItem value="Secretario">Secretario General</MenuItem>
+            <MenuItem value="Administrador">Administrador</MenuItem>
+            <MenuItem value="Líder">Líder Principal</MenuItem>
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6}>
           <TextField 
             size="small"
             name="status" label="Estado" value={form.status} 
             onChange={handleChange} fullWidth select
+            InputLabelProps={{ shrink: true }}
           >
             <MenuItem value="active">Activo</MenuItem>
             <MenuItem value="inactive">Inactivo</MenuItem>

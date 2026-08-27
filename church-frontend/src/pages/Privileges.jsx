@@ -18,6 +18,7 @@ import {
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { PageHeader } from "../components/ui/PageHeader";
+import ConfirmDialog from "../components/ConfirmDialog";
 import s from "../styles/page.module.css";
 
 const DAYS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
@@ -296,6 +297,8 @@ function TabSettings({ onUpdate }) {
   const [editing, setEditing]         = useState(null);
   const [form, setForm]               = useState({ name:"", category:"General", description:"", ignore_ministry_day:false });
   const [error, setError]             = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState({ title: "", content: "", onConfirm: () => {} });
 
   const load = async () => { setLoading(true); try { const [t,d] = await Promise.all([getPrivilegeTypes(), getServiceDaysConfig()]); setTypes(t.data); setServiceDays(d.data); } catch (err) { console.error("Error loading config:", err); } setLoading(false); };
   useEffect(() => { load(); }, []);
@@ -309,9 +312,16 @@ function TabSettings({ onUpdate }) {
     } catch { setError("Error al guardar. Posible nombre duplicado."); }
   };
 
-  const handleDelete = async id => {
-    if (!window.confirm("¿Eliminar este privilegio del catálogo?")) return;
-    try { await deletePrivilegeType(id); load(); onUpdate(); } catch (err) { console.error("Error deleting privilege type:", err); }
+  const handleDelete = (id) => {
+    setConfirmConfig({
+      title: "¿Eliminar privilegio?",
+      content: "¿Estás seguro de que deseas eliminar este privilegio del catálogo? Esta acción no se puede deshacer.",
+      onConfirm: async () => {
+        try { await deletePrivilegeType(id); load(); onUpdate(); } catch (err) { console.error("Error deleting privilege type:", err); }
+        finally { setConfirmOpen(false); }
+      }
+    });
+    setConfirmOpen(true);
   };
 
   return (
@@ -402,6 +412,13 @@ function TabSettings({ onUpdate }) {
           </DialogActions>
         </form>
       </Dialog>
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmConfig.title}
+        content={confirmConfig.content}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

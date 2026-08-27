@@ -20,10 +20,6 @@ DAYS_OF_SERVICE = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábad
 # ── Gestión de Tipos de Privilegios (Catálogo Dinámico) ──────────────────────
 def get_privilege_types(db: Session):
     rows = db.query(PrivilegeType).all()
-    if not rows:
-        # Si está vacío, inicializar con los defaults y re-consultar
-        initialize_privileges(db)
-        rows = db.query(PrivilegeType).all()
     return rows
 
 def create_privilege_type(db: Session, data: PrivilegeTypeCreate):

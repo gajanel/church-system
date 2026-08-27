@@ -30,4 +30,20 @@ export const createDeposit = (formData) => API.post("/finance/deposits", formDat
 });
 export const deleteDeposit = (id) => API.delete(`/finance/deposits/${id}`);
 
-
+// Caja General
+export const getCashRegister = (month, year) => {
+  const params = month && year ? `?month=${month}&year=${year}` : "";
+  return API.get(`/finance/cash-register${params}`);
+};
+
+// Inyecciones Caja → Banco
+export const getInjections = (p=1, s=50) => API.get(`/finance/injections?page=${p}&size=${s}`);
+export const createInjection = (formData) => API.post("/finance/injections", formData, {
+  headers: { "Content-Type": "multipart/form-data" }
+});
+export const deleteInjection = (id) => API.delete(`/finance/injections/${id}`);
+
+// Cuentas Bancarias
+export const getBankAccounts = () => API.get("/finance/bank-accounts");
+export const createBankAccount = (data) => API.post("/finance/bank-accounts", data);
+export const deleteBankAccount = (id) => API.delete(`/finance/bank-accounts/${id}`);

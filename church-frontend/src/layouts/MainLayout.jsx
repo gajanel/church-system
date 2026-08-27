@@ -24,8 +24,8 @@ import {
   ChevronLeft,
   KeyboardDoubleArrowLeft,
   KeyboardDoubleArrowRight,
-  AccountBalanceWallet, CallReceived, CallMade, Flag, Receipt,
-  Business, AttachMoney, MenuBook, Palette, Lock, Backup, History, PersonOutlined
+  Business, AttachMoney, MenuBook, Palette, Lock, Backup, History, PersonOutlined,
+  AccountBalanceWallet, CallReceived, CallMade, Flag, Savings
 } from "@mui/icons-material";
 
 import { Tooltip } from "@mui/material";
@@ -37,65 +37,16 @@ const ICON_SIZE = 17;
 const MENU_ITEMS = (t, hasAccess, isAdmin, isSuperAdmin, user) => [
   { title: t("sidebar.dashboard"),     icon: <DashboardIcon     sx={{ fontSize: ICON_SIZE }} />, path: "/",            show: hasAccess("dashboard") },
   { title: t("sidebar.members"),       icon: <MembersIcon       sx={{ fontSize: ICON_SIZE }} />, path: "/members",     show: hasAccess("members") },
-  {
-    title: t("sidebar.ministries"),
-    icon:  <MinistriesIcon sx={{ fontSize: ICON_SIZE }} />,
-    group: "ministries",
-    show:  hasAccess("ministries") || user?.modules?.some(m => m.startsWith("ministry.")) || isAdmin,
-    children: [
-      { title: "Administrar",     path: "/ministries",        icon: <MinistriesIcon sx={{ fontSize: 13 }} />, show: hasAccess("ministries") },
-      { title: "Portal",          path: "/ministry-workspace", icon: <WorkspaceIcon  sx={{ fontSize: 13 }} />, show: user?.modules?.some(m => m.startsWith("ministry.")) || isAdmin },
-    ].filter(c => c.show !== false),
-  },
-  {
-    title: t("sidebar.finance"),
-    icon:  <FinanceIcon sx={{ fontSize: ICON_SIZE }} />,
-    group: "finance",
-    show:  hasAccess("finance"),
-    children: [
-      { title: "Ofrendas", path: "/finance",          icon: <AccountBalanceWallet sx={{ fontSize: 13 }} />, show: hasAccess("finance.offerings") || isAdmin },
-      { title: "Ingresos", path: "/finance/incomes",  icon: <CallReceived sx={{ fontSize: 13 }} />, show: hasAccess("finance.incomes") || isAdmin },
-      { title: "Gastos",   path: "/finance/expenses", icon: <CallMade sx={{ fontSize: 13 }} />, show: hasAccess("finance.expenses") || isAdmin },
-      { title: "Metas",    path: "/finance/goals",    icon: <Flag sx={{ fontSize: 13 }} />, show: hasAccess("finance.goals") || isAdmin },
-      { title: "Boletas",  path: "/finance/deposits", icon: <Receipt sx={{ fontSize: 13 }} />, show: hasAccess("finance.deposits") || isAdmin },
-    ].filter(c => c.show !== false),
-  },
+  { title: t("sidebar.ministries"), icon: <MinistriesIcon sx={{ fontSize: ICON_SIZE }} />, path: "/ministries", show: hasAccess("ministries") || user?.modules?.some(m => m.startsWith("ministry.")) || isAdmin },
+  { title: t("sidebar.finance"), icon: <FinanceIcon sx={{ fontSize: ICON_SIZE }} />, path: "/finance", show: hasAccess("finance") },
   { title: t("sidebar.projects"),      icon: <ProjectsIcon      sx={{ fontSize: ICON_SIZE }} />, path: "/projects",     show: hasAccess("projects") },
   { title: t("sidebar.events"),        icon: <EventsIcon        sx={{ fontSize: ICON_SIZE }} />, path: "/events",       show: hasAccess("events") },
   { title: t("sidebar.privileges"),    icon: <PrivilegesIcon    sx={{ fontSize: ICON_SIZE }} />, path: "/privileges",   show: hasAccess("privileges") },
   { title: t("sidebar.announcements"), icon: <AnnouncementsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/announcements", show: hasAccess("announcements") },
   { title: t("sidebar.attendance"),    icon: <AttendanceIcon    sx={{ fontSize: ICON_SIZE }} />, path: "/attendance",   show: hasAccess("attendance") },
-  {
-    title: t("sidebar.reports"),
-    icon:  <ReportsIcon sx={{ fontSize: ICON_SIZE }} />,
-    group: "reports",
-    show:  hasAccess("reports"),
-    children: [
-      { title: "Balance Mensual",    path: "/reports",               icon: <AccountBalanceWallet sx={{ fontSize: 13 }} />, show: hasAccess("reports.monthly") || isAdmin },
-      { title: "Corte Anual",        path: "/reports/annual",        icon: <EventsIcon sx={{ fontSize: 13 }} />, show: hasAccess("reports.annual") || isAdmin },
-      { title: "Libro Demográfico",  path: "/reports/members",       icon: <MembersIcon sx={{ fontSize: 13 }} />, show: hasAccess("reports.members") || isAdmin },
-      { title: "Obras Misioneras",   path: "/reports/projects",      icon: <ProjectsIcon sx={{ fontSize: 13 }} />, show: hasAccess("reports.projects") || isAdmin },
-      { title: "Aportes Miembros",   path: "/reports/contributions", icon: <MinistriesIcon sx={{ fontSize: 13 }} />, show: hasAccess("reports.contributions") || isAdmin },
-      { title: "Asistencia",         path: "/reports/attendance",    icon: <AttendanceIcon sx={{ fontSize: 13 }} />, show: hasAccess("reports.attendance") || isAdmin },
-    ].filter(c => c.show !== false),
-  },
+  { title: t("sidebar.reports"), icon: <ReportsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/reports", show: hasAccess("reports") },
   { title: t("sidebar.users"),         icon: <AdminIcon         sx={{ fontSize: ICON_SIZE }} />, path: "/usuarios",     show: isAdmin },
-  {
-    title: t("sidebar.settings"),
-    icon:  <SettingsIcon sx={{ fontSize: ICON_SIZE }} />,
-    group: "settings",
-    show:  true,
-    children: [
-      { title: "Identidad",  path: "/settings",            icon: <Business sx={{ fontSize: 13 }} />, show: isAdmin },
-      { title: "Finanzas",   path: "/settings/finance",    icon: <AttachMoney sx={{ fontSize: 13 }} />, show: isAdmin },
-      { title: "Versículo",  path: "/settings/verse",      icon: <MenuBook sx={{ fontSize: 13 }} />, show: isAdmin },
-      { title: "Marca",      path: "/settings/brand",      icon: <Palette sx={{ fontSize: 13 }} />, show: isAdmin },
-      { title: "Seguridad",  path: "/settings/security",   icon: <Lock sx={{ fontSize: 13 }} /> },
-      { title: "Datos",      path: "/settings/data",       icon: <Backup sx={{ fontSize: 13 }} />, show: isSuperAdmin },
-      { title: "Apariencia", path: "/settings/appearance", icon: <SettingsIcon sx={{ fontSize: 13 }} /> },
-      { title: "Auditoría",  path: "/settings/audit",      icon: <History sx={{ fontSize: 13 }} />, show: isSuperAdmin },
-    ].filter(c => c.show !== false),
-  },
+  { title: t("sidebar.settings"), icon: <SettingsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/settings", show: true },
 ];
 
 
@@ -224,6 +175,21 @@ export default function MainLayout({ children }) {
       (c.path !== "/" && location.pathname.startsWith(c.path + "/"))
     );
 
+  useEffect(() => {
+    const activeItem = menuItems.find(m => m.group && isGroupActive(m));
+    if (activeItem) {
+      setExpandedGroups(prev => {
+        if (!prev.includes(activeItem.group)) {
+          const next = [activeItem.group];
+          localStorage.setItem("sidebar_groups", JSON.stringify(next));
+          return next;
+        }
+        return prev;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   return (
     <div className={styles.shell}>
       {/* Mobile overlay */}
@@ -257,7 +223,7 @@ export default function MainLayout({ children }) {
               // ── Group item (has children) ──
               if (item.children) {
                 const groupActive  = isGroupActive(item);
-                const isExpanded   = expandedGroups.includes(item.group) || groupActive;
+                const isExpanded   = expandedGroups.includes(item.group);
 
                 return collapsed ? (
                   <li key={item.group}>

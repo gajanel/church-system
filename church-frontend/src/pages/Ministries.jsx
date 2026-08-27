@@ -5,7 +5,8 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   TextField, FormGroup, FormControlLabel, Checkbox, MenuItem
 } from "@mui/material";
-import { AddHomeWorkOutlined, EditOutlined, DeleteOutlined, AccountBalanceOutlined } from "@mui/icons-material";
+import { AddHomeWorkOutlined, EditOutlined, DeleteOutlined, AccountBalanceOutlined, ArrowBack } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { Badge } from "../components/ui/Badge";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -17,6 +18,7 @@ const DAYS       = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","
 const emptyForm  = { name: "", roles: [], service_day: "" };
 
 export default function Ministries() {
+  const navigate = useNavigate();
   const [ministries, setMinistries] = useState([]);
   const [showForm, setShowForm]     = useState(false);
   const [editing, setEditing]       = useState(null);
@@ -72,10 +74,21 @@ export default function Ministries() {
   return (
     <div className={s.page}>
       <PageHeader title="Ministerios" subtitle="Administra los departamentos y sus roles dentro de la congregación.">
-        <Button variant="contained" size="small" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }} startIcon={<AddHomeWorkOutlined sx={{ fontSize: 15 }} />}
-          onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}>
-          Nuevo Ministerio
-        </Button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Button 
+            variant="outlined" 
+            size="small"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate("/ministries")}
+            sx={{ textTransform: "none", borderRadius: "8px", color: "#374151", borderColor: "#d1d5db" }}
+          >
+            Volver al Menú
+          </Button>
+          <Button variant="contained" size="small" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }} startIcon={<AddHomeWorkOutlined sx={{ fontSize: 15 }} />}
+            onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }}>
+            Nuevo Ministerio
+          </Button>
+        </div>
       </PageHeader>
 
       {error && !showForm && <div className={s.errorText}>{error}</div>}

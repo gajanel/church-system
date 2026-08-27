@@ -32,5 +32,6 @@ class Member(Base):
     occupation = Column(String(100), nullable=True)
     join_date = Column(Date, nullable=True)
     emergency_contact = Column(String(100), nullable=True)
+    church_role = Column(String(50), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)

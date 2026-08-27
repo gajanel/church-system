@@ -33,10 +33,11 @@ export const toSlug = (name = "") =>
 
 
 const MODULE_META = {
-  finance:    { label: "Finanzas",   icon: <ReceiptLongOutlined sx={{ fontSize: 13 }} />,    variant: "success"  },
-  attendance: { label: "Asistencia", icon: <HowToRegOutlined    sx={{ fontSize: 13 }} />,    variant: "info"     },
-  work_plans: { label: "Planes",     icon: <ViewKanbanOutlined  sx={{ fontSize: 13 }} />,    variant: "primary"  },
-  gallery:    { label: "Galería",    icon: <PhotoLibraryOutlined sx={{ fontSize: 13 }} />,   variant: "warning"  },
+  finance:        { label: "Finanzas",        icon: <ReceiptLongOutlined sx={{ fontSize: 13 }} />,    variant: "success"  },
+  attendance:     { label: "Asistencia",      icon: <HowToRegOutlined    sx={{ fontSize: 13 }} />,    variant: "info"     },
+  work_plans:     { label: "Planes",          icon: <ViewKanbanOutlined  sx={{ fontSize: 13 }} />,    variant: "primary"  },
+  gallery:        { label: "Galería",         icon: <PhotoLibraryOutlined sx={{ fontSize: 13 }} />,   variant: "warning"  },
+  monthly_report: { label: "Reporte Mensual", icon: <ReceiptLongOutlined sx={{ fontSize: 13 }} />,   variant: "ghost"    },
 };
 
 export default function MinistryWorkspace() {

@@ -14,7 +14,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip
 } from "@mui/material";
 import {
-  PersonAddOutlined, EditOutlined, DeleteOutlined,
+  PersonAddOutlined, EditOutlined, PersonOffOutlined,
   VisibilityOutlined, AccountBalanceOutlined, ChevronLeft, ChevronRight,
 } from "@mui/icons-material";
 import { Badge } from "../components/ui/Badge";
@@ -123,11 +123,11 @@ export default function Members() {
     finally { setSubmitting(false); }
   };
 
-  const handleDelete = (id) => {
-    setConfirmConfig({ title: "¿Eliminar miembro?", content: "Esta acción no se puede deshacer.",
+  const handleDeactivate = (id) => {
+    setConfirmConfig({ title: "¿Desactivar miembro?", content: "El miembro pasará a estado inactivo y se removerán sus asignaciones a ministerios y privilegios.",
       onConfirm: async () => {
         try { await deleteMember(id); setConfirmOpen(false); load(); }
-        catch { setError("Error al eliminar."); setConfirmOpen(false); }
+        catch { setError("Error al desactivar."); setConfirmOpen(false); }
       }
     }); setConfirmOpen(true);
   };
@@ -159,7 +159,18 @@ export default function Members() {
                   bgcolor: "#f1f5f9", color: "#0F172A", border: "1px solid #e5e7eb" }}>
                   {!m.photo_url && `${m.first_name?.[0]||""}${m.last_name?.[0]||""}`}
                 </Avatar>
-                <span style={{ fontWeight:600, fontSize:13 }}>{m.first_name} {m.last_name}</span>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ fontWeight:600, fontSize:13 }}>{m.first_name} {m.last_name}</span>
+                  {m.church_role && (
+                    <span style={{ 
+                      fontSize: 10, fontWeight: 700, textTransform: "uppercase", 
+                      letterSpacing: "0.05em", color: "#7c3aed", marginTop: 2,
+                      display: "flex", alignItems: "center", gap: 3
+                    }}>
+                      ◆ {m.church_role}
+                    </span>
+                  )}
+                </div>
               </div>
             </TableCell>
             <TableCell sx={{ color:"text.secondary", fontSize:12 }}>{m.phone || <span style={{ color: "#cbd5e1", fontStyle: "italic" }}>No registrado</span>}</TableCell>
@@ -175,7 +186,9 @@ export default function Members() {
                 <Tooltip title="Ver detalle" placement="top" arrow><IconButton size="small" onClick={() => openDetalle(m)}><VisibilityOutlined sx={{ fontSize:16, color: "#64748b" }} /></IconButton></Tooltip>
                 <Tooltip title="Asignar a Ministerios" placement="top" arrow><IconButton size="small" onClick={() => openMinistries(m)}><AccountBalanceOutlined sx={{ fontSize:16, color: "#64748b" }} /></IconButton></Tooltip>
                 <Tooltip title="Editar registro" placement="top" arrow><IconButton size="small" onClick={() => { setEditing(m); setShowMemberForm(true); }}><EditOutlined sx={{ fontSize:16, color: "#3b82f6" }} /></IconButton></Tooltip>
-                <Tooltip title="Eliminar permanentemente" placement="top" arrow><IconButton size="small" color="error" onClick={() => handleDelete(m.id)}><DeleteOutlined sx={{ fontSize:16 }} /></IconButton></Tooltip>
+                {m.status === "active" && (
+                  <Tooltip title="Desactivar miembro" placement="top" arrow><IconButton size="small" color="error" onClick={() => handleDeactivate(m.id)}><PersonOffOutlined sx={{ fontSize:16 }} /></IconButton></Tooltip>
+                )}
               </div>
             </TableCell>
           </TableRow>
@@ -219,11 +232,11 @@ export default function Members() {
                   ["Nacimiento",selectedMember.birth_date],["Género",GENDER_MAP[selectedMember.gender]||selectedMember.gender],
                   ["Estado Civil",selectedMember.marital_status],["Ocupación",selectedMember.occupation],
                   ["Ingreso",selectedMember.join_date],["Bautismo",selectedMember.baptism_date],
-                  ["Emergencia",selectedMember.emergency_contact]
+                  ["Emergencia",selectedMember.emergency_contact], ["Cargo", selectedMember.church_role]
                 ].map(([l,v]) => (
                   <div key={l}>
                     <p style={{ fontSize:10, color:"var(--text-muted)", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:2 }}>{l}</p>
-                    <p style={{ fontSize:13, color:"var(--text-primary)" }}>{v||"—"}</p>
+                    <p style={{ fontSize:13, color: l === "Cargo" && v ? "#7c3aed" : "var(--text-primary)", fontWeight: l === "Cargo" && v ? 700 : 400 }}>{v||"—"}</p>
                   </div>
                 ))}
               </div>
