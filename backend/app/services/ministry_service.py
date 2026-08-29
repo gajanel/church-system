@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from sqlalchemy.orm import Session, joinedload
 from app.models.ministry_model import Ministry, MinistryRole
 from app.schemas.ministry_schema import MinistryCreate, MinistryUpdate

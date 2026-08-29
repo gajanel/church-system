@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import API from "./api";
 
 export const getOfferings = (p=1, s=50) => API.get(`/finance/offerings?page=${p}&size=${s}`);
@@ -46,4 +50,4 @@ export const deleteInjection = (id) => API.delete(`/finance/injections/${id}`);
 // Cuentas Bancarias
 export const getBankAccounts = () => API.get("/finance/bank-accounts");
 export const createBankAccount = (data) => API.post("/finance/bank-accounts", data);
-export const deleteBankAccount = (id) => API.delete(`/finance/bank-accounts/${id}`);
+export const deleteBankAccount = (id) => API.delete(`/finance/bank-accounts/${id}`);

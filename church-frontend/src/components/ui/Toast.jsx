@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { createContext, useContext, useState, useCallback, useRef } from "react";
 import styles from "./Toast.module.css";
 

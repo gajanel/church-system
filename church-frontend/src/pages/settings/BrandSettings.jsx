@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { Box, Button, Grid, Typography, Divider, Tooltip, CircularProgress } from "@mui/material";
 import { Palette, Save } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";

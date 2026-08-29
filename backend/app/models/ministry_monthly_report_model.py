@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 """
 Ministry Monthly Report Model
 Stores the complete monthly statistical report submitted by a ministry.

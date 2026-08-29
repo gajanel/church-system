@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 """
 Migration: Create ministry_monthly_reports table and add monthly_report
 column to ministry_module_configs.

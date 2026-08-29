@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 import logging
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer

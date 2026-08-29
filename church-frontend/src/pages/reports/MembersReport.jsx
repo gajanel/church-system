@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { useState } from "react";
 import { Box, Typography, Button, Grid, Card, Select, MenuItem, FormControl, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, Chip } from "@mui/material";
 import { PeopleAlt, Print, EventAvailable, LocalOffer } from "@mui/icons-material";

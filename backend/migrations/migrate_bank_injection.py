@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 """
 migrate_bank_injection.py
 Crea la tabla bank_injections para el flujo Caja → Banco

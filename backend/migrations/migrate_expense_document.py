@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 """
 Migration: Add document_url column to church_expenses table.
 This allows attaching receipts/invoices to expense records.

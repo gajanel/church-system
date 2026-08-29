@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { useState } from "react";
 import { Box, Button, Grid, TextField, InputAdornment, IconButton, Typography, Divider, Alert, CircularProgress } from "@mui/material";
 import { Lock, Visibility, VisibilityOff, CheckCircle, Security } from "@mui/icons-material";

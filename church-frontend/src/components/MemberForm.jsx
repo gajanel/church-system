@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { useState, useEffect, useRef } from "react";
 import { Grid, TextField, MenuItem, Button, Box, Avatar, IconButton, Typography, Alert, CircularProgress } from "@mui/material";
 import { PhotoCamera } from "@mui/icons-material";

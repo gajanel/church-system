@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { useState, useEffect, useCallback } from "react";
 import { getEvents, getEventsSummary, createEvent, updateEvent, deleteEvent } from "../api/events";
 import {

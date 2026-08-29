@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { useState, useRef } from "react";
 import { Box, Button, LinearProgress, Typography, Grid } from "@mui/material";
 import { Backup, Download, Upload } from "@mui/icons-material";

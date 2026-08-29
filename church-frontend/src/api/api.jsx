@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import axios from "axios";
 
 export const API_URL = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;

@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from sqlalchemy.orm import Session
 from app.models.attendance_model import Attendance
 from app.schemas.attendance_schema import AttendanceCreate, AttendanceUpdate

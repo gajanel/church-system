@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, MetaData, text
@@ -34,7 +37,7 @@ def clear_db():
                 print(f"Tablas truncadas: {', '.join(tables_to_truncate)}")
             
             # Now, delete all non-admin users
-            res = conn.execute(text("DELETE FROM users WHERE name != 'Administrador' AND email != 'admin@admin.com';"))
+            res = conn.execute(text("DELETE FROM users WHERE is_super_admin = false;"))
             print("Usuarios no admin eliminados.")
             
 if __name__ == "__main__":

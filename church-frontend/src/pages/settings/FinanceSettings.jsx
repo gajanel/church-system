@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { Box, Button, Grid, TextField, InputAdornment, Typography, CircularProgress } from "@mui/material";
 import { AttachMoney, Info, Save } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
