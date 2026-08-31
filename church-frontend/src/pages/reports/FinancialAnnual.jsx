@@ -4,10 +4,10 @@
  */
 import { useState, useEffect } from "react";
 import { Box, Typography, Button, Grid, Card, CardContent, Select, MenuItem, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper } from "@mui/material";
-import { Assessment, Print } from "@mui/icons-material";
+import { Assessment, Print, TableChart } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import API from "../../api/api";
-import { fmt, nowYear, MONTHS_ES, printFinancialAnnualPDF, ReportSkeleton } from "./utils";
+import { fmt, nowYear, MONTHS_ES, printFinancialAnnualPDF, exportToExcel, ReportSkeleton } from "./utils";
 
 export default function FinancialAnnual() {
   const { settings } = useOutletContext();
@@ -46,9 +46,30 @@ export default function FinancialAnnual() {
           Extraer Reporte Anual
         </Button>
         {data && (
-          <Button variant="outlined" startIcon={<Print />} onClick={() => printFinancialAnnualPDF(data, year, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
-            Imprimir Analítica
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={() => printFinancialAnnualPDF(data, year, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
+              Exportar PDF
+            </Button>
+            <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
+              const rows = [
+                ["INFORME FINANCIERO ANUAL", `Año ${data.year}`],
+                [],
+                ["RESUMEN CONSOLIDADO"],
+                ["Total Ofrendas", data.year_totals.total_offerings],
+                ["Otros Ingresos", data.year_totals.total_incomes],
+                ["Total Gastos", data.year_totals.total_expenses],
+                ["Balance Anual", data.year_totals.balance],
+                [],
+                ["DESGLOSE MENSUAL"],
+                ["Mes", "Ofrendas", "Ingresos", "Gastos", "Balance"],
+                ...data.monthly_breakdown.map(r => [MONTHS_ES[r.month - 1], r.total_offerings, r.total_incomes, r.total_expenses, r.balance]),
+                ["TOTALES", data.year_totals.total_offerings, data.year_totals.total_incomes, data.year_totals.total_expenses, data.year_totals.balance]
+              ];
+              exportToExcel(`Reporte_Financiero_Anual_${data.year}`, rows);
+            }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
+              Exportar Excel
+            </Button>
+          </Box>
         )}
       </Box>
 

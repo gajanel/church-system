@@ -25,6 +25,7 @@ def create_user(db: Session, data: UserCreate):
         is_super_admin=data.is_super_admin,
         modules=data.modules,
         must_change_password=True,
+        is_active=True,
         member_id=data.member_id
     )
     db.add(user)
@@ -51,28 +52,6 @@ def delete_user(db: Session, user_id: int):
     if not user:
         return False
 
-    # ── Remove all FK references before deleting the user ──────────────
-    # Audit logs
-    from app.models.audit_model import AuditLog
-    db.query(AuditLog).filter(AuditLog.user_id == user_id).delete()
-
-    # Finance records created by this user (nullify or delete)
-    from app.models.finance_model import (
-        ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense, BankDeposit
-    )
-    db.query(ChurchOffering).filter(ChurchOffering.created_by == user_id).delete()
-    db.query(ChurchIncome).filter(ChurchIncome.created_by == user_id).delete()
-    db.query(ChurchExpense).filter(ChurchExpense.created_by == user_id).delete()
-    db.query(FixedExpense).filter(FixedExpense.created_by == user_id).delete()
-    db.query(BankDeposit).filter(BankDeposit.created_by == user_id).delete()
-
-    # Ministry/privilege records if any
-    try:
-        from app.models.privilege_model import MinistryRole
-        db.query(MinistryRole).filter(MinistryRole.created_by == user_id).delete()
-    except Exception:
-        pass
-
-    db.delete(user)
+    user.is_active = False
     db.commit()
     return True

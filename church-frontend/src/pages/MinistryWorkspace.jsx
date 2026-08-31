@@ -59,10 +59,13 @@ export default function MinistryWorkspace() {
       let loadedMinistries = res.data;
       
       if (!isAdmin) {
+         const hasGlobalMinistries = user?.modules?.includes("ministries");
          const hasWorkspace = user?.modules?.includes("workspace");
          const hasSpecificMinistries = user?.modules?.some(m => m.startsWith("ministry."));
          
-         if (hasSpecificMinistries) {
+         if (hasGlobalMinistries) {
+            // No se filtra, el usuario tiene acceso global a los ministerios
+         } else if (hasSpecificMinistries) {
             loadedMinistries = loadedMinistries.filter(m => user?.modules?.includes(`ministry.${m.id}`));
          } else if (!hasWorkspace) {
             loadedMinistries = [];

@@ -38,6 +38,15 @@ export default function SettingsLayout() {
     setCurrentUser(storedUser);
   }, []);
 
+  useEffect(() => {
+    if (currentUser) {
+      const isAdmin = currentUser.is_admin || currentUser.is_super_admin;
+      if (!isAdmin && location.pathname !== "/settings" && location.pathname !== "/settings/" && !location.pathname.startsWith("/settings/security")) {
+        navigate("/settings/security", { replace: true });
+      }
+    }
+  }, [location.pathname, currentUser, navigate]);
+
   const loadSettings = async () => {
     try {
       const res = await getSettings();

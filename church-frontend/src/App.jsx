@@ -28,6 +28,7 @@ const Events = lazy(() => import("./pages/Events"));
 const ReportsLanding = lazy(() => import("./pages/reports/ReportsLanding"));
 const ReportsLayout = lazy(() => import("./pages/reports/ReportsLayout"));
 const FinancialMonthly = lazy(() => import("./pages/reports/FinancialMonthly"));
+const FinancialBankMonthly = lazy(() => import("./pages/reports/FinancialBankMonthly"));
 const FinancialAnnual = lazy(() => import("./pages/reports/FinancialAnnual"));
 const MembersReport = lazy(() => import("./pages/reports/MembersReport"));
 const ProjectsReport = lazy(() => import("./pages/reports/ProjectsReport"));
@@ -150,6 +151,7 @@ function App() {
           <Route path="/reports" element={<ReportsLayout />}>
             <Route index element={<ReportsLanding />} />
             <Route path="monthly" element={<FinancialMonthly />} />
+            <Route path="bank-monthly" element={<FinancialBankMonthly />} />
             <Route path="annual" element={<FinancialAnnual />} />
             <Route path="members" element={<MembersReport />} />
             <Route path="projects" element={<ProjectsReport />} />

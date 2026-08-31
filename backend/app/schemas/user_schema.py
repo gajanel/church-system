@@ -22,6 +22,7 @@ class UserUpdate(BaseModel):
     is_admin: Optional[bool] = None
     is_super_admin: Optional[bool] = None
     modules: Optional[List[str]] = None
+    is_active: Optional[bool] = None
     member_id: Optional[int] = None
 
 class UserResponse(BaseModel):
@@ -33,6 +34,7 @@ class UserResponse(BaseModel):
     is_super_admin: bool
     modules: List[str]
     must_change_password: bool
+    is_active: bool = True
     member_id: Optional[int] = None
 
     class Config:

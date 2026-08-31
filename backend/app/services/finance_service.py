@@ -3,8 +3,8 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy import extract, func, or_
-from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense, BankDeposit, BankInjection, BankAccount
-from app.schemas.finance_schema import OfferingCreate, IncomeCreate, ExpenseCreate, FixedExpenseCreate, BankDepositCreate, BankInjectionCreate, BankAccountCreate
+from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense, BankDeposit, BankInjection, BankAccount, BankWithdrawal
+from app.schemas.finance_schema import OfferingCreate, IncomeCreate, ExpenseCreate, FixedExpenseCreate, BankDepositCreate, BankInjectionCreate, BankAccountCreate, BankWithdrawalCreate
 
 # ── Ofrendas ──
 def get_offerings(db: Session, skip: int = 0, limit: int = 50):
@@ -152,13 +152,17 @@ def get_monthly_summary(db: Session, month: int, year: int):
 
     monthly_goal = db.query(func.sum(FixedExpense.amount)).scalar() or 0
 
-    # Caja General: Lo que aún no ha ingresado a bancos (efectivo en mano)
+    # Caja General = dinero acumulado en bancos (inyecciones - retiros bancarios)
+    total_injections_hist = db.query(func.sum(BankInjection.amount)).scalar() or 0
+    total_withdrawals_hist = db.query(func.sum(BankWithdrawal.amount)).scalar() or 0
+
+    cash_balance = total_injections_hist - total_withdrawals_hist
+
+    # Caja de Ofrendas = efectivo en circulación (no depositado)
     total_offerings_hist = db.query(func.sum(ChurchOffering.amount)).scalar() or 0
     total_incomes_hist = db.query(func.sum(ChurchIncome.amount)).scalar() or 0
     total_expenses_hist = db.query(func.sum(ChurchExpense.amount)).scalar() or 0
-    total_injections_hist = db.query(func.sum(BankInjection.amount)).scalar() or 0
-
-    cash_balance = (total_offerings_hist + total_incomes_hist) - total_expenses_hist - total_injections_hist
+    offering_cash = (total_offerings_hist + total_incomes_hist) - total_expenses_hist - total_injections_hist
 
     return {
         "month": month,
@@ -169,7 +173,8 @@ def get_monthly_summary(db: Session, month: int, year: int):
         "balance": round(total_offerings + total_incomes - total_expenses, 2),
         "monthly_goal": round(monthly_goal, 2),
         "total_historical_incomes": round(total_incomes_hist, 2),
-        "cash_balance": round(cash_balance, 2),
+        "cash_balance": round(cash_balance, 2),         # Caja General (bancos)
+        "offering_cash": round(offering_cash, 2),       # Caja de Ofrendas (circulación)
     }
 
 # ── Boletas de Depósito ──
@@ -284,15 +289,22 @@ def _format_fixed_expense(r):
 
 # ── Caja General ──
 def get_cash_register(db: Session, month: int = None, year: int = None):
-    """Calcula el saldo de la Caja General y devuelve movimientos paginados."""
-    # Saldo histórico acumulado total (sin filtro de mes)
+    """Caja General = dinero acumulado en bancos (inyecciones - retiros).
+    Caja de Ofrendas (circulación) = ofrendas + ingresos - gastos - inyecciones."""
+
+    # Saldo histórico total en bancos
+    total_injections_hist  = db.query(func.sum(BankInjection.amount)).scalar() or 0
+    total_withdrawals_hist = db.query(func.sum(BankWithdrawal.amount)).scalar() or 0
+
+    # Saldo Caja General = lo que está en bancos
+    cash_balance = round(total_injections_hist - total_withdrawals_hist, 2)
+
+    # Saldo Caja de Ofrendas = efectivo en circulación
     total_offerings_hist  = db.query(func.sum(ChurchOffering.amount)).scalar() or 0
     total_incomes_hist    = db.query(func.sum(ChurchIncome.amount)).scalar() or 0
     total_expenses_hist   = db.query(func.sum(ChurchExpense.amount)).scalar() or 0
-    total_injections_hist = db.query(func.sum(BankInjection.amount)).scalar() or 0
-
-    cash_balance = round(
-        total_injections_hist, 2
+    offering_cash = round(
+        (total_offerings_hist + total_incomes_hist) - total_expenses_hist - total_injections_hist, 2
     )
 
     # Totales del mes seleccionado
@@ -305,24 +317,23 @@ def get_cash_register(db: Session, month: int = None, year: int = None):
         return query
 
     month_offerings  = _month_filter(db.query(func.sum(ChurchOffering.amount)),  ChurchOffering).scalar()  or 0
-    month_incomes    = _month_filter(db.query(func.sum(ChurchIncome.amount)),    ChurchIncome).scalar()    or 0
-    month_expenses   = _month_filter(db.query(func.sum(ChurchExpense.amount)),   ChurchExpense).scalar()   or 0
     month_injections = _month_filter(db.query(func.sum(BankInjection.amount)),   BankInjection).scalar()  or 0
+    month_withdrawals = _month_filter(db.query(func.sum(BankWithdrawal.amount)), BankWithdrawal).scalar()  or 0
 
     # Movimientos recientes combinados (solo del mes o todos si no hay filtro)
     movements = _get_combined_movements(db, month, year, limit=50)
 
     return {
-        "cash_balance":      cash_balance,
-        "month_entries":     round(month_offerings + month_incomes, 2),
-        "month_exits":       round(month_expenses, 2),
-        "month_injections":  round(month_injections, 2),
-        "month_net":         round(month_offerings + month_incomes - month_expenses - month_injections, 2),
+        "cash_balance":      cash_balance,      # Caja General (bancos)
+        "offering_cash":     offering_cash,      # Caja de Ofrendas (circulación)
+        "month_entries":     round(month_injections, 2),
+        "month_exits":       round(month_withdrawals, 2),
+        "month_net":         round(month_injections - month_withdrawals, 2),
         "movements":         movements,
     }
 
 def _get_combined_movements(db: Session, month: int = None, year: int = None, limit: int = 50):
-    """Combina ofrendas + ingresos + gastos + inyecciones en un solo listado cronológico."""
+    """Combina inyecciones y retiros bancarios."""
     rows = []
 
     def month_ok(d):
@@ -330,68 +341,87 @@ def _get_combined_movements(db: Session, month: int = None, year: int = None, li
             return True
         return d.month == month and d.year == year
 
-    # Ofrendas
-    for r in db.query(ChurchOffering).order_by(ChurchOffering.date.desc()).limit(200).all():
-        if month_ok(r.date):
-            rows.append({
-                "id":          f"off-{r.id}",
-                "date":        r.date,
-                "kind":        "entrada",
-                "category":    "Ofrenda",
-                "concept":     r.offering_type.capitalize(),
-                "party":       r.donor_name or (f"{r.member.first_name} {r.member.last_name}" if r.member else "—"),
-                "amount":      r.amount,
-                "sign":        "+",
-                "created_by_name": r.created_by_user.name if r.created_by_user else None,
-            })
-
-    # Ingresos
-    for r in db.query(ChurchIncome).order_by(ChurchIncome.date.desc()).limit(200).all():
-        if month_ok(r.date):
-            rows.append({
-                "id":          f"inc-{r.id}",
-                "date":        r.date,
-                "kind":        "entrada",
-                "category":    "Ingreso",
-                "concept":     r.income_type.capitalize(),
-                "party":       r.donor_name or (f"{r.member.first_name} {r.member.last_name}" if r.member else "—"),
-                "amount":      r.amount,
-                "sign":        "+",
-                "created_by_name": r.created_by_user.name if r.created_by_user else None,
-            })
-
-    # Gastos
-    for r in db.query(ChurchExpense).order_by(ChurchExpense.date.desc()).limit(200).all():
-        if month_ok(r.date):
-            rows.append({
-                "id":          f"exp-{r.id}",
-                "date":        r.date,
-                "kind":        "salida",
-                "category":    "Gasto",
-                "concept":     r.expense_type,
-                "party":       "—",
-                "amount":      r.amount,
-                "sign":        "-",
-                "created_by_name": r.created_by_user.name if r.created_by_user else None,
-            })
-
-    # Inyecciones a banco
+    # Inyecciones a banco (Entradas a la Caja General/Banco)
     for r in db.query(BankInjection).order_by(BankInjection.date.desc()).limit(200).all():
         if month_ok(r.date):
             rows.append({
                 "id":          f"inj-{r.id}",
                 "date":        r.date,
                 "kind":        "inyeccion",
-                "category":    "Inyección Banco",
-                "concept":     f"-> {r.bank_name}",
-                "party":       r.bank_name,
+                "category":    "Inyección",
+                "concept":     r.bank_name or (r.bank_account.bank_name if r.bank_account else "—"),
+                "party":       "—",
+                "amount":      r.amount,
+                "sign":        "+",
+                "created_by_name": r.created_by_user.name if hasattr(r, 'created_by_user') and r.created_by_user else None,
+            })
+
+    # Retiros de banco (Salidas de la Caja General/Banco)
+    for r in db.query(BankWithdrawal).order_by(BankWithdrawal.date.desc()).limit(200).all():
+        if month_ok(r.date):
+            rows.append({
+                "id":          f"wd-{r.id}",
+                "date":        r.date,
+                "kind":        "retiro",
+                "category":    "Retiro",
+                "concept":     r.concept,
+                "party":       "—",
                 "amount":      r.amount,
                 "sign":        "-",
-                "created_by_name": r.created_by_user.name if r.created_by_user else None,
+                "created_by_name": r.created_by_user.name if hasattr(r, 'created_by_user') and r.created_by_user else None,
             })
 
     rows.sort(key=lambda x: x["date"], reverse=True)
     return rows[:limit]
+
+
+# ── Retiros / Salidas Bancarias ──
+def get_withdrawals(db: Session, skip: int = 0, limit: int = 50):
+    query = db.query(BankWithdrawal)
+    total = query.count()
+    rows = query.order_by(BankWithdrawal.date.desc()).offset(skip).limit(limit).all()
+    return [_format_withdrawal(r) for r in rows], total
+
+def create_withdrawal(db: Session, data: dict, user_id: int):
+    obj = BankWithdrawal(**data, created_by=user_id)
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return _format_withdrawal(obj)
+
+def delete_withdrawal(db: Session, withdrawal_id: int):
+    obj = db.query(BankWithdrawal).filter(BankWithdrawal.id == withdrawal_id).first()
+    if not obj:
+        return False
+    db.delete(obj)
+    db.commit()
+    return True
+
+def _format_withdrawal(r):
+    return {
+        "id":              r.id,
+        "bank_account_id": r.bank_account_id,
+        "bank_account":    _format_bank_account(r.bank_account) if r.bank_account else None,
+        "amount":          r.amount,
+        "date":            r.date,
+        "concept":         r.concept,
+        "reference_number": r.reference_number,
+        "observations":    r.observations,
+        "image_url":       r.image_url,
+        "created_by":      r.created_by,
+        "created_at":      r.created_at,
+        "created_by_name": r.created_by_user.name if r.created_by_user else None,
+    }
+
+def get_bank_account_balance(db: Session, account_id: int):
+    """Saldo de una cuenta bancaria = Inyecciones - Retiros."""
+    injections = db.query(func.sum(BankInjection.amount)).filter(
+        BankInjection.bank_account_id == account_id
+    ).scalar() or 0
+    withdrawals = db.query(func.sum(BankWithdrawal.amount)).filter(
+        BankWithdrawal.bank_account_id == account_id
+    ).scalar() or 0
+    return round(injections - withdrawals, 2)
 
 # ── Inyecciones Caja → Banco ──
 def get_injections(db: Session, skip: int = 0, limit: int = 50):

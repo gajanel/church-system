@@ -51,3 +51,12 @@ export const deleteInjection = (id) => API.delete(`/finance/injections/${id}`);
 export const getBankAccounts = () => API.get("/finance/bank-accounts");
 export const createBankAccount = (data) => API.post("/finance/bank-accounts", data);
 export const deleteBankAccount = (id) => API.delete(`/finance/bank-accounts/${id}`);
+export const getBankAccountBalance = (id) => API.get(`/finance/bank-accounts/${id}/balance`);
+
+// Retiros / Salidas Bancarias
+export const getWithdrawals = (p=1, s=50) => API.get(`/finance/withdrawals?page=${p}&size=${s}`);
+export const createWithdrawal = (formData) => API.post("/finance/withdrawals", formData, {
+  headers: { "Content-Type": "multipart/form-data" }
+});
+export const deleteWithdrawal = (id) => API.delete(`/finance/withdrawals/${id}`);
+

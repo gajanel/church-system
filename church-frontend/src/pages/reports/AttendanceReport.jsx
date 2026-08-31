@@ -4,10 +4,10 @@
  */
 import { useState } from "react";
 import { Box, Typography, Button, Grid, Card, CardContent, Select, MenuItem, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow, Chip } from "@mui/material";
-import { Assessment, Print } from "@mui/icons-material";
+import { Assessment, Print, TableChart } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import API from "../../api/api";
-import { nowYear, nowMonth, MONTHS_ES, VerticalBars, printAttendancePDF, ReportSkeleton } from "./utils";
+import { nowYear, nowMonth, MONTHS_ES, VerticalBars, printAttendancePDF, exportToExcel, ReportSkeleton } from "./utils";
 
 export default function AttendanceReport() {
   const { settings } = useOutletContext();
@@ -52,9 +52,33 @@ export default function AttendanceReport() {
           Ver Reporte
         </Button>
         {data && (
-          <Button variant="outlined" startIcon={<Print />} onClick={() => printAttendancePDF(data, month, year, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
-            Imprimir
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={() => printAttendancePDF(data, month, year, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
+              Exportar PDF
+            </Button>
+            <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
+              const rows = [
+                ["BALANCE MENSUAL DE ASISTENCIA", `${MONTHS_ES[data.period.month - 1].toUpperCase()} ${data.period.year}`],
+                [],
+                ["RESUMEN"],
+                ["Servicios Realizados", data.summary.total_records],
+                ["Asistencia Total", data.summary.grand_total],
+                ["Promedio por Culto", data.summary.avg_attendance],
+                ["Nuevos Convertidos", data.summary.total_converts],
+                [],
+                ["TOTALES POR CATEGORÍA"],
+                ["Caballeros", "Damas", "Jóvenes", "Niños", "Visitas"],
+                [data.category_totals.men, data.category_totals.women, data.category_totals.youth, data.category_totals.children, data.category_totals.visitors],
+                [],
+                ["HISTORIAL DETALLADO"],
+                ["Fecha", "Tipo de Culto", "Caballeros", "Damas", "Jóvenes", "Niños", "Visitas", "Convertidos", "Total"],
+                ...data.records.map(r => [r.date, r.service_type, r.men, r.women, r.youth, r.children, r.visitors, r.converts, r.total])
+              ];
+              exportToExcel(`Reporte_Asistencia_${MONTHS_ES[data.period.month - 1]}_${data.period.year}`, rows);
+            }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
+              Exportar Excel
+            </Button>
+          </Box>
         )}
       </Box>
 

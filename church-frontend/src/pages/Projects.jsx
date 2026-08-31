@@ -60,6 +60,9 @@ export default function Projects() {
   const [filterStatus, setFilter]      = useState("Todos");
   const toast = useToast();
 
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
+
   const load = async () => {
     setLoading(true);
     try {
@@ -265,10 +268,12 @@ export default function Projects() {
                   <span className={s.cardDate}>
                     {p.start_date ? fmtDate(p.start_date) : "Sin fecha de inicio"}
                   </span>
-                  <div className={s.cardActions}>
-                    <button className={`${s.actionBtn} ${s.edit}`} title="Editar" onClick={() => handleEdit(p)}>Editar</button>
-                    <button className={`${s.actionBtn} ${s.delete}`} title="Eliminar" onClick={() => handleDelete(p.id)}>Eliminar</button>
-                  </div>
+                  {isSuper && (
+                    <div className={s.cardActions}>
+                      <button className={`${s.actionBtn} ${s.edit}`} title="Editar" onClick={() => handleEdit(p)}>Editar</button>
+                      <button className={`${s.actionBtn} ${s.delete}`} title="Eliminar" onClick={() => handleDelete(p.id)}>Eliminar</button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

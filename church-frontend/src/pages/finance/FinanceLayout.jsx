@@ -45,6 +45,16 @@ export default function FinanceLayout() {
   else if (currentPath.includes("/finance/goals"))      tabValue = "/finance/goals";
   else if (currentPath.includes("/finance/deposits"))   tabValue = "/finance/deposits";
 
+  const titles = {
+    "/finance/cash": "Caja General",
+    "/finance/offerings": "Ofrendas",
+    "/finance/incomes": "Ingresos Adicionales",
+    "/finance/expenses": "Gastos",
+    "/finance/goals": "Metas Financieras",
+    "/finance/deposits": "Bancos"
+  };
+  const currentTitle = titles[tabValue] || "Finanzas y Contabilidad";
+
   const handleTabChange = (_, newValue) => {
     navigate(newValue);
   };
@@ -53,7 +63,7 @@ export default function FinanceLayout() {
     <div className={s.page}>
       {!isLanding && (
         <>
-          <PageHeader title="Finanzas y Contabilidad" subtitle="Visión general de estado financiero y flujos de capital.">
+          <PageHeader title={currentTitle} subtitle="Módulo de gestión financiera">
             <Button
               startIcon={<ArrowBack />}
               onClick={() => navigate("/finance")}
@@ -64,70 +74,6 @@ export default function FinanceLayout() {
               Volver al Menú
             </Button>
           </PageHeader>
-
-          {/* Navigation tabs */}
-          <Paper
-            elevation={0}
-            sx={{ borderRadius: "8px", border: "1px solid #e5e7eb", marginBottom: 3, overflow: "hidden" }}
-          >
-            <Tabs
-              value={tabValue}
-              onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              sx={{
-                minHeight: 44,
-                "& .MuiTab-root": {
-                  minHeight: 44,
-                  textTransform: "none",
-                  fontSize: "0.8125rem",
-                  fontWeight: 600,
-                  color: "#6b7280",
-                  padding: "0 18px",
-                  gap: "6px",
-                },
-                "& .Mui-selected": { color: "#1d4ed8" },
-                "& .MuiTabs-indicator": { backgroundColor: "#1d4ed8", height: 3 },
-              }}
-            >
-              <Tab
-                icon={<AccountBalanceWallet sx={{ fontSize: 16 }} />}
-                iconPosition="start"
-                label="Caja General"
-                value="/finance/cash"
-              />
-              <Tab
-                icon={<Savings sx={{ fontSize: 16 }} />}
-                iconPosition="start"
-                label="Ofrendas"
-                value="/finance/offerings"
-              />
-              <Tab
-                icon={<CallMade sx={{ fontSize: 16 }} />}
-                iconPosition="start"
-                label="Otros Ingresos"
-                value="/finance/incomes"
-              />
-              <Tab
-                icon={<CallReceived sx={{ fontSize: 16 }} />}
-                iconPosition="start"
-                label="Gastos"
-                value="/finance/expenses"
-              />
-              <Tab
-                icon={<Flag sx={{ fontSize: 16 }} />}
-                iconPosition="start"
-                label="Metas Fijas"
-                value="/finance/goals"
-              />
-              <Tab
-                icon={<AccountBalance sx={{ fontSize: 16 }} />}
-                iconPosition="start"
-                label="Bancos"
-                value="/finance/deposits"
-              />
-            </Tabs>
-          </Paper>
         </>
       )}
 

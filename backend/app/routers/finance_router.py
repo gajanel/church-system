@@ -14,7 +14,8 @@ from app.utils.dependencies import get_current_user, only_finance
 from app.schemas.finance_schema import (
     OfferingCreate, IncomeCreate, ExpenseCreate, FixedExpenseCreate, BankDepositCreate,
     OfferingPaginatedResponse, IncomePaginatedResponse, ExpensePaginatedResponse, BankDepositPaginatedResponse,
-    BankInjectionPaginatedResponse, BankAccountCreate, BankAccountResponse
+    BankInjectionPaginatedResponse, BankAccountCreate, BankAccountResponse,
+    BankWithdrawalPaginatedResponse
 )
 from app.services import finance_service
 from app.services import audit_service
@@ -325,6 +326,81 @@ def delete_injection(injection_id: int, db: Session = Depends(get_db), user=Depe
     if not finance_service.delete_injection(db, injection_id):
         raise HTTPException(status_code=404, detail="Inyeccion no encontrada")
     return {"message": "Eliminada correctamente"}
+
+
+# ── Retiros / Salidas Bancarias ──
+@router.get("/finance/withdrawals", response_model=BankWithdrawalPaginatedResponse)
+def get_withdrawals(page: int = 1, size: int = 50, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    skip = (page - 1) * size
+    items, total = finance_service.get_withdrawals(db, skip=skip, limit=size)
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": math.ceil(total / size) if total > 0 else 0
+    }
+
+
+@router.post("/finance/withdrawals")
+async def create_withdrawal(
+    bank_account_id: int = Form(...),
+    amount: float = Form(...),
+    date: str = Form(...),
+    concept: str = Form(...),
+    reference_number: str = Form(None),
+    observations: str = Form(None),
+    file: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    user=Depends(only_finance)
+):
+    image_url = None
+    if file and file.filename:
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        allowed_extensions = [".jpg", ".jpeg", ".png", ".webp"]
+        if file_ext not in allowed_extensions:
+            raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Use JPG, PNG o WEBP.")
+        contents = await file.read()
+        if len(contents) > MAX_DEPOSIT_FILE_SIZE:
+            raise HTTPException(status_code=413, detail="El archivo supera el máximo de 5 MB.")
+        upload_dir = "static/uploads/withdrawals"
+        os.makedirs(upload_dir, exist_ok=True)
+        file_name = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(upload_dir, file_name)
+        with open(file_path, "wb") as buffer:
+            buffer.write(contents)
+        image_url = f"/static/uploads/withdrawals/{file_name}"
+
+    data = {
+        "bank_account_id": bank_account_id,
+        "amount":          amount,
+        "date":            date,
+        "concept":         concept,
+        "reference_number": reference_number,
+        "observations":    observations,
+        "image_url":       image_url,
+    }
+    withdrawal = finance_service.create_withdrawal(db, data, user.id)
+    audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
+        user_id=user.id,
+        action="CREATE",
+        module="Finanzas",
+        description=f"Retiro bancario por Q{amount} ({concept})"
+    ))
+    return withdrawal
+
+
+@router.delete("/finance/withdrawals/{withdrawal_id}")
+def delete_withdrawal(withdrawal_id: int, db: Session = Depends(get_db), user=Depends(only_finance)):
+    if not finance_service.delete_withdrawal(db, withdrawal_id):
+        raise HTTPException(status_code=404, detail="Retiro no encontrado")
+    return {"message": "Eliminado correctamente"}
+
+
+@router.get("/finance/bank-accounts/{account_id}/balance")
+def get_bank_account_balance(account_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    balance = finance_service.get_bank_account_balance(db, account_id)
+    return {"account_id": account_id, "balance": balance}
 
 
 # ── Cuentas Bancarias ──

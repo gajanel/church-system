@@ -17,7 +17,17 @@ export default function Projection() {
     const timer = setInterval(() => {
       setClock(new Date().toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit" }));
     }, 1000);
-    return () => clearInterval(timer);
+    
+    // Heartbeat para informar al módulo de administración que la ventana está abierta
+    const heartbeat = setInterval(() => {
+      localStorage.setItem("projection_heartbeat", Date.now().toString());
+    }, 2000);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(heartbeat);
+      localStorage.setItem("projection_heartbeat", "0"); // limpiar al cerrar
+    };
   }, []);
 
   useEffect(() => {
@@ -38,6 +48,7 @@ export default function Projection() {
       
       ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
+        console.log("WS Payload recibido:", message);
         // message esperado: { type: "announcement" | "weekly_program" | "announcement_playlist", data: object|array } o null
         setPayload(message);
         
@@ -57,21 +68,43 @@ export default function Projection() {
 
     connect();
 
+    // Fallback: Escuchar eventos de localStorage para comunicación directa entre ventanas
+    const handleStorage = (e) => {
+      if (e.key === "projection_payload" && e.newValue) {
+        try {
+          const message = JSON.parse(e.newValue);
+          setPayload(message);
+          if (message?.type === "announcement_playlist") {
+            setPlaylist(message.data || []);
+            setCurrentIndex(0);
+          } else {
+            setPlaylist([]);
+          }
+        } catch (err) {}
+      } else if (e.key === "projection_force_reload") {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
     return () => {
       if (ws) ws.close();
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 
   // Helpers para procesar los privilegios en grilla por día
-  const DAYS_ORDER = ["Martes", "Viernes", "Sábado", "Domingo"];
-  
   const renderWeeklyProgram = () => {
     if (!payload || !payload.data) return null;
     const items = payload.data; // Array de asignaciones
 
+    // Leer los días activos del localStorage
+    const savedDays = localStorage.getItem("privileges_selected_days");
+    const activeDays = savedDays ? JSON.parse(savedDays) : ["Martes", "Viernes", "Sábado", "Domingo"];
+
     // Agrupar por día
     const byDay = {};
-    DAYS_ORDER.forEach(d => byDay[d] = []);
+    activeDays.forEach(d => byDay[d] = []);
     items.forEach(item => {
       if (byDay[item.day_name]) {
         byDay[item.day_name].push(item);
@@ -85,7 +118,7 @@ export default function Projection() {
         </h1>
         
         <div style={{ display: "flex", flex: 1, gap: "1.5vw" }}>
-          {DAYS_ORDER.map(day => (
+          {activeDays.map(day => (
             <div key={day} style={{ 
               flex: 1, 
               background: "rgba(255, 255, 255, 0.05)", 
@@ -103,7 +136,7 @@ export default function Projection() {
               
               <div style={{ display: "flex", flexDirection: "column", gap: "1.5vh", overflowY: "auto", flex: 1 }}>
                 {byDay[day].length === 0 ? (
-                  <p style={{ color: "#64748b", fontSize: "1.2vw", fontStyle: "italic" }}>Sin programa</p>
+                  <p style={{ color: "#64748b", fontSize: "1.2vw", fontStyle: "italic" }}>pendiente de asignar</p>
                 ) : (
                   byDay[day].map(p => (
                     <div key={p.id} style={{ 
@@ -154,7 +187,7 @@ export default function Projection() {
       <div style={{ position: "absolute", bottom: "-10%", right: "-5%", width: "40vw", height: "40vw", background: "#facc15", filter: "blur(120px)", opacity: 0.1, borderRadius: "50%" }}></div>
 
       {/* Anuncio Individual Animado */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {isAnnouncement && !playlist.length && (
           <motion.div
             key={payload.data.id}
@@ -175,7 +208,7 @@ export default function Projection() {
       </AnimatePresence>
 
       {/* Playlist de Anuncios Animada */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {playlist.length > 0 && (
           <motion.div
             key={playlist[currentIndex]?.id}

@@ -4,10 +4,10 @@
  */
 import { useState, useEffect } from "react";
 import { Box, Typography, Button, Grid, Card, CardContent, Select, MenuItem, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow, Chip, LinearProgress } from "@mui/material";
-import { Assessment, Print } from "@mui/icons-material";
+import { Assessment, Print, TableChart } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import API from "../../api/api";
-import { fmt, nowYear, nowMonth, MONTHS_ES, VerticalBars, printFinancialMonthlyPDF, ReportSkeleton } from "./utils";
+import { fmt, nowYear, nowMonth, MONTHS_ES, VerticalBars, printFinancialMonthlyPDF, exportToExcel, ReportSkeleton } from "./utils";
 
 export default function FinancialMonthly() {
   const { settings } = useOutletContext();
@@ -53,9 +53,70 @@ export default function FinancialMonthly() {
           Generar Reporte
         </Button>
         {data && (
-          <Button variant="outlined" startIcon={<Print />} onClick={() => printFinancialMonthlyPDF(data, month, year, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
-            Exportar PDF Oficial
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={() => printFinancialMonthlyPDF(data, month, year, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
+              Exportar PDF
+            </Button>
+            <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
+              let allTx = [];
+              data.transactions.offerings.forEach(o => allTx.push({ ...o, type_cat: 'offering', desc: o.type === "servicio" ? "Ofrenda" : `Ofrenda especial${o.donor ? ' - ' + o.donor : ''}` }));
+              data.transactions.incomes.forEach(i => allTx.push({ ...i, type_cat: 'income', desc: i.type + (i.donor ? ` - ${i.donor}` : '') }));
+              data.transactions.expenses.forEach(e => allTx.push({ ...e, type_cat: 'expense', desc: e.type + (e.observations ? ` - ${e.observations}` : '') }));
+              if (data.transactions.injections) {
+                data.transactions.injections.forEach(inj => allTx.push({ ...inj, type_cat: 'expense', desc: inj.type + (inj.observations ? ` - ${inj.observations}` : '') }));
+              }
+            
+              allTx.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+              let saldoInicial = 0;
+              let diezmoManual = 0;
+              
+              allTx.forEach(t => {
+                if ((t.type_cat === 'income' || t.type_cat === 'offering') && t.desc.toLowerCase().includes("saldo inicial")) {
+                  saldoInicial += parseFloat(t.amount);
+                }
+                if (t.type_cat === 'expense' && t.desc.toLowerCase().includes("diezmo")) {
+                  diezmoManual += parseFloat(t.amount);
+                }
+              });
+            
+              const ofrendasLimpio = parseFloat(data.summary.total_offerings);
+              const aportacionesLimpio = parseFloat(data.summary.total_incomes) - saldoInicial;
+              
+              const diezmoGastos = ofrendasLimpio * 0.10;
+              const gastosLimpio = parseFloat(data.summary.pure_expenses) - diezmoManual;
+              const totalInyecciones = parseFloat(data.summary.total_injections || 0);
+              
+              const saldoFinal = ofrendasLimpio + aportacionesLimpio + saldoInicial - diezmoGastos - gastosLimpio - totalInyecciones;
+
+              const rows = [
+                ["REGISTROS DE OFRENDAS Y GASTOS"],
+                ["IGLESIA DE DIOS EVANGELIO COMPLETO"],
+                ["LEÓN DE JUDÁ, LINDA VISTA"],
+                [],
+                ["Reg.", "Fecha", "Descripcion", "Ofrendas", "Entrada", "Salida"],
+                ...allTx.map((t, i) => [
+                  i + 1,
+                  t.date,
+                  t.desc,
+                  t.type_cat === 'offering' ? t.amount : "",
+                  t.type_cat === 'income' ? t.amount : "",
+                  t.type_cat === 'expense' ? t.amount : ""
+                ]),
+                [],
+                ["", "", "", "Saldo Inicial(+)", saldoInicial],
+                ["", "", "", "Ofrendas (+)", ofrendasLimpio],
+                ["", "", "", "Aportaciones(+)", aportacionesLimpio],
+                ["", "", "", "Diezmo(-)", diezmoGastos],
+                ["", "", "", "Traslado a Bancos(-)", totalInyecciones],
+                ["", "", "", "Gastos(-)", gastosLimpio],
+                ["", "", "", "En caja:", saldoFinal]
+              ];
+              exportToExcel(`Reporte_Financiero_Mensual_${MONTHS_ES[data.period.month - 1]}_${data.period.year}`, rows);
+            }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
+              Exportar Excel
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -78,8 +139,8 @@ export default function FinancialMonthly() {
             {[
               { label: "Total Ofrendas", value: fmt(data.summary.total_offerings), color: "#1d4ed8" },
               { label: "Ingresos Adicionales", value: fmt(data.summary.total_incomes), color: "#16a34a" },
-              { label: "Total Gastos", value: fmt(data.summary.total_expenses), color: "#dc2626" },
-              { label: "Balance Neto", value: fmt(data.summary.balance), color: data.summary.balance >= 0 ? "#16a34a" : "#dc2626" },
+              { label: "Total Egresos (Incl. Banco)", value: fmt(data.summary.total_expenses), color: "#dc2626" },
+              { label: "Efectivo Disponible", value: fmt(data.summary.balance), color: data.summary.balance >= 0 ? "#16a34a" : "#dc2626" },
             ].map(m => (
               <Grid item xs={12} sm={6} md={3} key={m.label}>
                 <Card sx={{ borderTop: `4px solid ${m.color}`, height: '100%', boxShadow: "none", border: "1px solid #e5e7eb" }}>
@@ -166,6 +227,28 @@ export default function FinancialMonthly() {
             </Card>
           )}
 
+          {data.transactions.incomes && data.transactions.incomes.length > 0 && (
+            <Card sx={{ mb: 4, overflow: 'hidden', boxShadow: "none", border: "1px solid #e5e7eb" }}>
+              <Typography variant="subtitle1" fontWeight="700" sx={{ p: 2, bgcolor: '#f0fdf4', color: '#16a34a', borderBottom: "1px solid #e5e7eb" }}>
+                Detalle de Ingresos Adicionales
+              </Typography>
+              <Table size="small">
+                <TableHead><TableRow><TableCell>Fecha</TableCell><TableCell>Rubro</TableCell><TableCell>Donante</TableCell><TableCell align="right">Monto</TableCell></TableRow></TableHead>
+                <TableBody>
+                  {data.transactions.incomes.map((inc, i) => (
+                    <TableRow key={`inc-${i}`} hover>
+                      <TableCell>{inc.date}</TableCell>
+                      <TableCell>{inc.type}</TableCell>
+                      <TableCell sx={{ color: "text.secondary" }}>{inc.donor || "—"}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: "700", color: "#16a34a" }}>{fmt(inc.amount)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+
+
           {data.transactions.expenses.length > 0 && (
             <Card sx={{ overflow: 'hidden', boxShadow: "none", border: "1px solid #e5e7eb" }}>
               <Typography variant="subtitle1" fontWeight="700" sx={{ p: 2, bgcolor: '#fef2f2', color: '#dc2626', borderBottom: "1px solid #e5e7eb" }}>
@@ -175,11 +258,19 @@ export default function FinancialMonthly() {
                 <TableHead><TableRow><TableCell>Fecha</TableCell><TableCell>Rubro</TableCell><TableCell>Observaciones</TableCell><TableCell align="right">Monto</TableCell></TableRow></TableHead>
                 <TableBody>
                   {data.transactions.expenses.map((e, i) => (
-                    <TableRow key={i} hover>
+                    <TableRow key={`exp-${i}`} hover>
                       <TableCell>{e.date}</TableCell>
                       <TableCell>{e.type}</TableCell>
                       <TableCell sx={{ color: "text.secondary" }}>{e.observations || "—"}</TableCell>
                       <TableCell align="right" sx={{ fontWeight: "700", color: "#dc2626" }}>{fmt(e.amount)}</TableCell>
+                    </TableRow>
+                  ))}
+                  {data.transactions.injections && data.transactions.injections.map((inj, i) => (
+                    <TableRow key={`inj-${i}`} hover sx={{ bgcolor: "#eff6ff" }}>
+                      <TableCell>{inj.date}</TableCell>
+                      <TableCell sx={{ color: "#2563eb", fontWeight: 600 }}>{inj.type}</TableCell>
+                      <TableCell sx={{ color: "text.secondary" }}>{inj.observations || "—"}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: "700", color: "#2563eb" }}>{fmt(inj.amount)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

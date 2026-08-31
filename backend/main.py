@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -46,6 +46,7 @@ from migrations import migrate_ministry_workspace
 from migrations import migrate_fix_ministry_delete
 from migrations import migrate_audit_device
 from migrations import migrate_ministry_monthly_reports
+from migrations import migrate_bank_withdrawal
 
 
 load_dotenv()
@@ -99,6 +100,7 @@ async def lifespan(app: FastAPI):
         migrate_fix_ministry_delete.migrate(engine)
         migrate_audit_device.migrate()
         migrate_ministry_monthly_reports.migrate(engine)
+        migrate_bank_withdrawal.migrate(engine)
         
         # Crear admin inicial si no existe
         db = SessionLocal()
@@ -204,6 +206,28 @@ def health_check():
     return response
 
 
-@app.get("/", tags=["Sistema"])
-def root():
-    return {"message": "Sistema de gestión de iglesia — OK", "version": "1.0.0"}
+import sys
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
+frontend_path = os.path.join(application_path, "frontend")
+
+if os.path.exists(frontend_path):
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_path, "assets")), name="assets")
+    
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_react_app(full_path: str):
+        file_path = os.path.join(frontend_path, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(frontend_path, "index.html"))
+else:
+    @app.get("/", tags=["Sistema"])
+    def root():
+        return {"message": "Sistema de gestión de iglesia — OK (Frontend no encontrado)", "version": "1.0.0"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

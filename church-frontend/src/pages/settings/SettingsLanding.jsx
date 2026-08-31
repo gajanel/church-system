@@ -110,6 +110,10 @@ const CARDS = [
 
 export default function SettingsLanding() {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.is_admin || user?.is_super_admin;
+  
+  const visibleCards = CARDS.filter(card => isAdmin || card.path === "/settings/security");
 
   return (
     <div>
@@ -118,7 +122,7 @@ export default function SettingsLanding() {
         subtitle="Administra los parámetros globales, la identidad corporativa y la seguridad."
       />
       <div className={styles.grid}>
-        {CARDS.map((card) => (
+        {visibleCards.map((card) => (
           <button
             key={card.path}
             className={styles.card}

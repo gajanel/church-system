@@ -20,6 +20,18 @@ const CARDS = [
     bg: "rgba(37,99,235,0.09)",
   },
   {
+    title: "Reporte de Bancos",
+    desc: "Consulta los movimientos bancarios, depósitos directos, inyecciones y retiros de las cuentas de la Iglesia.",
+    path: "/reports/bank-monthly",
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 .95 14.61 4h.89a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.5.5H15v7a.5.5 0 0 1 .485.379l.5 2A.5.5 0 0 1 15.5 17H.5a.5.5 0 0 1-.485-.621l.5-2A.5.5 0 0 1 1 14V7H.5a.5.5 0 0 1-.5-.5v-2A.5.5 0 0 1 .5 4h.89zM3.776 4h8.447L8 2.05zM2 7v7h1V7zm2 0v7h2.5V7zm3.5 0v7h1V7zm2 0v7H12V7zM13 7v7h1V7zm2-1V5H1v1zm-.39 9H1.39l-.25 1h13.72z"/>
+      </svg>
+    ),
+    color: "#059669",
+    bg: "rgba(5,150,105,0.09)",
+  },
+  {
     title: "Corte Anual",
     desc: "Resumen financiero del año: comparativa mensual de ingresos y egresos con proyecciones y totales anuales.",
     path: "/reports/annual",

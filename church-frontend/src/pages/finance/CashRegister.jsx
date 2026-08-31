@@ -26,9 +26,8 @@ const MONTHS = [
 ];
 
 const KIND_COLORS = {
-  entrada:   { bg: "#f0fdf4", color: "#16a34a", label: "Entrada"  },
-  salida:    { bg: "#fef2f2", color: "#dc2626", label: "Salida"   },
-  inyeccion: { bg: "#eff6ff", color: "#2563eb", label: "→ Banco"  },
+  inyeccion: { bg: "#f0fdf4", color: "#16a34a", label: "Inyección (Entrada)" },
+  retiro:    { bg: "#fef2f2", color: "#dc2626", label: "Retiro (Salida)" },
 };
 
 const TableWrap = ({ children }) => (
@@ -64,6 +63,7 @@ export default function CashRegister() {
 
   const [cashData,  setCashData]  = useState(null);
   const [loading,   setLoading]   = useState(false);
+  const [typeFilter, setTypeFilter] = useState("todos");
 
   // Injection modal
   const [injOpen,   setInjOpen]   = useState(false);
@@ -193,7 +193,7 @@ export default function CashRegister() {
               </div>
           }
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 6 }}>
-            Total ingresado a bancos (inyecciones)
+            Dinero en bancos (inyecciones − retiros bancarios)
           </div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -208,12 +208,12 @@ export default function CashRegister() {
           >
             Inyectar a Banco
           </Button>
-          <Tooltip title="Actualizar">
-            <IconButton onClick={loadCash} sx={{ color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 2 }}>
-              <Refresh />
-            </IconButton>
-          </Tooltip>
-        </div>
+            <Tooltip title="Actualizar">
+              <IconButton onClick={loadCash} sx={{ color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 2 }}>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
+          </div>
       </div>
 
       {/* ── Month selector + stats ── */}
@@ -237,31 +237,24 @@ export default function CashRegister() {
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
           <StatCard
             icon={<TrendingUp sx={{ fontSize: 15 }} />}
-            label="Entradas del mes"
+            label="Inyecciones"
             value={fmt(cashData.month_entries)}
             color="#16a34a"
-            sub="Ofrendas + Ingresos"
+            sub="Entradas a bancos"
           />
           <StatCard
             icon={<TrendingDown sx={{ fontSize: 15 }} />}
-            label="Salidas del mes"
+            label="Retiros"
             value={fmt(cashData.month_exits)}
             color="#dc2626"
-            sub="Gastos registrados"
-          />
-          <StatCard
-            icon={<AccountBalance sx={{ fontSize: 15 }} />}
-            label="Inyectado a banco"
-            value={fmt(cashData.month_injections)}
-            color="#2563eb"
-            sub="Transferencias al banco"
+            sub="Salidas de bancos"
           />
           <StatCard
             icon={<AccountBalanceWallet sx={{ fontSize: 15 }} />}
             label="Balance del mes"
             value={fmt(cashData.month_net)}
             color={cashData.month_net >= 0 ? "#16a34a" : "#dc2626"}
-            sub="Entradas - Salidas - Inyecciones"
+            sub="Inyecciones - Retiros"
           />
         </div>
       )}
@@ -271,17 +264,26 @@ export default function CashRegister() {
         <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>
           Movimientos — {MONTHS[selMonth - 1]} {selYear}
         </p>
-        <div style={{ display: "flex", gap: 6 }}>
-          {["entrada","salida","inyeccion"].map(k => (
-            <div key={k} style={{
-              display: "flex", alignItems: "center", gap: 4,
-              background: KIND_COLORS[k].bg, color: KIND_COLORS[k].color,
-              borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 600,
-            }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: KIND_COLORS[k].color }} />
-              {KIND_COLORS[k].label}
-            </div>
-          ))}
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <FormControl size="small" sx={{ minWidth: 130 }}>
+            <Select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} sx={{ fontSize: 12, height: 28, '& .MuiSelect-select': { py: 0.5 } }}>
+              <MenuItem value="todos" sx={{ fontSize: 12 }}>Todos los tipos</MenuItem>
+              <MenuItem value="inyeccion" sx={{ fontSize: 12 }}>Solo Entradas</MenuItem>
+              <MenuItem value="retiro" sx={{ fontSize: 12 }}>Solo Salidas</MenuItem>
+            </Select>
+          </FormControl>
+          <div style={{ display: "flex", gap: 6 }}>
+            {["inyeccion","retiro"].map(k => (
+              <div key={k} style={{
+                display: "flex", alignItems: "center", gap: 4,
+                background: KIND_COLORS[k].bg, color: KIND_COLORS[k].color,
+                borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 600,
+              }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: KIND_COLORS[k].color }} />
+                {KIND_COLORS[k].label}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -300,9 +302,9 @@ export default function CashRegister() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {mv.length === 0
+            {mv.filter(m => typeFilter === "todos" || m.kind === typeFilter).length === 0
               ? <TableRow><TableCell colSpan={6} align="center" sx={{ py: 4, color: "#9ca3af" }}>Sin movimientos en este período</TableCell></TableRow>
-              : mv.map((m) => {
+              : mv.filter(m => typeFilter === "todos" || m.kind === typeFilter).map((m) => {
                 const kc = KIND_COLORS[m.kind] || KIND_COLORS.salida;
                 return (
                   <TableRow key={m.id} sx={{ "&:hover": { bgcolor: "#fafafa" } }}>
@@ -332,45 +334,7 @@ export default function CashRegister() {
         </TableWrap>
       )}
 
-      {/* ── Historial de inyecciones ── */}
-      <div style={{ marginTop: 36 }}>
-        <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Historial de Inyecciones a Banco</p>
-        {injLoading
-          ? <TableSkeleton rows={4} cols={5} />
-          : (
-            <TableWrap>
-              <TableHead>
-                <TableRow sx={{ "& th": { fontWeight: 700, color: "#374151", bgcolor: "#f9fafb" } }}>
-                  <TableCell>Fecha</TableCell>
-                  <TableCell>Banco</TableCell>
-                  <TableCell>Boleta #</TableCell>
-                  <TableCell>Observaciones</TableCell>
-                  <TableCell>Registrado por</TableCell>
-                  <TableCell align="right">Monto</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {injections.length === 0
-                  ? <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3, color: "#9ca3af" }}>Sin inyecciones registradas</TableCell></TableRow>
-                  : injections.map(inj => (
-                    <TableRow key={inj.id} sx={{ "&:hover": { bgcolor: "#f0f7ff" } }}>
-                      <TableCell sx={{ color: "#6b7280" }}>{String(inj.date)}</TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>{inj.bank_account ? inj.bank_account.bank_name : (inj.bank_name || '—')}</TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>{inj.slip_number || "—"}</TableCell>
-                      <TableCell sx={{ color: "#6b7280" }}>{inj.observations || "—"}</TableCell>
-                      <TableCell sx={{ color: "#9ca3af", fontSize: "0.75rem" }}>{inj.created_by_name}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, color: "#2563eb", fontFamily: "ui-monospace, monospace" }}>
-                        -{fmt(inj.amount)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                }
-              </TableBody>
-            </TableWrap>
-          )
-        }
-        <Pager page={injPage} total={injPages} onPage={setInjPage} />
-      </div>
+
 
       {/* ── Injection Dialog ── */}
       <Dialog open={injOpen} onClose={() => setInjOpen(false)} maxWidth="sm" fullWidth>
@@ -449,7 +413,7 @@ export default function CashRegister() {
             />
           </div>
           <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 14px", marginTop: 16, fontSize: 12, color: "#1d4ed8" }}>
-            Esta operación <strong>descontará del saldo de Caja General</strong> el monto ingresado y quedará registrada como inyección al banco seleccionado.
+            Esta operación <strong>agrega al saldo de Caja General (Bancos)</strong> el monto ingresado y <strong>descuenta de la Caja de Ofrendas</strong> (circulación). Queda registrada como inyección al banco seleccionado.
           </div>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>

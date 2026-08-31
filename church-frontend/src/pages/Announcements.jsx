@@ -15,6 +15,7 @@ import {
 import { Campaign, LiveTv, AddCircle, Edit, Delete, CalendarMonth, DesktopWindows, StopCircle } from "@mui/icons-material";
 import { Badge } from "../components/ui/Badge";
 import { PageHeader } from "../components/ui/PageHeader";
+import { getSchedule } from "../api/privileges";
 import s from "../styles/page.module.css";
 
 const getMonday = d => { const dt = new Date(d); const day = dt.getDay(); const diff = dt.getDate()-day+(day===0?-6:1); return new Date(dt.setDate(diff)).toISOString().split("T")[0]; };
@@ -23,11 +24,15 @@ export default function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading]             = useState(true);
   const [form, setForm]                   = useState(null);
-  const [weekToPublish, setWeekToPublish] = useState(getMonday(new Date()));
+  const [weekToPublish, setWeekToPublish] = useState(() => localStorage.getItem("privileges_week_start") || getMonday(new Date()));
   const [selectedIds, setSelectedIds]     = useState([]);
   const [isPublishingPlaylist, setPubPlay]= useState(false);
   const [publishingId, setPubId]          = useState(null);
   const [isPublishingProgram, setPubProg] = useState(false);
+  const [isProjectionActive, setProjActive] = useState(false);
+
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
 
   const load = async () => {
     setLoading(true);
@@ -36,7 +41,14 @@ export default function Announcements() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { 
+    load(); 
+    const hbTimer = setInterval(() => {
+      const hb = parseInt(localStorage.getItem("projection_heartbeat") || "0", 10);
+      setProjActive(Date.now() - hb < 4000);
+    }, 1000);
+    return () => clearInterval(hbTimer);
+  }, []);
 
   const handleSave = async e => {
     e.preventDefault();
@@ -47,10 +59,41 @@ export default function Announcements() {
     } catch { alert("Error al guardar el aviso."); }
   };
 
-  const handleDelete    = async id => { if (!window.confirm("¿Purgar esta nota pública?")) return; try { await deleteAnnouncement(id); load(); } catch (err) { console.error("Error deleting announcement:", err); } };
-  const handlePublish   = async id => { setPubId(id); try { await publishAnnouncement(id); await load(); } catch (err) { console.error("Error publishing announcement:", err); } setPubId(null); };
-  const handleProgram   = async () => { setPubProg(true); try { await publishWeeklyProgram(weekToPublish); await load(); setSelectedIds([]); } catch (err) { console.error("Error publishing program:", err); } setPubProg(false); };
-  const handlePlaylist  = async () => { if (!selectedIds.length) return; setPubPlay(true); try { await publishPlaylist(selectedIds); await load(); } catch (err) { console.error("Error publishing playlist:", err); } setPubPlay(false); };
+  const handleDelete    = async id => { if (!window.confirm("¿Eliminar este anuncio?")) return; try { await deleteAnnouncement(id); load(); } catch (err) { console.error("Error deleting announcement:", err); } };
+  const handlePublish   = async id => { 
+    setPubId(id); 
+    try { 
+      await publishAnnouncement(id); 
+      if (id === 0) localStorage.setItem("projection_payload", JSON.stringify({ type: "announcement", data: null, _t: Date.now() }));
+      else {
+        // optimistically update localStorage for instant local projection
+        const a = announcements.find(x => x.id === id);
+        if (a) localStorage.setItem("projection_payload", JSON.stringify({ type: "announcement", data: a, _t: Date.now() }));
+      }
+      await load(); 
+    } catch (err) { console.error("Error publishing:", err); } 
+    setPubId(null); 
+  };
+  const handleProgram   = async () => { 
+    setPubProg(true); 
+    try { 
+      await publishWeeklyProgram(weekToPublish); 
+      // fetch schedule for local projection sync
+      const scheduleRes = await getSchedule(weekToPublish);
+      localStorage.setItem("projection_payload", JSON.stringify({ 
+        type: "weekly_program", 
+        data: scheduleRes.data, 
+        week_start: weekToPublish, 
+        _t: Date.now() 
+      }));
+      await load(); 
+      setSelectedIds([]); 
+    } catch (err) { 
+      console.error("Error publishing program:", err); 
+    } 
+    setPubProg(false); 
+  };
+  const handlePlaylist  = async () => { if (!selectedIds.length) return; setPubPlay(true); try { await publishPlaylist(selectedIds); localStorage.setItem("projection_force_reload", Date.now()); await load(); } catch (err) { console.error("Error publishing playlist:", err); } setPubPlay(false); };
   const toggleSelect    = id => setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i!==id) : [...prev, id]);
 
   const activePubId = Array.isArray(announcements) ? announcements.find(a => a.is_published)?.id : null;
@@ -59,8 +102,8 @@ export default function Announcements() {
     <div className={s.page}>
       <PageHeader title="Anuncios y Control de Pantallas" subtitle="Empuja anuncios y el programa semanal hacia los proyectores del templo.">
         <div style={{ display:"flex", gap:8 }}>
-          <Button variant="outlined" startIcon={<DesktopWindows />} onClick={() => window.open("/projection", "_blank")}>
-            Proyección Local
+          <Button variant="outlined" startIcon={<DesktopWindows />} onClick={() => window.open("/projection", "Proyeccion", "width=1280,height=720,menubar=no,toolbar=no,location=no,status=no")}>
+            Proyección Local (Ventana)
           </Button>
           <Button variant="contained" startIcon={<AddCircle />} onClick={() => setForm({ title:"", content:"", is_active:true })}>
             Nuevo Anuncio
@@ -85,8 +128,8 @@ export default function Announcements() {
         </div>
         <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
           <TextField type="date" size="small" value={weekToPublish} onChange={e => setWeekToPublish(e.target.value)} sx={{ bgcolor:"white", borderRadius:1, width:160 }} />
-          <Button variant="contained" color="warning" startIcon={<CalendarMonth />} onClick={handleProgram} disabled={isPublishingProgram}>Empujar Organigrama</Button>
-          <Button variant="contained" color="success" startIcon={<LiveTv />} onClick={handlePlaylist} disabled={isPublishingPlaylist||!selectedIds.length} sx={{ fontWeight:800 }}>
+          <Button variant="contained" color="warning" startIcon={<CalendarMonth />} onClick={handleProgram} disabled={!isProjectionActive || isPublishingProgram}>Proyectar Privilegios</Button>
+          <Button variant="contained" color="success" startIcon={<LiveTv />} onClick={handlePlaylist} disabled={!isProjectionActive || isPublishingPlaylist||!selectedIds.length} sx={{ fontWeight:800 }}>
             Lanzar Selección ({selectedIds.length})
           </Button>
           <Button variant="contained" color="error" startIcon={<StopCircle />} onClick={() => handlePublish(0)}>Cortar Todo</Button>
@@ -132,12 +175,12 @@ export default function Announcements() {
                   <div style={{ display:"flex", gap:4, justifyContent:"flex-end" }}>
                     {!a.is_published && (
                       <Button size="small" variant="outlined" color="success" startIcon={<LiveTv />}
-                        onClick={() => handlePublish(a.id)} disabled={publishingId===a.id}>
+                        onClick={() => handlePublish(a.id)} disabled={!isProjectionActive || publishingId===a.id}>
                         Lanzar
                       </Button>
                     )}
-                    <IconButton color="primary" size="small" onClick={() => setForm(a)}><Edit fontSize="small" /></IconButton>
-                    <IconButton color="error" size="small" onClick={() => handleDelete(a.id)}><Delete fontSize="small" /></IconButton>
+                    {isSuper && <IconButton color="primary" size="small" onClick={() => setForm(a)}><Edit fontSize="small" /></IconButton>}
+                    {isSuper && <IconButton color="error" size="small" onClick={() => handleDelete(a.id)}><Delete fontSize="small" /></IconButton>}
                   </div>
                 </TableCell>
               </TableRow>

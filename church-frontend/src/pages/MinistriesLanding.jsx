@@ -36,6 +36,10 @@ const CARDS = [
 
 export default function MinistriesLanding() {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.is_admin || user?.is_super_admin;
+  
+  const canAdmin = isAdmin;
 
   return (
     <div>
@@ -44,7 +48,7 @@ export default function MinistriesLanding() {
         subtitle="Gestiona y accede a los ministerios de la iglesia."
       />
       <div className={styles.grid}>
-        {CARDS.map((card) => (
+        {CARDS.filter(card => card.path === "/ministries/admin" ? canAdmin : true).map((card) => (
           <button
             key={card.path}
             className={styles.card}

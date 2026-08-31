@@ -17,6 +17,7 @@ class User(Base):
     is_super_admin = Column(Boolean, default=False)
     modules = Column(JSON, default=list)
     must_change_password = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
     member_id = Column(Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
 
     member = relationship("Member")

@@ -4,10 +4,10 @@
  */
 import { useState } from "react";
 import { Box, Typography, Button, Grid, Card, Select, MenuItem, FormControl, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, Chip } from "@mui/material";
-import { PeopleAlt, Print, EventAvailable, LocalOffer } from "@mui/icons-material";
+import { PeopleAlt, Print, EventAvailable, LocalOffer, TableChart } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import API from "../../api/api";
-import { printMembersPDF, ReportSkeleton } from "./utils";
+import { printMembersPDF, exportToExcel, ReportSkeleton } from "./utils";
 
 export default function MembersReport() {
   const { settings } = useOutletContext();
@@ -41,9 +41,26 @@ export default function MembersReport() {
           Inspeccionar Demografía
         </Button>
         {data && (
-          <Button variant="outlined" startIcon={<Print />} onClick={() => printMembersPDF(data, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
-            Imprimir Listado
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={() => printMembersPDF(data, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
+              Exportar PDF
+            </Button>
+            <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
+              const rows = [
+                ["DIRECTORIO DE FELIGRESES"],
+                ["Total Miembros", data.summary.total],
+                ["Activos", data.summary.active],
+                ["Inactivos", data.summary.inactive],
+                [],
+                ["DIRECTORIO COMPLETO"],
+                ["No.", "Nombre Completo", "Teléfono", "Email", "Nacimiento", "Bautismo", "Estado"],
+                ...data.members.map((m, i) => [i + 1, m.name, m.phone || "—", m.email || "—", m.birth_date || "—", m.baptism_date || "—", m.status === "active" ? "Activo" : "Inactivo"])
+              ];
+              exportToExcel("Directorio_Miembros", rows);
+            }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
+              Exportar Excel
+            </Button>
+          </Box>
         )}
       </Box>
 

@@ -216,8 +216,8 @@ export default function Dashboard() {
   const METRICS = [
     {
       label: "Caja de Ofrendas",
-      value: fmt(summary.cash_balance),
-      sub: "Aún no ingresado a bancos",
+      value: fmt(summary.offering_cash),
+      sub: "Efectivo en circulación",
       subClass: styles.textMuted,
       icon: <AccountBalanceWallet sx={{ fontSize: 18 }} />,
       iconClass: styles.iconPrimary,

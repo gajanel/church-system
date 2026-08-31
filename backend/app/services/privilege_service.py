@@ -265,9 +265,19 @@ def auto_generate_schedule(db: Session, week_start: date, user_id: int, days: li
                 ))
                 continue
 
-            # Filtrar: preferir no repetir en el mismo día
-            not_today = [c for c in candidates if c not in assigned_today]
-            pool_candidates = not_today if not_today else candidates
+            # Filtrar: NO repetir en el mismo día bajo ninguna circunstancia
+            pool_candidates = [c for c in candidates if c not in assigned_today]
+            
+            if not pool_candidates:
+                new_entries.append(WeeklyPrivilegeSchedule(
+                    week_start=week_start,
+                    day_name=day,
+                    privilege=privilege,
+                    member_id=None,
+                    notes="Candidatos ocupados en otro privilegio",
+                    created_by=user_id,
+                ))
+                continue
 
             # Ordenar por menor frecuencia reciente (distribución equitativa)
             pool_candidates.sort(key=lambda mid: recent_count.get(mid, 0))

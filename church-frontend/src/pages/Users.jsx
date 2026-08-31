@@ -27,14 +27,14 @@ import DataTable from "../components/ui/DataTable";
 import ConfirmDialog from "../components/ConfirmDialog";
 import s from "../styles/page.module.css";
 
-const emptyForm = { name: "", username: "", email: "", password: "", is_admin: false, is_super_admin: false, modules: [], userType: "general", member_id: null };
+const emptyForm = { name: "", username: "", email: "", password: "", is_admin: false, is_super_admin: false, modules: [], userType: "general", member_id: null, is_active: true };
 
 const COLUMNS = [
   { label: "#",         width: "44px" },
   { label: "Nombre",    width: "20%" },
   { label: "Usuario",   width: "14%" },
   { label: "Email",     width: "22%" },
-  { label: "Tipo",      width: "9%" },
+  { label: "Estado",      width: "9%" },
   { label: "Módulos",   width: "auto" },
   { label: "Acciones",  width: "10%", align: "right" },
 ];
@@ -194,7 +194,7 @@ export default function Users() {
     e.preventDefault(); setError("");
     try {
       if (editing) {
-        const payload = { name: form.name, username: form.username, email: form.email, is_admin: form.is_admin, is_super_admin: form.is_super_admin, modules: form.modules, member_id: form.member_id };
+        const payload = { name: form.name, username: form.username, email: form.email, is_admin: form.is_admin, is_super_admin: form.is_super_admin, modules: form.modules, member_id: form.member_id, is_active: form.is_active };
         if (form.password) payload.password = form.password;
         await updateUser(editing.id, payload);
       } else {
@@ -210,17 +210,17 @@ export default function Users() {
     const mods = u.modules || [];
     const uType = detectUserType(mods);
     setEditing(u);
-    setForm({ name: u.name||"", username: u.username||"", email: u.email||"", password: "", is_admin: u.is_admin, is_super_admin: u.is_super_admin, modules: mods, userType: uType, member_id: u.member_id || null });
+    setForm({ name: u.name||"", username: u.username||"", email: u.email||"", password: "", is_admin: u.is_admin, is_super_admin: u.is_super_admin, modules: mods, userType: uType, member_id: u.member_id || null, is_active: u.is_active !== false });
     setShowForm(true);
   };
 
   const handleDelete = (id) => {
     setConfirmConfig({
-      title: "¿Eliminar este usuario?",
-      content: "Esta acción eliminará permanentemente al usuario del sistema y no se puede deshacer.",
+      title: "¿Desactivar este usuario?",
+      content: "Esta acción desactivará al usuario del sistema. No podrá iniciar sesión hasta ser reactivado.",
       onConfirm: async () => {
         try { await deleteUser(id); loadData(); }
-        catch { setError("Error al eliminar el usuario"); }
+        catch { setError("Error al desactivar el usuario"); }
         finally { setConfirmOpen(false); }
       }
     });
@@ -281,9 +281,13 @@ export default function Users() {
             <TableCell sx={{ fontSize: 12, color: "text.secondary", fontFamily: "monospace" }}>@{u.username}</TableCell>
             <TableCell sx={{ fontSize: 12, color: "text.secondary" }}>{u.email}</TableCell>
             <TableCell>
-              <Badge variant={u.is_super_admin ? "info" : u.is_admin ? "error" : "primary"} size="sm">
-                {u.is_super_admin ? "Súper Admin" : u.is_admin ? "Admin" : "Usuario"}
-              </Badge>
+              {u.is_active === false ? (
+                <Badge variant="ghost" size="sm">Inactivo</Badge>
+              ) : (
+                <Badge variant={u.is_super_admin ? "info" : u.is_admin ? "error" : "primary"} size="sm">
+                  {u.is_super_admin ? "Súper Admin" : u.is_admin ? "Admin" : "Usuario"}
+                </Badge>
+              )}
             </TableCell>
             <TableCell>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
@@ -309,8 +313,8 @@ export default function Users() {
                     </IconButton>
                   </Tooltip>
                 )}
-                {!u.is_super_admin && (!u.is_admin || currentUser.is_super_admin) && (
-                  <Tooltip title="Eliminar">
+                {!u.is_super_admin && (!u.is_admin || currentUser.is_super_admin) && u.is_active !== false && (
+                  <Tooltip title="Desactivar">
                     <IconButton size="small" color="error" onClick={() => handleDelete(u.id)}>
                       <DeleteOutlined sx={{ fontSize: 15 }} />
                     </IconButton>
@@ -383,15 +387,28 @@ export default function Users() {
                 </p>
               </div>
             )}
-            <div className={s.subPanel} style={{ marginBottom: 0 }}>
-              <FormControlLabel
-                control={<Switch checked={form.is_admin} onChange={handleChange} name="is_admin" color="error" />}
-                label={<span style={{ fontWeight: 600, fontSize: 13, color: form.is_admin ? "var(--color-error)" : "var(--text-primary)" }}>Administrador</span>}
-              />
-              <p style={{ fontSize: 12, color: "var(--text-secondary)", marginLeft: 44, marginTop: 2 }}>
-                {form.is_admin ? "Acceso total al sistema." : "Usuario común — configura módulos abajo."}
-              </p>
-            </div>
+            {editing && currentUser.is_super_admin && (
+              <div className={s.subPanel} style={{ marginBottom: 0 }}>
+                <FormControlLabel
+                  control={<Switch checked={form.is_active} onChange={handleChange} name="is_active" color="success" />}
+                  label={<span style={{ fontWeight: 600, fontSize: 13, color: form.is_active ? "#059669" : "var(--text-primary)" }}>Cuenta Activa</span>}
+                />
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", marginLeft: 44, marginTop: 2 }}>
+                  Si está inactiva, el usuario no podrá iniciar sesión.
+                </p>
+              </div>
+            )}
+            {currentUser.is_super_admin && (
+              <div className={s.subPanel} style={{ marginBottom: 0 }}>
+                <FormControlLabel
+                  control={<Switch checked={form.is_admin} onChange={handleChange} name="is_admin" color="error" />}
+                  label={<span style={{ fontWeight: 600, fontSize: 13, color: form.is_admin ? "var(--color-error)" : "var(--text-primary)" }}>Administrador</span>}
+                />
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", marginLeft: 44, marginTop: 2 }}>
+                  {form.is_admin ? "Acceso total al sistema." : "Usuario común — configura módulos abajo."}
+                </p>
+              </div>
+            )}
 
             {/* Module selection (only for non-admin users) */}
             {!form.is_admin && (

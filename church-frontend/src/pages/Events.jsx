@@ -61,6 +61,9 @@ export default function Events() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState({ title: "", content: "", onConfirm: () => {} });
 
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -207,8 +210,12 @@ export default function Events() {
             </CardBody>
             <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", gap:6, padding:"12px 16px", borderLeft:"1px solid var(--border)" }}>
               <Button size="small" startIcon={<Visibility sx={{ fontSize:13 }} />} onClick={() => setSelected(ev)}>Ver</Button>
-              <Button size="small" color="primary" startIcon={<Edit sx={{ fontSize:13 }} />} onClick={() => openForm(ev)}>Editar</Button>
-              <Button size="small" color="error" startIcon={<Delete sx={{ fontSize:13 }} />} onClick={() => handleDelete(ev.id)}>Borrar</Button>
+              {isSuper && (
+                <>
+                  <Button size="small" color="primary" startIcon={<Edit sx={{ fontSize:13 }} />} onClick={() => openForm(ev)}>Editar</Button>
+                  <Button size="small" color="error" startIcon={<Delete sx={{ fontSize:13 }} />} onClick={() => handleDelete(ev.id)}>Borrar</Button>
+                </>
+              )}
             </div>
           </Card>
         ))}
@@ -344,8 +351,12 @@ export default function Events() {
               </div>
             </DialogContent>
             <DialogActions sx={{ px:3, py:2 }}>
-              <Button color="error" startIcon={<Delete />} onClick={() => handleDelete(selected.id)} sx={{ mr:"auto" }}>Eliminar</Button>
-              <Button variant="outlined" startIcon={<Edit />} onClick={() => { setSelected(null); openForm(selected); }}>Editar</Button>
+              {isSuper && (
+                <>
+                  <Button color="error" startIcon={<Delete />} onClick={() => handleDelete(selected.id)} sx={{ mr:"auto" }}>Eliminar</Button>
+                  <Button variant="outlined" startIcon={<Edit />} onClick={() => { setSelected(null); openForm(selected); }}>Editar</Button>
+                </>
+              )}
               <Button onClick={() => setSelected(null)} variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }}>Cerrar</Button>
             </DialogActions>
           </>

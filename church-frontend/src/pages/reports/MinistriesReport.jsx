@@ -15,12 +15,13 @@ import {
   FilterListOutlined, ExpandMoreOutlined, ExpandLessOutlined,
   PrintOutlined, RefreshOutlined, ChurchOutlined,
   PeopleOutlined, EventNoteOutlined, MicOutlined,
-  AccountBalanceWalletOutlined, AttachFileOutlined, VisibilityOutlined,
+  AccountBalanceWalletOutlined, AttachFileOutlined, VisibilityOutlined, TableChartOutlined
 } from "@mui/icons-material";
 import { getAllMonthlyReports } from "../../api/ministryWorkspace";
 import { getMinistries } from "../../api/ministries";
 import { API_URL } from "../../api/api";
 import { useOutletContext } from "react-router-dom";
+import { exportToExcel } from "./utils";
 
 const MONTHS = [
   "Enero","Febrero","Marzo","Abril","Mayo","Junio",
@@ -258,6 +259,25 @@ export default function MinistriesReport() {
     setTimeout(() => window.print(), 200);
   };
 
+  const handleExcel = () => {
+    const rows = [
+      ["CONSOLIDADO DE MINISTERIOS", filterMonth || "Todos", filterMin || "Todos"],
+      [],
+      ["MINISTERIO", "MES", "CREADO POR", "NIÑOS", "ADOLESCENTES", "JÓVENES", "MUJERES", "HOMBRES", "ANCIANOS", "TOTAL MIEMBROS", "INGRESOS", "EGRESOS", "BALANCE"]
+    ];
+    reports.forEach(r => {
+      const tMem = [r.mem_children, r.mem_teens, r.mem_youth, r.mem_women, r.mem_men, r.mem_seniors].reduce((a, v) => a + n(v), 0);
+      const tInc = n(r.fin_offerings) + n(r.fin_sales) + n(r.fin_special);
+      const tExp = n(r.fin_social_expense) + n(r.fin_project_expense);
+      rows.push([
+        r.ministry_name, r.report_month, r.reporter_name,
+        n(r.mem_children), n(r.mem_teens), n(r.mem_youth), n(r.mem_women), n(r.mem_men), n(r.mem_seniors), tMem,
+        tInc, tExp, tInc - tExp
+      ]);
+    });
+    exportToExcel(`Consolidado_Ministerios`, rows);
+  };
+
   // ── Aggregated totals ───────────────────────────────────────────────────
   const totals = reports.reduce((acc, r) => {
     acc.members    += [r.mem_children, r.mem_teens, r.mem_youth, r.mem_women, r.mem_men, r.mem_seniors].reduce((a, v) => a + n(v), 0);
@@ -308,8 +328,11 @@ export default function MinistriesReport() {
         <Tooltip title="Actualizar">
           <IconButton size="small" onClick={load} disabled={loading}><RefreshOutlined sx={{ fontSize: 17 }} /></IconButton>
         </Tooltip>
-        <Tooltip title="Imprimir">
-          <IconButton size="small" onClick={handlePrint}><PrintOutlined sx={{ fontSize: 17 }} /></IconButton>
+        <Tooltip title="Exportar Excel">
+          <IconButton size="small" onClick={handleExcel} disabled={reports.length === 0}><TableChartOutlined sx={{ fontSize: 17, color: "#059669" }} /></IconButton>
+        </Tooltip>
+        <Tooltip title="Exportar PDF Oficial">
+          <IconButton size="small" onClick={handlePrint} disabled={reports.length === 0}><PrintOutlined sx={{ fontSize: 17 }} /></IconButton>
         </Tooltip>
       </Box>
 

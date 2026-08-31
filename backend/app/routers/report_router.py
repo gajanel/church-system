@@ -9,7 +9,7 @@ from datetime import date
 
 from app.database.connection import get_db
 from app.utils.dependencies import get_current_user
-from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense
+from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense, BankInjection
 from app.models.member_model import Member
 from app.models.event_model import Event
 from app.models.project_model import Project
@@ -84,7 +84,7 @@ def report_attendance(
     }
 
 
-# ── 1. Reporte Financiero Mensual ──
+# ── 1. Reporte Financiero Mensual (Caja de Ofrendas) ──
 @router.get("/financial/monthly")
 def report_financial_monthly(
     month: int = Query(..., ge=1, le=12),
@@ -106,11 +106,19 @@ def report_financial_monthly(
         extract("month", ChurchExpense.date) == month,
         extract("year", ChurchExpense.date) == year,
     ).all()
+    
+    injections = db.query(BankInjection).filter(
+        extract("month", BankInjection.date) == month,
+        extract("year", BankInjection.date) == year,
+    ).all()
 
     total_offerings = sum(o.amount for o in offerings)
     total_incomes = sum(i.amount for i in incomes)
     total_expenses = sum(e.amount for e in expenses)
-    balance = total_offerings + total_incomes - total_expenses
+    total_injections = sum(inj.amount for inj in injections)
+    
+    # El balance en Caja de Ofrendas resta también los traslados a bancos (inyecciones)
+    balance = total_offerings + total_incomes - total_expenses - total_injections
 
     monthly_goal = db.query(func.sum(FixedExpense.amount)).scalar() or 0
 
@@ -122,13 +130,18 @@ def report_financial_monthly(
     expenses_by_type = {}
     for e in expenses:
         expenses_by_type[e.expense_type] = expenses_by_type.get(e.expense_type, 0) + e.amount
+        
+    for inj in injections:
+        expenses_by_type["Traslado a Bancos"] = expenses_by_type.get("Traslado a Bancos", 0) + inj.amount
 
     return {
         "period": {"month": month, "year": year},
         "summary": {
             "total_offerings": round(total_offerings, 2),
             "total_incomes": round(total_incomes, 2),
-            "total_expenses": round(total_expenses, 2),
+            "total_expenses": round(total_expenses + total_injections, 2), # Se suma a los gastos totales para la vista general
+            "pure_expenses": round(total_expenses, 2),
+            "total_injections": round(total_injections, 2),
             "balance": round(balance, 2),
             "monthly_goal": round(monthly_goal, 2),
             "goal_completion_pct": round((total_offerings + total_incomes) / monthly_goal * 100, 1) if monthly_goal > 0 else 0,
@@ -139,7 +152,93 @@ def report_financial_monthly(
             "offerings": [{"date": str(o.date), "type": o.offering_type, "amount": o.amount, "donor": o.donor_name} for o in offerings],
             "incomes": [{"date": str(i.date), "type": i.income_type, "amount": i.amount, "donor": i.donor_name} for i in incomes],
             "expenses": [{"date": str(e.date), "type": e.expense_type, "amount": e.amount, "observations": e.observations} for e in expenses],
+            "injections": [{"date": str(i.date), "type": "Traslado a Bancos", "amount": i.amount, "observations": i.observations} for i in injections],
         },
+    }
+
+# ── 1.5. Reporte de Bancos (Caja General) ──
+@router.get("/financial/bank-monthly")
+def report_financial_bank_monthly(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=2000),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    from app.models.finance_model import BankDeposit, BankInjection, BankWithdrawal, BankAccount
+    
+    deposits = db.query(BankDeposit).filter(
+        extract("month", BankDeposit.date) == month,
+        extract("year", BankDeposit.date) == year,
+    ).all()
+    
+    injections = db.query(BankInjection).filter(
+        extract("month", BankInjection.date) == month,
+        extract("year", BankInjection.date) == year,
+    ).all()
+    
+    withdrawals = db.query(BankWithdrawal).filter(
+        extract("month", BankWithdrawal.date) == month,
+        extract("year", BankWithdrawal.date) == year,
+    ).all()
+    
+    accounts = db.query(BankAccount).all()
+    account_map = {acc.id: f"{acc.bank_name} - {acc.account_number}" for acc in accounts}
+    
+    total_deposits = sum(d.amount for d in deposits)
+    total_injections = sum(i.amount for i in injections)
+    total_withdrawals = sum(w.amount for w in withdrawals)
+    
+    # Agrupación de ingresos a banco (depósitos e inyecciones) y retiros
+    transactions = []
+    
+    for d in deposits:
+        transactions.append({
+            "id": f"dep-{d.id}",
+            "date": str(d.date),
+            "type": "Depósito (Directo)",
+            "account": account_map.get(d.bank_account_id, "Desconocida"),
+            "amount": d.amount,
+            "observations": d.observations,
+            "reference": d.slip_number,
+            "sign": "+"
+        })
+        
+    for inj in injections:
+        transactions.append({
+            "id": f"inj-{inj.id}",
+            "date": str(inj.date),
+            "type": "Inyección (Desde Caja)",
+            "account": account_map.get(inj.bank_account_id, "Desconocida"),
+            "amount": inj.amount,
+            "observations": inj.observations,
+            "reference": inj.slip_number,
+            "sign": "+"
+        })
+        
+    for w in withdrawals:
+        transactions.append({
+            "id": f"wd-{w.id}",
+            "date": str(w.date),
+            "type": "Retiro/Salida",
+            "account": account_map.get(w.bank_account_id, "Desconocida"),
+            "amount": w.amount,
+            "observations": w.concept,
+            "reference": w.reference_number,
+            "sign": "-"
+        })
+        
+    transactions.sort(key=lambda x: x["date"], reverse=True)
+    
+    return {
+        "period": {"month": month, "year": year},
+        "summary": {
+            "total_deposits": round(total_deposits, 2),
+            "total_injections": round(total_injections, 2),
+            "total_incomes": round(total_deposits + total_injections, 2),
+            "total_withdrawals": round(total_withdrawals, 2),
+            "net_flow": round((total_deposits + total_injections) - total_withdrawals, 2)
+        },
+        "transactions": transactions
     }
 
 

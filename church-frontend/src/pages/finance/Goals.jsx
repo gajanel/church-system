@@ -29,6 +29,9 @@ export default function Goals() {
   const [fixedExp, setFixedExp]   = useState([]);
   const [form, setForm]           = useState({ name:"", amount:"" });
 
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
+
   // ── Confirm Dialog ──
   const [confirmOpen, setConfirmOpen]     = useState(false);
   const [confirmConfig, setConfirmConfig] = useState({ title: "", content: "", onConfirm: () => {} });
@@ -156,12 +159,16 @@ export default function Goals() {
                 <TableCell>{fmtDT(f.created_at)}</TableCell>
                 <TableCell align="right" sx={{ fontWeight:600, color:"#111827", fontFamily:"ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>{fmt(f.amount)}</TableCell>
                 <TableCell align="center">
-                  <IconButton color="primary" size="small" onClick={() => handleEditOpen(f)} title="Editar">
-                    <Edit fontSize="small" />
-                  </IconButton>
-                  <IconButton color="error" size="small" onClick={() => handleDelete(f.id)} title="Eliminar">
-                    <Delete fontSize="small" />
-                  </IconButton>
+                  {isSuper && (
+                    <>
+                      <IconButton color="primary" size="small" onClick={() => handleEditOpen(f)} title="Editar">
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton color="error" size="small" onClick={() => handleDelete(f.id)} title="Eliminar">
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))

@@ -114,3 +114,22 @@ class BankInjection(Base):
 
     created_by_user = relationship("User", foreign_keys=[created_by])
     bank_account = relationship("BankAccount")
+
+
+class BankWithdrawal(Base):
+    """Salida/retiro de dinero desde una cuenta bancaria (independiente de Caja General)."""
+    __tablename__ = "bank_withdrawals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    bank_account_id = Column(Integer, ForeignKey("bank_accounts.id"), nullable=True, index=True)
+    amount = Column(Float, nullable=False)
+    date = Column(Date, nullable=False, index=True)
+    concept = Column(String(200), nullable=False)          # Descripción del retiro
+    reference_number = Column(String(100), nullable=True)  # No. cheque / referencia transferencia
+    observations = Column(String(300), nullable=True)
+    image_url = Column(String(255), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    created_by_user = relationship("User", foreign_keys=[created_by])
+    bank_account = relationship("BankAccount")

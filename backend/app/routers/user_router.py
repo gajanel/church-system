@@ -30,6 +30,8 @@ def login(request: Request, data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
         raise _auth_error
+    if not getattr(user, 'is_active', True):
+        raise HTTPException(status_code=401, detail="Usuario desactivado. Contacte a un administrador.")
     if not verify_password(data.password, user.password):
         raise _auth_error
     
@@ -55,6 +57,7 @@ def login(request: Request, data: LoginSchema, db: Session = Depends(get_db)):
             "name": user.name,
             "username": user.username,
             "is_admin": user.is_admin,
+            "is_super_admin": user.is_super_admin,
             "modules": user.modules,
             "must_change_password": user.must_change_password
         }
@@ -130,9 +133,22 @@ def create_user(data: UserCreate, db: Session = Depends(get_db), user=Depends(on
 
 @router.put("/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), user=Depends(only_admin)):
-    u = user_service.update_user(db, user_id, data.model_dump(exclude_unset=True))
-    if not u:
+    target_user = user_service.get_user_by_id(db, user_id)
+    if not target_user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    # Un admin no puede editar a otro admin (solo super admin, o a sí mismo)
+    if target_user.is_admin and not user.is_super_admin and user.id != target_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para modificar a otro administrador")
+
+    # Un admin regular no puede otorgar/quitar el rol de admin o super_admin
+    if not user.is_super_admin:
+        if data.is_admin is not None and data.is_admin != target_user.is_admin:
+            raise HTTPException(status_code=403, detail="No tienes permisos para cambiar el rol de administrador")
+        if data.is_super_admin is not None and data.is_super_admin != target_user.is_super_admin:
+            raise HTTPException(status_code=403, detail="No tienes permisos para cambiar el rol de súper administrador")
+
+    u = user_service.update_user(db, user_id, data.model_dump(exclude_unset=True))
     return u
 
 @router.delete("/users/{user_id}")
@@ -141,6 +157,10 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user=Depends(only_a
     if not target_user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
+    # Un admin no puede eliminar/desactivar a otro admin (solo super admin, y no a sí mismo)
+    if target_user.is_admin and not user.is_super_admin:
+        raise HTTPException(status_code=403, detail="No tienes permisos para desactivar a otro administrador")
+        
     username = target_user.username
     deleted = user_service.delete_user(db, user_id)
     if not deleted:
@@ -148,8 +168,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user=Depends(only_a
 
     audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
         user_id=user.id,
-        action="DELETE",
+        action="UPDATE",
         module="Gestión Usuarios",
-        description=f"Eliminó al usuario {username}"
+        description=f"Desactivó al usuario {username}"
     ))
-    return {"message": "Usuario eliminado correctamente"}
+    return {"message": "Usuario desactivado correctamente"}

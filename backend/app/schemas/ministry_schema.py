@@ -29,3 +29,17 @@ class MinistryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MinistryMemberAssign(BaseModel):
+    member_id: int
+    ministry_role_id: int
+
+class MinistryMemberResponse(BaseModel):
+    id: int
+    member_id: int
+    ministry_id: int
+    ministry_role_id: int
+    member_name: str
+    
+    class Config:
+        from_attributes = True

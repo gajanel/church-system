@@ -196,3 +196,37 @@ class BankInjectionPaginatedResponse(BaseModel):
     page: int
     size: int
     pages: int
+
+
+# ── Retiros / Salidas Bancarias ──
+class BankWithdrawalCreate(BaseModel):
+    bank_account_id: int
+    amount: float
+    date: date
+    concept: str
+    reference_number: Optional[str] = None
+    observations: Optional[str] = None
+
+class BankWithdrawalResponse(BaseModel):
+    id: int
+    bank_account_id: Optional[int] = None
+    bank_account: Optional[BankAccountResponse] = None
+    amount: float
+    date: date
+    concept: str
+    reference_number: Optional[str] = None
+    observations: Optional[str] = None
+    image_url: Optional[str] = None
+    created_by: int
+    created_at: datetime
+    created_by_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class BankWithdrawalPaginatedResponse(BaseModel):
+    items: List[BankWithdrawalResponse]
+    total: int
+    page: int
+    size: int
+    pages: int

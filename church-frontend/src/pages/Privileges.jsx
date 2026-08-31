@@ -135,13 +135,14 @@ function TabProfiles({ members, categories }) {
 }
 
 // ── TAB 2: Programa Semanal ────────────────────────────────────
-function TabSchedule({ members, categories }) {
-  const [weekStart, setWeekStart]       = useState(todayMonday);
+function TabSchedule({ members, categories, selectedDays, setSelectedDays }) {
+  const [weekStart, setWeekStart]       = useState(() => localStorage.getItem("privileges_week_start") || todayMonday);
   const [schedule, setSchedule]         = useState([]);
   const [loading, setLoading]           = useState(false);
   const [generating, setGenerating]     = useState(false);
   const [editCell, setEditCell]         = useState(null);
-  const [selectedDays, setSelectedDays] = useState(DAYS);
+  const [confirmOpen, setConfirmOpen]       = useState(false);
+  const [confirmConfig, setConfirmConfig]   = useState({ title: "", content: "", onConfirm: () => {} });
 
   const allPrivileges = Object.values(categories).flat();
   const privCatMap = {};
@@ -149,7 +150,7 @@ function TabSchedule({ members, categories }) {
 
   const toggleDay  = d => setSelectedDays(prev => prev.includes(d) ? prev.filter(x => x!==d) : [...prev, d]);
   const loadSched  = async (ws = weekStart) => { setLoading(true); try { const r = await getSchedule(ws); setSchedule(r.data); } catch { setSchedule([]); } setLoading(false); };
-  useEffect(() => { loadSched(); }, [weekStart]);
+  useEffect(() => { loadSched(); localStorage.setItem("privileges_week_start", weekStart); }, [weekStart]);
 
   const weekNav = delta => { const dt = new Date(weekStart+"T12:00:00"); dt.setDate(dt.getDate()+delta*7); setWeekStart(dt.toISOString().split("T")[0]); };
 
@@ -160,9 +161,16 @@ function TabSchedule({ members, categories }) {
     setGenerating(false);
   };
 
-  const handleClear = async () => {
-    if (!window.confirm("¿Eliminar el programa de esta semana?")) return;
-    await deleteSchedule(weekStart); setSchedule([]);
+  const handleClear = () => {
+    setConfirmConfig({
+      title: "¿Eliminar programa?",
+      content: "¿Estás seguro de que deseas eliminar el programa de esta semana? Esta acción no se puede deshacer.",
+      onConfirm: async () => {
+        await deleteSchedule(weekStart); setSchedule([]);
+        setConfirmOpen(false);
+      }
+    });
+    setConfirmOpen(true);
   };
 
   const handleManualChange = async (entry, newMemberId) => {
@@ -222,7 +230,7 @@ function TabSchedule({ members, categories }) {
         {hasSchedule && (
           <>
             <Button variant="contained" color="secondary" startIcon={<Print />} onClick={printSchedule}>Imprimir</Button>
-            <Button variant="contained" color="error" startIcon={<DeleteSweep />} onClick={handleClear}>Purgar Cronograma</Button>
+            <Button variant="contained" color="error" startIcon={<DeleteSweep />} onClick={handleClear}>Eliminar Programa</Button>
           </>
         )}
       </div>
@@ -288,6 +296,13 @@ function TabSchedule({ members, categories }) {
         </TableContainer>
       )}
       {hasSchedule && <Alert severity="info" sx={{ mt:2 }}>Toque a cualquier siervo directamente en la celda para reasignar manualmente.</Alert>}
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmConfig.title}
+        content={confirmConfig.content}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }
@@ -303,6 +318,9 @@ function TabSettings({ onUpdate }) {
   const [error, setError]             = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState({ title: "", content: "", onConfirm: () => {} });
+
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
 
   const load = async () => { setLoading(true); try { const [t,d] = await Promise.all([getPrivilegeTypes(), getServiceDaysConfig()]); setTypes(t.data); setServiceDays(d.data); } catch (err) { console.error("Error loading config:", err); } setLoading(false); };
   useEffect(() => { load(); }, []);
@@ -381,8 +399,12 @@ function TabSettings({ onUpdate }) {
                     {t.description && <p style={{ fontSize:12, color:"var(--text-secondary)", margin:"4px 0 0" }}>{t.description}</p>}
                   </div>
                   <div style={{ display:"flex", gap:4 }}>
-                    <IconButton size="small" color="primary" onClick={() => { setEditing(t); setForm({...t, ignore_ministry_day:!!t.ignore_ministry_day}); setShowForm(true); }}><Edit fontSize="small" /></IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDelete(t.id)}><Delete fontSize="small" /></IconButton>
+                    {isSuper && (
+                      <>
+                        <IconButton size="small" color="primary" onClick={() => { setEditing(t); setForm({...t, ignore_ministry_day:!!t.ignore_ministry_day}); setShowForm(true); }}><Edit fontSize="small" /></IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDelete(t.id)}><Delete fontSize="small" /></IconButton>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardBody>
@@ -432,6 +454,14 @@ export default function Privileges() {
   const [tab, setTab]         = useState(0);
   const [members, setMembers] = useState([]);
   const [categories, setCategories] = useState({});
+  const [selectedDays, setSelectedDays] = useState(() => {
+    const saved = localStorage.getItem("privileges_selected_days");
+    return saved ? JSON.parse(saved) : DAYS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("privileges_selected_days", JSON.stringify(selectedDays));
+  }, [selectedDays]);
 
   const loadData = async () => {
     try {
@@ -454,7 +484,7 @@ export default function Privileges() {
         </Tabs>
       </Paper>
       {tab === 0 && <TabProfiles members={members} categories={categories} />}
-      {tab === 1 && <TabSchedule members={members} categories={categories} />}
+      {tab === 1 && <TabSchedule members={members} categories={categories} selectedDays={selectedDays} setSelectedDays={setSelectedDays} />}
       {tab === 2 && <TabSettings onUpdate={loadData} />}
     </div>
   );

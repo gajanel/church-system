@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import {
   PersonAddOutlined, EditOutlined, PersonOffOutlined,
-  VisibilityOutlined, AccountBalanceOutlined, ChevronLeft, ChevronRight,
+  VisibilityOutlined, AccountBalanceOutlined, ChevronLeft, ChevronRight, DeleteOutlined
 } from "@mui/icons-material";
 import { Badge } from "../components/ui/Badge";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -61,6 +61,9 @@ export default function Members() {
   const [confirmOpen, setConfirmOpen]       = useState(false);
   const [confirmConfig, setConfirmConfig]   = useState({ title: "", content: "", onConfirm: () => {} });
   const [submitting, setSubmitting]         = useState(false);
+
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
 
   const load = async () => {
     setLoading(true);
@@ -189,8 +192,8 @@ export default function Members() {
               <div style={{ display:"flex", justifyContent:"center", gap:2 }}>
                 <Tooltip title="Ver detalle" placement="top" arrow><IconButton size="small" onClick={() => openDetalle(m)}><VisibilityOutlined sx={{ fontSize:16, color: "#64748b" }} /></IconButton></Tooltip>
                 <Tooltip title="Asignar a Ministerios" placement="top" arrow><IconButton size="small" onClick={() => openMinistries(m)}><AccountBalanceOutlined sx={{ fontSize:16, color: "#64748b" }} /></IconButton></Tooltip>
-                <Tooltip title="Editar registro" placement="top" arrow><IconButton size="small" onClick={() => { setEditing(m); setShowMemberForm(true); }}><EditOutlined sx={{ fontSize:16, color: "#3b82f6" }} /></IconButton></Tooltip>
-                {m.status === "active" && (
+                {isSuper && <Tooltip title="Editar registro" placement="top" arrow><IconButton size="small" onClick={() => { setEditing(m); setShowMemberForm(true); }}><EditOutlined sx={{ fontSize:16, color: "#3b82f6" }} /></IconButton></Tooltip>}
+                {isSuper && m.status === "active" && (
                   <Tooltip title="Desactivar miembro" placement="top" arrow><IconButton size="small" color="error" onClick={() => handleDeactivate(m.id)}><PersonOffOutlined sx={{ fontSize:16 }} /></IconButton></Tooltip>
                 )}
               </div>

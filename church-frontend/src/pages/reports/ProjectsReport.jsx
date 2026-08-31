@@ -4,10 +4,10 @@
  */
 import { useState } from "react";
 import { Box, Typography, Button, Grid, Card, CardContent, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, Chip, LinearProgress } from "@mui/material";
-import { Assignment, Print } from "@mui/icons-material";
+import { Assignment, Print, TableChart } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import API from "../../api/api";
-import { fmt, printProjectsPDF, ReportSkeleton } from "./utils";
+import { fmt, printProjectsPDF, exportToExcel, ReportSkeleton } from "./utils";
 
 export default function ProjectsReport() {
   const { settings } = useOutletContext();
@@ -38,9 +38,27 @@ export default function ProjectsReport() {
           Revisar Auditoría de Proyectos
         </Button>
         {data && (
-          <Button variant="outlined" startIcon={<Print />} onClick={() => printProjectsPDF(data, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
-            Compilar Hoja de Impresión
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={() => printProjectsPDF(data, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
+              Exportar PDF
+            </Button>
+            <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
+              const rows = [
+                ["INSPECCIÓN DE OBRAS MISIONERAS"],
+                ["Total Proyectos", data.summary.total_projects],
+                ["Presupuesto Total", data.summary.total_budget],
+                ["Aportado", data.summary.total_contributions],
+                ["Disponible", data.summary.total_available],
+                [],
+                ["DETALLE POR PROYECTO"],
+                ["Nombre de la Obra", "Estado", "Presupuesto", "Aportado", "Invertido", "Caja Abierta", "Avance %"],
+                ...data.projects.map(p => [p.name, p.status, p.budget, p.contributions, p.spent, p.available, p.progress])
+              ];
+              exportToExcel("Auditoria_Proyectos", rows);
+            }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
+              Exportar Excel
+            </Button>
+          </Box>
         )}
       </Box>
 

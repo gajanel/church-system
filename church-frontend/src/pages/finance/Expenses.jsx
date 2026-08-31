@@ -238,7 +238,7 @@ export default function Expenses() {
                       <Button
                         size="small"
                         startIcon={<Receipt />}
-                        onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"}${ex.document_url}`, "_blank")}
+                        onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://" + window.location.hostname + ":8000"}${ex.document_url}`, "_blank")}
                         sx={{ textTransform:"none" }}
                       >
                         Ver

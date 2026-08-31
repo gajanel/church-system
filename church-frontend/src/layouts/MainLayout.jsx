@@ -131,16 +131,22 @@ export default function MainLayout({ children }) {
     if (!user) return; // Wait until user is parsed
     if (user.is_admin) return; // Admins have full access
 
+    const ministryAccess = hasAccess("ministries") || user.modules?.some(m => m.startsWith("ministry."));
+
     // Check if the current route matches any allowed path
     const isAllowed = allPaths.some(m => 
       m.path === location.pathname || 
       (m.path !== "/" && location.pathname.startsWith(m.path))
-    );
+    ) || (location.pathname.startsWith("/ministry-workspace") && ministryAccess);
 
     if (!isAllowed) {
       if (allPaths.length > 0) {
         navigate(allPaths[0].path, { replace: true });
       }
+    }
+    
+    if (location.pathname === "/ministries/admin" && !isAdmin) {
+        navigate("/ministries", { replace: true });
     }
   }, [location.pathname, user, menuItems, navigate]);
 

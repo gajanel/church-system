@@ -4,10 +4,10 @@
  */
 import { useState, useEffect } from "react";
 import { Box, Typography, Button, Grid, Card, Autocomplete, TextField, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, Chip } from "@mui/material";
-import { Assessment, Print } from "@mui/icons-material";
+import { Assessment, Print, TableChart } from "@mui/icons-material";
 import { useOutletContext, useLocation } from "react-router-dom";
 import API from "../../api/api";
-import { fmt, printMemberContributionsPDF, ReportSkeleton } from "./utils";
+import { fmt, printMemberContributionsPDF, exportToExcel, ReportSkeleton } from "./utils";
 
 export default function MemberContributions() {
   const { settings } = useOutletContext();
@@ -75,9 +75,26 @@ export default function MemberContributions() {
           Generar Historial
         </Button>
         {data && (
-          <Button variant="outlined" startIcon={<Print />} onClick={() => printMemberContributionsPDF(data, data.member_name, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
-            Imprimir
-          </Button>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={() => printMemberContributionsPDF(data, data.member_name, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
+              Exportar PDF
+            </Button>
+            <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
+              const rows = [
+                ["HISTORIAL INDIVIDUAL DE APORTACIONES", data.member_name],
+                [],
+                ["Total Aportado", data.summary.total_contributions],
+                ["Cantidad de Registros", data.summary.count],
+                [],
+                ["DETALLE DE TRANSACCIONES"],
+                ["Fecha", "Categoría", "Tipo / Concepto", "Observaciones", "Monto"],
+                ...data.transactions.map(t => [t.date, t.category, t.type, t.observations || "—", t.amount])
+              ];
+              exportToExcel(`Aportaciones_${data.member_name.replace(/\s+/g, '_')}`, rows);
+            }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
+              Exportar Excel
+            </Button>
+          </Box>
         )}
       </Box>
 

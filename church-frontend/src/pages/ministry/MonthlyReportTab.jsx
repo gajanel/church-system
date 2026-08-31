@@ -101,6 +101,9 @@ export default function MonthlyReportTab({ ministryId }) {
   const [reports, setReports]         = useState([]);
   const [loading, setLoading]         = useState(true);
   const [submitting, setSubmitting]   = useState(false);
+
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
   const [showForm, setShowForm]       = useState(false);
   const [form, setForm]               = useState(initForm());
   const [expanded, setExpanded]       = useState("general");
@@ -555,11 +558,13 @@ export default function MonthlyReportTab({ ministryId }) {
                         <VisibilityOutlined sx={{ fontSize: 15 }} />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Eliminar">
-                      <IconButton size="small" color="error" onClick={() => handleDelete(r.id)}>
-                        <DeleteOutlined sx={{ fontSize: 15 }} />
-                      </IconButton>
-                    </Tooltip>
+                    {isSuper && (
+                      <Tooltip title="Eliminar">
+                        <IconButton size="small" color="error" onClick={() => handleDelete(r.id)}>
+                          <DeleteOutlined sx={{ fontSize: 15 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 0, padding: "8px 16px", flexWrap: "wrap" }}>

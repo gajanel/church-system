@@ -3,6 +3,8 @@
  * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
  */
 import { Box, Typography } from "@mui/material";
+import * as XLSX from "xlsx";
+import { API_URL } from "../../api/api";
 
 export const fmt = (n) => `Q ${parseFloat(n || 0).toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const nowYear = new Date().getFullYear();
@@ -102,8 +104,17 @@ const PDF_STYLES = `
 export const pdfHeader = (title, config, period = "") => {
   const name = config?.church_name || "IGLESIA";
   const addr = config?.church_address || "";
-  const logoUrl = config?.church_logo_url || "";
-  const logoHtml = logoUrl ? `<img src="${logoUrl}" onerror="this.style.display='none'" alt="Logo" />` : "";
+  
+  let logoSrc = '';
+  if (config?.church_logo_url) {
+    try {
+      logoSrc = new URL(config.church_logo_url, window.location.origin).href;
+    } catch (e) {
+      logoSrc = config.church_logo_url;
+    }
+  }
+  
+  const logoHtml = logoSrc ? `<img src="${logoSrc}" onerror="this.style.display='none'" alt="Logo" />` : "";
   return `
     <div class="pdf-header">
       <div style="width:68px"></div>
@@ -131,48 +142,180 @@ export const pdfClose = (win, config) => {
 };
 
 export const printFinancialMonthlyPDF = (data, month, year, config) => {
-  const fmtQ = n => `Q ${parseFloat(n || 0).toLocaleString("es-GT", { minimumFractionDigits: 2 })}`;
-  const period = `Período: ${MONTHS_ES[month - 1].toUpperCase()} ${year}`;
-  const win = pdfOpen("Informe Financiero Mensual", config, period);
+  const fmtQ = n => `Q ${parseFloat(n || 0).toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
+  // Format dates manually to match "viernes, 1 de mayo de 2026"
+  const formatDate = (dateStr) => {
+    try {
+      const parts = dateStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        return d.toLocaleDateString('es-GT', options);
+      }
+      return dateStr;
+    } catch { return dateStr; }
+  };
 
-  const bal = data.summary.balance;
-  const balColor = bal >= 0 ? "#16a34a" : "#dc2626";
+  let allTx = [];
+  data.transactions.offerings.forEach(o => allTx.push({ ...o, type_cat: 'offering', desc: o.type === "servicio" ? "Ofrenda" : `Ofrenda especial${o.donor ? ' - ' + o.donor : ''}` }));
+  data.transactions.incomes.forEach(i => allTx.push({ ...i, type_cat: 'income', desc: i.type + (i.donor ? ` - ${i.donor}` : '') }));
+  data.transactions.expenses.forEach(e => allTx.push({ ...e, type_cat: 'expense', desc: e.type + (e.observations ? ` - ${e.observations}` : '') }));
+
+  allTx.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  let saldoInicial = 0;
+  let diezmoManual = 0;
+  
+  allTx.forEach(t => {
+    if ((t.type_cat === 'income' || t.type_cat === 'offering') && t.desc.toLowerCase().includes("saldo inicial")) {
+      saldoInicial += parseFloat(t.amount);
+    }
+    if (t.type_cat === 'expense' && t.desc.toLowerCase().includes("diezmo")) {
+      diezmoManual += parseFloat(t.amount);
+    }
+  });
+
+  const ofrendasLimpio = parseFloat(data.summary.total_offerings);
+  const aportacionesLimpio = parseFloat(data.summary.total_incomes) - saldoInicial;
+  
+  // Diezmo es estrictamente el 10% de las ofrendas
+  const diezmoGastos = ofrendasLimpio * 0.10;
+  // Gastos es el total de gastos puros menos lo que hayan registrado manualmente como diezmo
+  const gastosLimpio = parseFloat(data.summary.pure_expenses) - diezmoManual;
+  const totalInyecciones = parseFloat(data.summary.total_injections || 0);
+  const saldoFinal = ofrendasLimpio + aportacionesLimpio + saldoInicial - diezmoGastos - gastosLimpio - totalInyecciones;
+
+  // Resolver la URL del logo para que funcione en window.open (about:blank)
+  let logoSrc = '';
+  if (config?.church_logo_url) {
+    try {
+      logoSrc = new URL(config.church_logo_url, window.location.origin).href;
+    } catch (e) {
+      logoSrc = config.church_logo_url;
+    }
+  }
+
+  const win = window.open("", "_blank");
   win.document.write(`
-    <div class="metrics-grid">
-      <div class="metric-card"><div class="label">Total Ofrendas</div><div class="value" style="color:#1d4ed8">${fmtQ(data.summary.total_offerings)}</div></div>
-      <div class="metric-card"><div class="label">Otros Ingresos</div><div class="value" style="color:#16a34a">${fmtQ(data.summary.total_incomes)}</div></div>
-      <div class="metric-card"><div class="label">Total Gastos</div><div class="value" style="color:#dc2626">${fmtQ(data.summary.total_expenses)}</div></div>
-      <div class="metric-card"><div class="label">Balance Neto</div><div class="value" style="color:${balColor}">${fmtQ(bal)}</div></div>
-    </div>`);
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Registros de Ofrendas y Gastos</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Times New Roman", Times, serif; font-size: 13px; color: #000; padding: 30px; }
+        .header-container { display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 20px; }
+        .header-text { text-align: center; }
+        .header-text h1 { font-size: 14px; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+        .header-text h2 { font-size: 13px; font-weight: normal; margin-bottom: 2px; text-transform: uppercase; }
+        .header-text h3 { font-size: 12px; font-weight: normal; text-transform: uppercase; }
+        .logo { position: absolute; right: 20px; top: 0; width: 70px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 0px; font-size: 13px; }
+        th, td { border: 1px solid #000; padding: 4px 6px; }
+        th { text-align: center; font-weight: normal; }
+        .col-reg { width: 40px; text-align: left; }
+        .col-fecha { width: 220px; text-align: right; padding-right: 15px; }
+        .col-desc { text-align: left; }
+        .col-money { width: 90px; }
+        .money-cell { display: flex; justify-content: space-between; width: 100%; border: none; padding: 0; }
+        .money-cell span:first-child { text-align: left; width: 20px; }
+        .money-cell span:last-child { text-align: right; flex-grow: 1; }
+        .summary-wrapper { display: flex; justify-content: flex-end; }
+        .summary-table { width: 270px; border-collapse: collapse; border-top: none; }
+        .summary-table td { border: 1px solid #000; padding: 4px 6px; }
+        .summary-label { text-align: right; border-top: none; border-bottom: none; }
+        @media print { body { padding: 15px; } }
+      </style>
+    </head>
+    <body>
+      <div class="header-container">
+        <div class="header-text">
+          <h1>REGISTROS DE OFRENDAS Y GASTOS</h1>
+          <h2>IGLESIA DE DIOS EVANGELIO COMPLETO</h2>
+          <h3>LEÓN DE JUDÁ, LINDA VISTA</h3>
+        </div>
+        ${logoSrc ? `<img src="${logoSrc}" onerror="this.style.display='none'" class="logo" />` : ''}
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th class="col-reg">Reg.</th>
+            <th class="col-fecha">Fecha</th>
+            <th class="col-desc">Descripcion</th>
+            <th class="col-money">Ofrendas</th>
+            <th class="col-money">Entrada</th>
+            <th class="col-money">Salida</th>
+          </tr>
+        </thead>
+        <tbody>
+  `);
 
-  if (data.transactions.offerings.length > 0) {
-    win.document.write(`<div class="section-title">Ofrendas del Período</div>
-      <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Donante</th><th class="right">Monto</th></tr></thead><tbody>`);
-    data.transactions.offerings.forEach(o => {
-      win.document.write(`<tr><td>${o.date}</td><td>${o.type === "servicio" ? "Ofrenda de Servicio" : "Ofrenda Especial"}</td><td>${o.donor || "—"}</td><td class="right green">${fmtQ(o.amount)}</td></tr>`);
-    });
-    win.document.write(`</tbody></table>`);
-  }
+  allTx.forEach((t, i) => {
+    let oStr = "", eStr = "", sStr = "";
+    
+    if (t.type_cat === 'offering') oStr = `<div class="money-cell"><span>Q</span><span>${parseFloat(t.amount).toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>`;
+    else if (t.type_cat === 'income') eStr = `<div class="money-cell"><span>Q</span><span>${parseFloat(t.amount).toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>`;
+    else if (t.type_cat === 'expense') sStr = `<div class="money-cell"><span>Q</span><span>${parseFloat(t.amount).toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div>`;
 
-  if (data.transactions.incomes.length > 0) {
-    win.document.write(`<div class="section-title">Ingresos Adicionales</div>
-      <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Origen</th><th class="right">Monto</th></tr></thead><tbody>`);
-    data.transactions.incomes.forEach(i => {
-      win.document.write(`<tr><td>${i.date}</td><td>${i.type}</td><td>${i.donor || "—"}</td><td class="right green">${fmtQ(i.amount)}</td></tr>`);
-    });
-    win.document.write(`</tbody></table>`);
-  }
+    win.document.write(`
+      <tr>
+        <td class="col-reg">${i + 1}</td>
+        <td class="col-fecha">${formatDate(t.date)}</td>
+        <td class="col-desc">${t.desc}</td>
+        <td>${oStr}</td>
+        <td>${eStr}</td>
+        <td>${sStr}</td>
+      </tr>
+    `);
+  });
 
-  if (data.transactions.expenses.length > 0) {
-    win.document.write(`<div class="section-title">Egresos / Gastos</div>
-      <table><thead><tr><th>Fecha</th><th>Rubro</th><th>Observaciones</th><th class="right">Monto</th></tr></thead><tbody>`);
-    data.transactions.expenses.forEach(e => {
-      win.document.write(`<tr><td>${e.date}</td><td>${e.type}</td><td>${e.observations || "—"}</td><td class="right red">${fmtQ(e.amount)}</td></tr>`);
-    });
-    win.document.write(`</tbody></table>`);
-  }
+  win.document.write(`
+        </tbody>
+      </table>
+      <div class="summary-wrapper">
+        <table class="summary-table">
+          <tr>
+            <td class="summary-label">Saldo Inicial(+)</td>
+            <td><div class="money-cell"><span>Q</span><span>${saldoInicial.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></td>
+          </tr>
+          <tr>
+            <td class="summary-label">Ofrendas (+)</td>
+            <td><div class="money-cell"><span>Q</span><span>${ofrendasLimpio.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></td>
+          </tr>
+          <tr>
+            <td class="summary-label">Aportaciones(+)</td>
+            <td><div class="money-cell"><span>Q</span><span>${aportacionesLimpio.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></td>
+          </tr>
+          <tr>
+            <td class="summary-label">Diezmo(-)</td>
+            <td><div class="money-cell"><span>Q</span><span>${diezmoGastos.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></td>
+          </tr>
+          <tr>
+            <td class="summary-label">Gastos(-)</td>
+            <td><div class="money-cell"><span>Q</span><span>${gastosLimpio.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></td>
+          </tr>
+          ${totalInyecciones > 0 ? `
+          <tr>
+            <td class="summary-label" style="color: #2563eb;">Traslado a Bancos(-)</td>
+            <td><div class="money-cell" style="color: #2563eb;"><span>Q</span><span>${totalInyecciones.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></td>
+          </tr>
+          ` : ''}
+          <tr class="total-row">
+            <td class="summary-label" style="color: inherit">En caja:</td>
+            <td><div class="money-cell"><span>Q</span><span>${saldoFinal.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2})}</span></div></td>
+          </tr>
+        </table>
+      </div>
+    </body>
+    </html>
+  `);
 
-  pdfClose(win, config);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); win.close(); }, 500);
 };
 
 export const printFinancialAnnualPDF = (data, year, config) => {
@@ -417,4 +560,11 @@ export const printAttendancePDF = (data, month, year, config) => {
   </tr></tbody></table>`);
 
   pdfClose(win, config);
+};
+
+export const exportToExcel = (filename, data) => {
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+  XLSX.writeFile(wb, `${filename}.xlsx`);
 };

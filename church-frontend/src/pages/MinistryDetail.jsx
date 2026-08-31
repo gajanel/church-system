@@ -43,6 +43,9 @@ export default function MinistryDetail() {
   const navigate           = useNavigate();
   const [mid, setMid]      = useState(null);   // resolved numeric ID
 
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
+
   const [tab, setTab]           = useState(0);
   const [config, setConfig]     = useState(null);
   const [ministry, setMinistry] = useState(null);
@@ -227,7 +230,7 @@ export default function MinistryDetail() {
                   {f.type==="expense"?"-":"+"} Q{f.amount.toFixed(2)}
                 </TableCell>
                 <TableCell align="right">
-                  <IconButton size="small" color="error" onClick={() => delFin(f.id)}><DeleteOutlined sx={{ fontSize:14 }} /></IconButton>
+                  {isSuper && <IconButton size="small" color="error" onClick={() => delFin(f.id)}><DeleteOutlined sx={{ fontSize:14 }} /></IconButton>}
                 </TableCell>
               </TableRow>
             )}
@@ -270,9 +273,11 @@ export default function MinistryDetail() {
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                   <Badge variant="info" size="sm">{sess.records?.filter(r => r.present).length || 0} presentes</Badge>
-                  <IconButton size="small" color="error" onClick={async () => { if (!confirm("¿Eliminar sesión?")) return; await deleteAttendanceSession(mid, sess.id); loadTab(1); }}>
-                    <DeleteOutlined sx={{ fontSize:14 }} />
-                  </IconButton>
+                  {isSuper && (
+                    <IconButton size="small" color="error" onClick={async () => { if (!confirm("¿Eliminar sesión?")) return; await deleteAttendanceSession(mid, sess.id); loadTab(1); }}>
+                      <DeleteOutlined sx={{ fontSize:14 }} />
+                    </IconButton>
+                  )}
                 </div>
               </div>
               {sess.records?.length > 0 && (
@@ -322,8 +327,8 @@ export default function MinistryDetail() {
                     {plan.description && <p style={{ fontSize:12, color:"var(--text-secondary)", marginTop:4 }}>{plan.description}</p>}
                   </div>
                   <div style={{ display:"flex", gap:4 }}>
-                    <IconButton size="small" onClick={() => openEditPlan(plan)}><EditOutlined sx={{ fontSize:14 }} /></IconButton>
-                    <IconButton size="small" color="error" onClick={() => delPlan(plan.id)}><DeleteOutlined sx={{ fontSize:14 }} /></IconButton>
+                    {isSuper && <IconButton size="small" onClick={() => openEditPlan(plan)}><EditOutlined sx={{ fontSize:14 }} /></IconButton>}
+                    {isSuper && <IconButton size="small" color="error" onClick={() => delPlan(plan.id)}><DeleteOutlined sx={{ fontSize:14 }} /></IconButton>}
                   </div>
                 </div>
                 <div style={{ padding:"10px 14px" }}>
@@ -345,7 +350,7 @@ export default function MinistryDetail() {
                       <span style={{ flex:1, fontSize:13, color: task.completed ? "var(--text-muted)" : "var(--text-primary)", textDecoration: task.completed ? "line-through" : "none" }}>{task.title}</span>
                       {task.assigned_to && <span style={{ fontSize:11, color:"var(--text-muted)" }}>{task.assigned_to}</span>}
                       {task.due_date && <span style={{ fontSize:11, color:"var(--text-muted)" }}>{task.due_date}</span>}
-                      <IconButton size="small" onClick={() => handleDelTask(plan.id, task.id)}><DeleteOutlined sx={{ fontSize:12 }} /></IconButton>
+                      {isSuper && <IconButton size="small" onClick={() => handleDelTask(plan.id, task.id)}><DeleteOutlined sx={{ fontSize:12 }} /></IconButton>}
                     </div>
                   ))}
                   {/* Add task inline */}
@@ -411,11 +416,13 @@ export default function MinistryDetail() {
                     style={{ width:"100%", height:140, objectFit:"cover", display:"block", opacity:0.92 }}
                   />
                   <div style={{ position:"absolute", top:4, right:4 }}>
-                    <Tooltip title="Eliminar">
-                      <IconButton size="small" onClick={() => delPhoto(item.id)} sx={{ bgcolor:"rgba(0,0,0,0.55)", color:"#fff", "&:hover":{ bgcolor:"rgba(220,38,38,0.85)" }, padding:"4px" }}>
-                        <DeleteOutlined sx={{ fontSize:13 }} />
-                      </IconButton>
-                    </Tooltip>
+                    {isSuper && (
+                      <Tooltip title="Eliminar">
+                        <IconButton size="small" onClick={() => delPhoto(item.id)} sx={{ bgcolor:"rgba(0,0,0,0.55)", color:"#fff", "&:hover":{ bgcolor:"rgba(220,38,38,0.85)" }, padding:"4px" }}>
+                          <DeleteOutlined sx={{ fontSize:13 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </div>
                   {item.caption && (
                     <div style={{ padding:"4px 8px", fontSize:11, color:"var(--text-secondary)", background:"#fff", borderTop:"1px solid var(--border)" }}>{item.caption}</div>
