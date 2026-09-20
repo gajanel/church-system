@@ -32,10 +32,13 @@ export default function SettingsLayout() {
 
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => { 
-    loadSettings(); 
+  useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
     setCurrentUser(storedUser);
+    getSettings()
+      .then(res => setData(res.data))
+      .catch(() => setMsg({ type: "error", text: "No se pudo cargar la configuración." }))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -43,6 +46,8 @@ export default function SettingsLayout() {
       const isAdmin = currentUser.is_admin || currentUser.is_super_admin;
       if (!isAdmin && location.pathname !== "/settings" && location.pathname !== "/settings/" && !location.pathname.startsWith("/settings/security")) {
         navigate("/settings/security", { replace: true });
+      } else if (location.pathname.startsWith("/settings/data") && !currentUser.is_super_admin) {
+        navigate("/settings", { replace: true });
       }
     }
   }, [location.pathname, currentUser, navigate]);
@@ -75,7 +80,7 @@ export default function SettingsLayout() {
       // Aplicar branding en tiempo real
       document.documentElement.style.setProperty('--color-primary', payloadToSave.primary_color);
       document.title = payloadToSave.church_name || "Sistema de Gestión Ministerial";
-      showMsg("success", "✅ Configuración actualizada correctamente.");
+      showMsg("success", "Configuración actualizada correctamente.");
       return true;
     } catch {
       showMsg("error", "Error al guardar los cambios.");

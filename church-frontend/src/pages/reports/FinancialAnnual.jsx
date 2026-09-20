@@ -2,7 +2,7 @@
  * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
  * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
  */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Box, Typography, Button, Grid, Card, CardContent, Select, MenuItem, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper } from "@mui/material";
 import { Assessment, Print, TableChart } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
@@ -32,7 +32,7 @@ export default function FinancialAnnual() {
         p: 2, mb: 4, bgcolor: "white", borderRadius: 1, 
         border: "1px solid #e5e7eb" 
       }}>
-        <Typography variant="subtitle2" fontWeight={700} color="text.secondary" sx={{ mr: 2 }}>Parámetros de Auditoría:</Typography>
+        <Typography variant="subtitle2" fontWeight={700} color="text.secondary" sx={{ mr: 2 }}>Parámetros del reporte:</Typography>
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Periodo Fiscal</InputLabel>
           <Select value={year} label="Periodo Fiscal" onChange={e => setYear(+e.target.value)}>
@@ -84,7 +84,7 @@ export default function FinancialAnnual() {
         </Box>
       ) : (
         <Box id="report-fin-annual">
-          <Typography variant="h5" fontWeight="800" mb={3} color="#0F172A">📈 Resumen Consolidado Anual — {data.year}</Typography>
+          <Typography variant="h5" fontWeight="800" mb={3} color="#0F172A">Resumen consolidado anual — {data.year}</Typography>
 
           <Grid container spacing={3} mb={4}>
             {[

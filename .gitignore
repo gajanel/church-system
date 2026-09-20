@@ -1,0 +1,23 @@
+.env
+.env.*
+!.env.example
+
+node_modules/
+**/node_modules/
+**/.vite/
+**/dist/
+**/build/
+
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+Instalador_SIGDEM/
+Instalador_SIGDEM.zip
+config system interface.txt

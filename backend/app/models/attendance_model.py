@@ -18,6 +18,8 @@ class Attendance(Base):
     women = Column(Integer, default=0)
     youth = Column(Integer, default=0)
     children = Column(Integer, default=0)
+    teens = Column(Integer, default=0)
+    seniors = Column(Integer, default=0)
     visitors = Column(Integer, default=0)
     converts = Column(Integer, default=0)
     
@@ -40,6 +42,8 @@ class AttendanceRecord(Base):
     person_type = Column(String(50), nullable=False) # Miembro, Visitante, Adherente, Convertido
     person_name = Column(String(150), nullable=True) # Used for visitors/adherents
     is_convert = Column(Boolean, default=False)
+    gender = Column(String(20), nullable=True)
+    age_group = Column(String(20), nullable=True)
     ministry_ids = Column(String(200), default="[]")
     
     # Relationships

@@ -149,7 +149,7 @@ export default function MonthlyReportTab({ ministryId }) {
       if (form.financial_file) fd.append("financial_report", form.financial_file);
 
       await createMonthlyReport(ministryId, fd);
-      setSuccess("✅ Reporte guardado exitosamente.");
+      setSuccess("Reporte guardado exitosamente.");
       setForm(initForm());
       setShowForm(false);
       load();

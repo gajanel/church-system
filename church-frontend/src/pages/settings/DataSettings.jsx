@@ -20,7 +20,7 @@ export default function DataSettings() {
     setBackupLoading(true);
     try {
       await downloadBackup();
-      showMsg("success", "✅ Backup descargado correctamente.");
+      showMsg("success", "Respaldo descargado correctamente.");
     } catch {
       showMsg("error", "Error al generar el backup.");
     } finally {
@@ -52,7 +52,7 @@ export default function DataSettings() {
         if (!res.ok) throw new Error(result.detail || "Error en restauración");
 
         const total = Object.values(result.restored_rows || {}).reduce((a, b) => a + b, 0);
-        showMsg("success", `✅ Restauración completada: ${total} registros restaurados. Recarga la página para ver los cambios.`);
+        showMsg("success", `Restauración completada: ${total} registros restaurados. Recarga la página para ver los cambios.`);
       } catch (err) {
         showMsg("error", err.message || "Error durante la restauración.");
       } finally {

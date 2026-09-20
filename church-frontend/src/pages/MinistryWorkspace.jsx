@@ -50,7 +50,7 @@ export default function MinistryWorkspace() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isAdmin = user?.is_admin;
+  const isAdmin = user?.is_admin || user?.is_super_admin;
 
   const load = async () => {
     setLoading(true);

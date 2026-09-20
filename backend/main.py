@@ -15,6 +15,8 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
 
+load_dotenv()
+
 # ── Detectar entorno ──────────────────────────────────────────────────
 ENV = os.getenv("ENV", "development").lower()
 IS_PRODUCTION = ENV == "production"
@@ -47,6 +49,7 @@ from migrations import migrate_fix_ministry_delete
 from migrations import migrate_audit_device
 from migrations import migrate_ministry_monthly_reports
 from migrations import migrate_bank_withdrawal
+from migrations import migrate_attendance_demographics
 
 
 load_dotenv()
@@ -76,6 +79,7 @@ def create_initial_admin(db: Session):
             email="admin@sistema.com",
             password=hash_password("admin123"),
             is_admin=True,
+            is_super_admin=True,
             modules=["members", "ministries", "finance", "projects", "events", "reports", "users", "settings"],
             must_change_password=True
         )
@@ -101,6 +105,7 @@ async def lifespan(app: FastAPI):
         migrate_audit_device.migrate()
         migrate_ministry_monthly_reports.migrate(engine)
         migrate_bank_withdrawal.migrate(engine)
+        migrate_attendance_demographics.migrate(engine)
         
         # Crear admin inicial si no existe
         db = SessionLocal()
@@ -120,7 +125,7 @@ _redoc_url = None if IS_PRODUCTION else "/api/redoc"
 
 app = FastAPI(
     title="Church System API",
-    version="1.0.0",
+    version="1.1.0",
     description="Sistema de Gestión de Iglesia — API REST",
     docs_url=_docs_url,
     redoc_url=_redoc_url,
@@ -202,7 +207,7 @@ def health_check():
     # SEC-05: No exponer versión del sistema en producción
     response = {"status": status, "database": db_status}
     if not IS_PRODUCTION:
-        response["version"] = "1.0.0"
+        response["version"] = "1.1.0"
     return response
 
 
@@ -219,15 +224,18 @@ if os.path.exists(frontend_path):
     
     @app.get("/{full_path:path}", include_in_schema=False)
     def serve_react_app(full_path: str):
-        file_path = os.path.join(frontend_path, full_path)
+        root_path = os.path.realpath(frontend_path)
+        file_path = os.path.realpath(os.path.join(root_path, full_path))
+        if os.path.commonpath([root_path, file_path]) != root_path:
+            return JSONResponse(status_code=404, content={"detail": "Archivo no encontrado"})
         if os.path.isfile(file_path):
             return FileResponse(file_path)
         return FileResponse(os.path.join(frontend_path, "index.html"))
 else:
     @app.get("/", tags=["Sistema"])
     def root():
-        return {"message": "Sistema de gestión de iglesia — OK (Frontend no encontrado)", "version": "1.0.0"}
+        return {"message": "Sistema de gestión de iglesia — OK (Frontend no encontrado)", "version": "1.1.0"}
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

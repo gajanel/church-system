@@ -36,7 +36,6 @@
 }
 
 .icon {
-  font-size: 14px;
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -45,6 +44,7 @@
   align-items: center;
   justify-content: center;
 }
+.icon svg { width: 18px; height: 18px; }
 
 .success { border-left: 3px solid var(--color-success); }
 .error   { border-left: 3px solid var(--color-error); }
@@ -58,11 +58,11 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 14px;
   padding: 0;
   line-height: 1;
   flex-shrink: 0;
 }
+.close svg { width: 16px; height: 16px; }
 .close:hover { color: var(--text-primary); }
 
 @keyframes slideIn {

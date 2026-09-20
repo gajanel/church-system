@@ -40,14 +40,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=401, detail="Usuario no encontrado")
+    if not user.is_active:
+        raise HTTPException(status_code=401, detail="Usuario desactivado")
     return user
 
 def only_admin(current_user=Depends(get_current_user)):
-    if not current_user.is_admin:
+    if not (current_user.is_admin or current_user.is_super_admin):
         raise HTTPException(status_code=403, detail="No autorizado")
     return current_user
 
 def only_finance(current_user=Depends(get_current_user)):
-    if not current_user.is_admin and "finance" not in (current_user.modules or []):
+    if not (current_user.is_admin or current_user.is_super_admin) and "finance" not in (current_user.modules or []):
         raise HTTPException(status_code=403, detail="No autorizado")
     return current_user

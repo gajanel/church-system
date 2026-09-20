@@ -9,6 +9,7 @@ import { Box, CircularProgress } from "@mui/material";
 // Layouts and Core Components (kept static for stability)
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { API_URL } from "./api/api";
 
 // Lazy Loaded Pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -76,7 +77,7 @@ function App() {
     // 2. Dynamic Branding Transformation
     const applyBranding = async () => {
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+        const baseUrl = API_URL;
         const response = await fetch(`${baseUrl}/settings/public`);
         if (!response.ok) return;
         const data = await response.json();
@@ -90,7 +91,7 @@ function App() {
           }
           document.title = data.church_name || "Sistema de Gestión Ministerial";
         }
-      } catch (error) {
+      } catch {
         // Silencioso
       }
     };

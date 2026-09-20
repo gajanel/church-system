@@ -516,20 +516,23 @@ export const printAttendancePDF = (data, month, year, config) => {
   const ct = data.category_totals;
   win.document.write(`<div class="section-title">Totales por Categoría</div>
     <table><thead><tr>
-      <th>Caballeros</th><th>Damas</th><th>Jóvenes</th><th>Niños</th><th>Visitas</th>
+      <th>Niños<br>4-12</th><th>Adolescentes<br>13-17</th><th>Jóvenes<br>18-35</th><th>Mujeres<br>36-60</th><th>Hombres<br>36-60</th><th>Adulto mayor<br>61+</th><th>Visitas</th>
     </tr></thead><tbody><tr>
-      <td class="center bold blue">${ct.men}</td>
-      <td class="center bold">${ct.women}</td>
-      <td class="center bold">${ct.youth}</td>
       <td class="center bold">${ct.children}</td>
+      <td class="center bold">${ct.teens}</td>
+      <td class="center bold">${ct.youth}</td>
+      <td class="center bold">${ct.women}</td>
+      <td class="center bold blue">${ct.men}</td>
+      <td class="center bold">${ct.seniors}</td>
       <td class="center bold">${ct.visitors}</td>
     </tr></tbody></table>`);
 
   win.document.write(`<div class="section-title">Historial Detallado del Mes</div>
     <table><thead><tr>
       <th>Fecha</th><th>Tipo de Culto</th>
-      <th class="center">Cab.</th><th class="center">Dam.</th>
-      <th class="center">Jóv.</th><th class="center">Niñ.</th>
+      <th class="center">Niñ.</th><th class="center">Adol.</th>
+      <th class="center">Jóv.</th><th class="center">Muj.</th>
+      <th class="center">Hom.</th><th class="center">A. may.</th>
       <th class="center">Vis.</th><th class="center">Conv.</th>
       <th class="center">Total</th>
     </tr></thead><tbody>`);
@@ -538,10 +541,12 @@ export const printAttendancePDF = (data, month, year, config) => {
     win.document.write(`<tr>
       <td>${r.date}</td>
       <td>${r.service_type}</td>
-      <td class="center">${r.men}</td>
-      <td class="center">${r.women}</td>
-      <td class="center">${r.youth}</td>
       <td class="center">${r.children}</td>
+      <td class="center">${r.teens}</td>
+      <td class="center">${r.youth}</td>
+      <td class="center">${r.women}</td>
+      <td class="center">${r.men}</td>
+      <td class="center">${r.seniors}</td>
       <td class="center">${r.visitors}</td>
       <td class="center red">${r.converts}</td>
       <td class="center bold">${r.total}</td>
@@ -550,10 +555,12 @@ export const printAttendancePDF = (data, month, year, config) => {
 
   win.document.write(`<tr class="totals-row">
     <td colspan="2" class="bold">TOTALES DEL MES</td>
-    <td class="center">${ct.men}</td>
-    <td class="center">${ct.women}</td>
-    <td class="center">${ct.youth}</td>
     <td class="center">${ct.children}</td>
+    <td class="center">${ct.teens}</td>
+    <td class="center">${ct.youth}</td>
+    <td class="center">${ct.women}</td>
+    <td class="center">${ct.men}</td>
+    <td class="center">${ct.seniors}</td>
     <td class="center">${ct.visitors}</td>
     <td class="center red">${s.total_converts}</td>
     <td class="center bold blue">${s.grand_total}</td>

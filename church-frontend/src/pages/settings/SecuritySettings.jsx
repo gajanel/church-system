@@ -25,7 +25,7 @@ export default function SecuritySettings() {
     setPwMsg({ type: null, text: null });
     try {
       await changePassword({ current_password, new_password });
-      setPwMsg({ type: "success", text: "✅ Contraseña cambiada correctamente." });
+      setPwMsg({ type: "success", text: "Contraseña cambiada correctamente." });
       setPwData({ current_password: "", new_password: "", confirm: "" });
     } catch (err) {
       setPwMsg({ type: "error", text: err?.response?.data?.detail || "Error al cambiar contraseña. Verifica tu clave actual." });

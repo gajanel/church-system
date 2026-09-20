@@ -33,7 +33,7 @@ export default function MembersReport() {
         p: 2, mb: 4, bgcolor: "white", borderRadius: 1, 
         border: "1px solid #e5e7eb" 
       }}>
-        <Typography variant="subtitle2" fontWeight={700} color="text.secondary" sx={{ mr: 2 }}>Auditoría Demográfica:</Typography>
+        <Typography variant="subtitle2" fontWeight={700} color="text.secondary" sx={{ mr: 2 }}>Consulta de miembros:</Typography>
         
         <Box sx={{ flexGrow: 1 }} />
         
@@ -74,7 +74,7 @@ export default function MembersReport() {
         </Box>
       ) : (
         <Box id="report-members">
-          <Typography variant="h5" fontWeight="800" mb={3} color="#0F172A">👥 Informe Demográfico de Miembros</Typography>
+          <Typography variant="h5" fontWeight="800" mb={3} color="#0F172A">Informe demográfico de miembros</Typography>
 
           <Grid container spacing={3} mb={4} justifyContent="center">
             {[

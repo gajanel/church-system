@@ -37,7 +37,7 @@ def report_attendance(
         return {
             "period": {"month": month, "year": year},
             "summary": {"total_records": 0, "grand_total": 0, "avg_attendance": 0, "total_converts": 0},
-            "category_totals": {"men": 0, "women": 0, "youth": 0, "children": 0, "visitors": 0},
+            "category_totals": {"men": 0, "women": 0, "youth": 0, "children": 0, "teens": 0, "seniors": 0, "visitors": 0},
             "records": []
         }
 
@@ -45,6 +45,8 @@ def report_attendance(
     total_women = sum(r.women for r in records)
     total_youth = sum(r.youth for r in records)
     total_children = sum(r.children for r in records)
+    total_teens = sum(r.teens for r in records)
+    total_seniors = sum(r.seniors for r in records)
     total_visitors = sum(r.visitors for r in records)
     total_converts = sum(r.converts for r in records)
     
@@ -64,6 +66,8 @@ def report_attendance(
             "women": total_women,
             "youth": total_youth,
             "children": total_children,
+            "teens": total_teens,
+            "seniors": total_seniors,
             "visitors": total_visitors,
         },
         "records": [
@@ -75,6 +79,8 @@ def report_attendance(
                 "women": r.women,
                 "youth": r.youth,
                 "children": r.children,
+                "teens": r.teens,
+                "seniors": r.seniors,
                 "visitors": r.visitors,
                 "converts": r.converts,
                 "total": r.total,

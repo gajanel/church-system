@@ -424,7 +424,7 @@
 .detailBanner {
   margin: 0 32px 20px;
   padding: 14px 20px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  background: var(--color-primary);
   border-radius: 10px;
   display: flex;
   align-items: center;

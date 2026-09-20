@@ -6,14 +6,25 @@ from app.models.attendance_model import Attendance, AttendanceRecord
 from app.models.member_model import Member
 from app.schemas.attendance_schema import AttendanceCreate, AttendanceUpdate
 from app.models.member_ministry_model import MemberMinistry
-from datetime import date
+from app.utils.attendance_demographics import age_group as age_group_for_member, normalize_gender
 import json
 
 def get_all(db: Session):
     return db.query(Attendance).order_by(Attendance.created_at.desc()).all()
 
-def _calculate_aggregates(db: Session, records_data):
-    men = women = youth = children = visitors = converts = 0
+def _classify_record(db: Session, record, attendance_date):
+    gender = normalize_gender(getattr(record, "gender", None))
+    age_group = getattr(record, "age_group", None)
+    if record.person_type == "Miembro" and record.member_id:
+        member = db.query(Member).filter(Member.id == record.member_id).first()
+        if member:
+            gender = normalize_gender(member.gender)
+            age_group = age_group_for_member(member.birth_date, attendance_date)
+    return gender, age_group
+
+
+def _calculate_aggregates(db: Session, records_data, attendance_date):
+    men = women = youth = children = teens = seniors = visitors = converts = 0
     total = len(records_data)
     
     for r in records_data:
@@ -22,34 +33,32 @@ def _calculate_aggregates(db: Session, records_data):
             
         if r.person_type == "Visitante":
             visitors += 1
-        elif r.person_type == "Miembro" and r.member_id:
-            member = db.query(Member).filter(Member.id == r.member_id).first()
-            if member:
-                age = 30
-                if member.birth_date:
-                    today = date.today()
-                    age = today.year - member.birth_date.year - ((today.month, today.day) < (member.birth_date.month, member.birth_date.day))
-                
-                if age < 13:
-                    children += 1
-                elif age < 30:
-                    youth += 1
-                else:
-                    if member.gender == "Masculino":
-                        men += 1
-                    else:
-                        women += 1
 
-    return men, women, youth, children, visitors, converts, total
+        gender, age_group = _classify_record(db, r, attendance_date)
+        if age_group == "Niño":
+            children += 1
+        elif age_group == "Adolescente":
+            teens += 1
+        elif age_group == "Joven":
+            youth += 1
+        elif age_group == "Adulto Mayor":
+            seniors += 1
+        elif gender == "Masculino":
+            men += 1
+        elif gender == "Femenino":
+            women += 1
+
+    return men, women, youth, children, teens, seniors, visitors, converts, total
 
 def create(db: Session, data: AttendanceCreate):
     records_data = data.records or []
-    men, women, youth, children, visitors, converts, total = _calculate_aggregates(db, records_data)
+    men, women, youth, children, teens, seniors, visitors, converts, total = _calculate_aggregates(db, records_data, data.date)
     
     db_obj = Attendance(
         date=data.date,
         service_type=data.service_type,
         men=men, women=women, youth=youth, children=children,
+        teens=teens, seniors=seniors,
         visitors=visitors, converts=converts, total=total,
         notes=data.notes
     )
@@ -57,6 +66,7 @@ def create(db: Session, data: AttendanceCreate):
     db.flush()
     
     for r in records_data:
+        gender, age_group = _classify_record(db, r, data.date)
         m_ids = []
         if r.person_type == "Miembro" and r.member_id:
             mms = db.query(MemberMinistry).filter(MemberMinistry.member_id == r.member_id).all()
@@ -68,6 +78,8 @@ def create(db: Session, data: AttendanceCreate):
             person_type=r.person_type,
             person_name=r.person_name,
             is_convert=r.is_convert,
+            gender=gender,
+            age_group=age_group,
             ministry_ids=json.dumps(m_ids)
         )
         db.add(rec)
@@ -88,6 +100,8 @@ def update(db: Session, attendance_id: int, data: AttendanceUpdate):
     if data.records is not None:
         db.query(AttendanceRecord).filter(AttendanceRecord.attendance_id == attendance_id).delete()
         for r in data.records:
+            record_date = data.date or db_obj.date
+            gender, age_group = _classify_record(db, r, record_date)
             m_ids = []
             if r.person_type == "Miembro" and r.member_id:
                 mms = db.query(MemberMinistry).filter(MemberMinistry.member_id == r.member_id).all()
@@ -99,15 +113,21 @@ def update(db: Session, attendance_id: int, data: AttendanceUpdate):
                 person_type=r.person_type,
                 person_name=r.person_name,
                 is_convert=r.is_convert,
+                gender=gender,
+                age_group=age_group,
                 ministry_ids=json.dumps(m_ids)
             )
             db.add(rec)
         
-        men, women, youth, children, visitors, converts, total = _calculate_aggregates(db, data.records)
+        men, women, youth, children, teens, seniors, visitors, converts, total = _calculate_aggregates(
+            db, data.records, data.date or db_obj.date
+        )
         db_obj.men = men
         db_obj.women = women
         db_obj.youth = youth
         db_obj.children = children
+        db_obj.teens = teens
+        db_obj.seniors = seniors
         db_obj.visitors = visitors
         db_obj.converts = converts
         db_obj.total = total

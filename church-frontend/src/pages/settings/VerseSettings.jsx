@@ -30,7 +30,7 @@ export default function VerseSettings() {
         {data.bible_verse && (
           <Box sx={{
             mt: 3, p: 3, borderRadius: 1,
-            background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+            background: "var(--surface-card)",
             border: "1px solid #e5e7eb",
             borderLeft: "4px solid #0F172A",
           }}>

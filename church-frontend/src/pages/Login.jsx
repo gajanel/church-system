@@ -4,13 +4,12 @@
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { CircularProgress, Collapse, Alert } from "@mui/material";
+import { CircularProgress, Collapse } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useToast } from "../components/ui/Toast";
 import { getPublicSettings } from "../api/settings";
 import { API_URL } from "../api/api";
 import styles from "./Login.module.css";
-import logoSigdem from "../assets/logo-sigdem.png";
 
 function Login() {
   const [username, setUsername]               = useState("");
@@ -18,6 +17,7 @@ function Login() {
   const [needsPasswordChange, setNeedsPwChange] = useState(false);
   const [newPassword, setNewPassword]         = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [refreshToSave, setRefreshToSave]     = useState(null);
   const [tokenToSave, setTokenToSave]         = useState(null);
   const [userToSave, setUserToSave]           = useState(null);
   const [showPassword, setShowPassword]       = useState(false);
@@ -36,6 +36,7 @@ function Login() {
   }, [navigate]);
 
   const handleLogin = async () => {
+    if (loading) return;
     if (!username || !password) { setError("Ingresa tu usuario y contraseña"); return; }
     setLoading(true); setError("");
     try {
@@ -51,6 +52,7 @@ function Login() {
       }
       if (data.user.must_change_password) {
         setTokenToSave(data.access_token);
+        setRefreshToSave(data.refresh_token);
         setUserToSave(data.user);
         setNeedsPwChange(true);
       } else {
@@ -64,6 +66,7 @@ function Login() {
   };
 
   const handlePwChange = async () => {
+    if (loading) return;
     const rx = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
     if (!rx.test(newPassword)) { setError("8+ caracteres, mayúscula, minúscula, número y símbolo."); return; }
     if (newPassword !== confirmPassword) { setError("Las contraseñas no coinciden"); return; }
@@ -76,6 +79,7 @@ function Login() {
       });
       if (!res.ok) { const d = await res.json(); setError(d.detail || "Error al cambiar contraseña"); setLoading(false); return; }
       localStorage.setItem("token", tokenToSave);
+      if (refreshToSave) localStorage.setItem("refresh_token", refreshToSave);
       localStorage.setItem("user",  JSON.stringify({ ...userToSave, must_change_password: false }));
       navigate("/");
     } catch { setError("Error de conexión."); }

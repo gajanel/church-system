@@ -179,7 +179,7 @@ export default function BrandSettings() {
             try {
               await factoryReset();
               await loadSettings();
-              showMsg("success", "✅ Configuración de marca reseteada.");
+              showMsg("success", "Configuración de marca restablecida.");
             } catch { showMsg("error", "Error al resetear."); }
           }}
         >

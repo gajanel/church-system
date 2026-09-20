@@ -1,8 +1,4 @@
-/* ════════════════════════════════════════════════════════
-   MainLayout.module.css
-   Corporate Flat Design — Dense & Professional
-   Dark sidebar · White topbar · Collapsible
-   ════════════════════════════════════════════════════════ */
+/* Main application shell */
 
 /* ── Shell ── */
 .shell {
@@ -25,9 +21,10 @@
   display: flex;
   flex-direction: column;
   z-index: 200;
-  border-right: none;
+  border-right: 1px solid #DDE3EA;
   overflow: hidden;
-  transition: width var(--transition-slow);
+  box-shadow: none;
+  transition: width var(--transition-slow), transform var(--transition-slow);
   flex-shrink: 0;
 }
 
@@ -35,12 +32,23 @@
   width: var(--sidebar-collapsed-width);
 }
 
+.sidebar.collapsed .logo {
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.sidebar.collapsed .navList {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
 /* Mobile overlay */
 .overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(23, 32, 51, 0.42);
   z-index: 199;
 }
 
@@ -48,20 +56,22 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: 0 14px;
-  height: var(--topbar-height);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 11px;
+  padding: 0 18px;
+  height: 70px;
+  border-bottom: 1px solid #E6EAF0;
   flex-shrink: 0;
   overflow: hidden;
-  min-height: var(--topbar-height);
+  min-height: 70px;
 }
 
 .logoMark {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
-  background: var(--color-primary);
+  width: 32px;
+  height: 32px;
+  border: 1px solid #C7D4E3;
+  border-radius: 5px;
+  background: #F7F9FC;
+  color: #2878C8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,20 +87,25 @@
 }
 
 .logoName {
-  font-size: 13px;
+  color: #263548;
+  font-family: var(--font);
+  font-size: 14px;
   font-weight: 700;
-  color: #fff;
-  line-height: 1.25;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .logoBadge {
-  font-size: 10px;
-  color: rgba(156, 163, 175, 0.7);
+  margin-top: 2px;
+  color: #8A96A6;
+  font-size: 9.5px;
+  font-weight: 500;
   line-height: 1.2;
-  margin-top: 1px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -102,19 +117,19 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 36px;
+  height: 44px;
   background: transparent;
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  color: #6B7280;
+  border-top: 1px solid #E6EAF0;
+  color: #7B8797;
   cursor: pointer;
   transition: color var(--transition-fast), background var(--transition-fast);
   flex-shrink: 0;
 }
 
 .collapseBtn:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: #9CA3AF;
+  background: #F6F8FA;
+  color: #2878C8;
 }
 
 /* ── Nav ── */
@@ -122,28 +137,28 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--sp-2) 0;
+  padding: 10px 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.06) transparent;
+  scrollbar-color: #CDD5DF transparent;
 }
 
 .nav::-webkit-scrollbar { width: 3px; }
-.nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); }
+.nav::-webkit-scrollbar-thumb { background: #CDD5DF; }
 
 .navSection {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
-  color: rgba(107, 114, 128, 0.6);
-  letter-spacing: 0.08em;
+  color: #98A3B1;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 10px 14px 4px;
+  padding: 6px 20px 9px;
   white-space: nowrap;
   overflow: hidden;
 }
 
 .navList {
   list-style: none;
-  padding: 0 var(--sp-2);
+  padding: 0 8px;
   margin: 0;
   display: flex;
   flex-direction: column;
@@ -154,20 +169,21 @@
 .navBtn {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 8px 10px;
+  min-height: 42px;
+  padding: 9px 12px;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 3px;
   background: transparent;
   color: var(--sidebar-text);
   font-family: var(--font);
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
   position: relative;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-base), color var(--transition-base);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -178,9 +194,20 @@
 }
 
 .navBtn.active {
-  background: var(--color-primary);
-  color: #FFFFFF;
-  font-weight: 500;
+  background: var(--sidebar-item-active-bg);
+  color: var(--sidebar-text-active);
+  font-weight: 600;
+}
+
+.navBtn.active::before {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--sidebar-item-active-border);
+  content: '';
 }
 
 /* No pill needed — full blue background is enough */
@@ -191,7 +218,16 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 18px;
+  width: 20px;
+  color: #788698;
+}
+
+.navBtn:hover .navIcon {
+  color: #43546A;
+}
+
+.navBtn.active .navIcon {
+  color: #2878C8;
 }
 
 .navTitle {
@@ -202,15 +238,11 @@
   font-size: 13px;
 }
 
-.navArrow {
-  flex-shrink: 0;
-  opacity: 0.5;
-}
-
 /* ── Group header state ── */
 .navBtn.groupActive {
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.9);
+  background: #F8FAFC;
+  color: #2F4055;
+  font-weight: 600;
 }
 
 /* Chevron rotates when group is open */
@@ -218,23 +250,22 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  opacity: 0.45;
+  color: #8995A4;
   transition: transform 0.18s ease;
   margin-left: auto;
 }
 .groupChevronOpen {
   transform: rotate(90deg);
-  opacity: 0.7;
+  color: #526275;
 }
 
 /* ── Sub-items list ── */
 .subList {
   list-style: none;
-  margin: 0;
-  padding: 2px 0 4px 0;
-  background: rgba(0,0,0,0.15);
-  border-top: 1px solid rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  margin: 2px 0 5px 20px;
+  padding: 2px 0 2px 10px;
+  border-left: 1px solid #DCE3EB;
+  background: transparent;
 }
 
 .subBtn {
@@ -242,14 +273,15 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 7px 12px 7px 38px;  /* 38px left indent */
+  min-height: 36px;
+  padding: 7px 10px;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.55);
+  color: #718094;
   cursor: pointer;
   font-family: var(--font);
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   text-align: left;
   transition: background var(--transition-fast), color var(--transition-fast);
   white-space: nowrap;
@@ -257,22 +289,22 @@
 }
 
 .subBtn:hover {
-  background: rgba(255,255,255,0.06);
-  color: rgba(255,255,255,0.9);
+  background: #F6F8FA;
+  color: #34465C;
 }
 
 .subBtn.subActive {
-  color: #FFFFFF;
+  color: #236EB7;
   font-weight: 600;
-  background: rgba(255,255,255,0.1);
-  border-left: 2px solid var(--color-primary);
+  background: #F2F7FC;
+  box-shadow: inset 3px 0 0 #2878C8;
 }
 
 .subIcon {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  opacity: 0.7;
+  color: #8793A2;
 }
 
 .subTitle {
@@ -281,24 +313,33 @@
   text-overflow: ellipsis;
 }
 
-/* ── Tooltip on collapsed sidebar ── */
-.navBtn[title]:hover::after {
-  content: attr(title);
-  position: absolute;
-  left: calc(var(--sidebar-collapsed-width) + 4px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: #1F2937;
-  color: #f9fafb;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: var(--radius-md);
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 9999;
-  border: 1px solid rgba(255,255,255,0.08);
+:global(html.dark) .sidebar {
+  border-right-color: rgba(255, 255, 255, 0.09);
 }
+
+:global(html.dark) .logo,
+:global(html.dark) .collapseBtn {
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+:global(html.dark) .logoMark {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #7DB7F0;
+}
+
+:global(html.dark) .logoName { color: #F1F5F9; }
+:global(html.dark) .logoBadge,
+:global(html.dark) .navSection { color: #8491A5; }
+:global(html.dark) .navBtn { color: #B6C0CE; }
+:global(html.dark) .navIcon { color: #8F9DB0; }
+:global(html.dark) .navBtn:hover,
+:global(html.dark) .navBtn.groupActive,
+:global(html.dark) .subBtn:hover { background: rgba(255, 255, 255, 0.06); color: #F1F5F9; }
+:global(html.dark) .navBtn.active,
+:global(html.dark) .subBtn.subActive { background: rgba(40, 120, 200, 0.16); color: #8CC3F5; }
+:global(html.dark) .subList { border-left-color: rgba(255, 255, 255, 0.11); }
+:global(html.dark) .subBtn { color: #9EABBB; }
 
 /* ════════════════════════════════════════════════════════
    TOPBAR — White, 1px bottom border, dense

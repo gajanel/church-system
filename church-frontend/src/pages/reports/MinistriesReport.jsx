@@ -87,7 +87,7 @@ function ReportCard({ r, isExpanded, onToggle }) {
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 8,
-            background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+            background: "var(--color-primary)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <ChurchOutlined sx={{ fontSize: 17, color: "#fff" }} />

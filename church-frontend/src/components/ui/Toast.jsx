@@ -2,17 +2,25 @@
  * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
  * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
  */
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useRef } from "react";
+import {
+  CheckCircleOutline,
+  Close,
+  ErrorOutline,
+  InfoOutlined,
+  WarningAmberOutlined,
+} from "@mui/icons-material";
 import styles from "./Toast.module.css";
 
 // ── Context ────────────────────────────────────────────────────────
 const ToastContext = createContext(null);
 
 const ICONS = {
-  success: "✅",
-  error:   "❌",
-  warning: "⚠️",
-  info:    "ℹ️",
+  success: <CheckCircleOutline />,
+  error: <ErrorOutline />,
+  warning: <WarningAmberOutlined />,
+  info: <InfoOutlined />,
 };
 
 let _id = 0;
@@ -52,7 +60,7 @@ export function ToastProvider({ children }) {
           >
             <span className={styles.icon}>{ICONS[t.type]}</span>
             <span className={styles.message}>{t.message}</span>
-            <button className={styles.close} onClick={e => { e.stopPropagation(); remove(t.id); }}>✕</button>
+            <button className={styles.close} aria-label="Cerrar notificación" onClick={e => { e.stopPropagation(); remove(t.id); }}><Close /></button>
           </div>
         ))}
       </div>

@@ -32,7 +32,7 @@ export default function AttendanceReport() {
         p: 2, mb: 4, bgcolor: "white", borderRadius: 1, 
         border: "1px solid #e5e7eb" 
       }}>
-        <Typography variant="subtitle2" fontWeight={700} color="text.secondary" sx={{ mr: 2 }}>Parámetros de Auditoría:</Typography>
+        <Typography variant="subtitle2" fontWeight={700} color="text.secondary" sx={{ mr: 2 }}>Parámetros del reporte:</Typography>
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Mes</InputLabel>
           <Select value={month} label="Mes" onChange={e => setMonth(+e.target.value)}>
@@ -67,12 +67,12 @@ export default function AttendanceReport() {
                 ["Nuevos Convertidos", data.summary.total_converts],
                 [],
                 ["TOTALES POR CATEGORÍA"],
-                ["Caballeros", "Damas", "Jóvenes", "Niños", "Visitas"],
-                [data.category_totals.men, data.category_totals.women, data.category_totals.youth, data.category_totals.children, data.category_totals.visitors],
+                ["Niños 4-12", "Adolescentes 13-17", "Jóvenes 18-35", "Mujeres 36-60", "Hombres 36-60", "Adulto mayor 61+", "Visitas"],
+                [data.category_totals.children, data.category_totals.teens, data.category_totals.youth, data.category_totals.women, data.category_totals.men, data.category_totals.seniors, data.category_totals.visitors],
                 [],
                 ["HISTORIAL DETALLADO"],
-                ["Fecha", "Tipo de Culto", "Caballeros", "Damas", "Jóvenes", "Niños", "Visitas", "Convertidos", "Total"],
-                ...data.records.map(r => [r.date, r.service_type, r.men, r.women, r.youth, r.children, r.visitors, r.converts, r.total])
+                ["Fecha", "Tipo de Culto", "Niños 4-12", "Adolescentes 13-17", "Jóvenes 18-35", "Mujeres 36-60", "Hombres 36-60", "Adulto mayor 61+", "Visitas", "Convertidos", "Total"],
+                ...data.records.map(r => [r.date, r.service_type, r.children, r.teens, r.youth, r.women, r.men, r.seniors, r.visitors, r.converts, r.total])
               ];
               exportToExcel(`Reporte_Asistencia_${MONTHS_ES[data.period.month - 1]}_${data.period.year}`, rows);
             }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
@@ -92,7 +92,7 @@ export default function AttendanceReport() {
         </Box>
       ) : (
         <Box id="report-attendance">
-          <Typography variant="h5" fontWeight="800" mb={3} color="#0F172A">📈 Balance Mensual de Asistencia — {MONTHS_ES[data.period.month - 1]} {data.period.year}</Typography>
+          <Typography variant="h5" fontWeight="800" mb={3} color="#0F172A">Balance mensual de asistencia — {MONTHS_ES[data.period.month - 1]} {data.period.year}</Typography>
 
           <Grid container spacing={3} mb={4}>
             {[
@@ -117,10 +117,12 @@ export default function AttendanceReport() {
               <Card sx={{ height: '100%', p: 2, boxShadow: "none", border: "1px solid #e5e7eb" }}>
                 <Typography variant="subtitle2" fontWeight="700" color="text.secondary" mb={2} textTransform="uppercase">Distribución por Categorías (Acumulada)</Typography>
                 <VerticalBars isCurrency={false} data={[
-                  { label: "Caballeros", value: data.category_totals.men, color: "#2563eb" },
-                  { label: "Damas", value: data.category_totals.women, color: "#ec4899" },
-                  { label: "Jóvenes", value: data.category_totals.youth, color: "#8b5cf6" },
-                  { label: "Niños", value: data.category_totals.children, color: "#10b981" },
+                  { label: "Niños · 4–12", value: data.category_totals.children, color: "#10b981" },
+                  { label: "Adolescentes · 13–17", value: data.category_totals.teens, color: "#0ea5e9" },
+                  { label: "Jóvenes · 18–35", value: data.category_totals.youth, color: "#8b5cf6" },
+                  { label: "Mujeres · 36–60", value: data.category_totals.women, color: "#ec4899" },
+                  { label: "Hombres · 36–60", value: data.category_totals.men, color: "#2563eb" },
+                  { label: "Adulto mayor · 61+", value: data.category_totals.seniors, color: "#64748b" },
                   { label: "Visitas", value: data.category_totals.visitors, color: "#f59e0b" },
                 ]} />
               </Card>
@@ -150,10 +152,12 @@ export default function AttendanceReport() {
                 <TableRow>
                   <TableCell>Fecha</TableCell>
                   <TableCell>Actividad</TableCell>
-                  <TableCell align="center">Cab.</TableCell>
-                  <TableCell align="center">Dam.</TableCell>
-                  <TableCell align="center">Jóv.</TableCell>
                   <TableCell align="center">Niñ.</TableCell>
+                  <TableCell align="center">Adol.</TableCell>
+                  <TableCell align="center">Jóv.</TableCell>
+                  <TableCell align="center">Muj.</TableCell>
+                  <TableCell align="center">Hom.</TableCell>
+                  <TableCell align="center">A. may.</TableCell>
                   <TableCell align="center">Vis.</TableCell>
                   <TableCell align="center" sx={{ color: '#dc2626', fontWeight: 'bold' }}>Conv.</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 'bold' }}>Total</TableCell>
@@ -164,10 +168,12 @@ export default function AttendanceReport() {
                   <TableRow key={i} hover>
                     <TableCell>{r.date}</TableCell>
                     <TableCell><Chip label={r.service_type} size="small" variant="outlined" /></TableCell>
-                    <TableCell align="center">{r.men}</TableCell>
-                    <TableCell align="center">{r.women}</TableCell>
-                    <TableCell align="center">{r.youth}</TableCell>
                     <TableCell align="center">{r.children}</TableCell>
+                    <TableCell align="center">{r.teens}</TableCell>
+                    <TableCell align="center">{r.youth}</TableCell>
+                    <TableCell align="center">{r.women}</TableCell>
+                    <TableCell align="center">{r.men}</TableCell>
+                    <TableCell align="center">{r.seniors}</TableCell>
                     <TableCell align="center">{r.visitors}</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 'bold', color: '#dc2626' }}>{r.converts}</TableCell>
                     <TableCell align="center" sx={{ fontWeight: 'bold' }}>{r.total}</TableCell>

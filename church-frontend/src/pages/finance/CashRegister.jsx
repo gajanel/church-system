@@ -56,6 +56,30 @@ const Pager = ({ page, total, onPage }) =>
   ) : null;
 
 /* ─── Main component ──────────────────────────────────────────────── */
+  const StatCard = ({ icon, label, value, color, sub }) => (
+    <div style={{
+      background: "#fff",
+      border: "1px solid #e5e7eb",
+      borderRadius: 12,
+      padding: "20px 24px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 8,
+      flex: 1,
+      minWidth: 160,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        {icon}
+        {label}
+      </div>
+      <div style={{ fontSize: "1.6rem", fontWeight: 700, color, fontFamily: "ui-monospace, monospace", lineHeight: 1.2 }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 11, color: "#9ca3af" }}>{sub}</div>}
+    </div>
+  );
+
+
 export default function CashRegister() {
   const now = new Date();
   const [selMonth, setSelMonth] = useState(now.getMonth() + 1);
@@ -142,28 +166,6 @@ export default function CashRegister() {
 
 
   /* ── stat card ── */
-  const StatCard = ({ icon, label, value, color, sub }) => (
-    <div style={{
-      background: "#fff",
-      border: "1px solid #e5e7eb",
-      borderRadius: 12,
-      padding: "20px 24px",
-      display: "flex",
-      flexDirection: "column",
-      gap: 8,
-      flex: 1,
-      minWidth: 160,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#6b7280", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-        {icon}
-        {label}
-      </div>
-      <div style={{ fontSize: "1.6rem", fontWeight: 700, color, fontFamily: "ui-monospace, monospace", lineHeight: 1.2 }}>
-        {value}
-      </div>
-      {sub && <div style={{ fontSize: 11, color: "#9ca3af" }}>{sub}</div>}
-    </div>
-  );
 
   const mv = cashData?.movements || [];
 
@@ -171,8 +173,8 @@ export default function CashRegister() {
     <div>
       {/* ── Saldo hero ── */}
       <div style={{
-        background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)",
-        borderRadius: 16,
+        background: "var(--color-primary)",
+        borderRadius: 4,
         padding: "32px 36px",
         marginBottom: 24,
         color: "#fff",

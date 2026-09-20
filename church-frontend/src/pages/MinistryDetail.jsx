@@ -19,7 +19,7 @@ import { API_URL } from "../api/api";
 import {
   getModuleConfig,
   getMinistryFinance, createMinistryFinance, deleteMinistryFinance,
-  getMinistryAttendance, createAttendanceSession,
+  getMinistryAttendance, createAttendanceSession, deleteAttendanceSession,
   getMinistryPlans, createMinistryPlan, updateMinistryPlan, deleteMinistryPlan,
   addPlanTask, togglePlanTask, deletePlanTask,
   getMinistryGallery, uploadGalleryItem, deleteGalleryItem,
@@ -87,7 +87,7 @@ export default function MinistryDetail() {
       const cfgRes = await getModuleConfig(found.id);
       setConfig(cfgRes.data);
       await loadTab(0, cfgRes.data, found.id);
-    } catch (e) { setError("Error al cargar workspace"); }
+    } catch { setError("No se pudo cargar el ministerio."); }
     finally { setLoading(false); }
   };
 
@@ -98,7 +98,7 @@ export default function MinistryDetail() {
       if (t === 1 && cfg.attendance) { const r = await getMinistryAttendance(resolvedMid); setSessions(r.data); }
       if (t === 2 && cfg.work_plans) { const r = await getMinistryPlans(resolvedMid);      setPlans(r.data); }
       if (t === 3 && cfg.gallery)    { const r = await getMinistryGallery(resolvedMid);    setGallery(r.data); }
-    } catch {}
+    } catch { setError("No se pudo cargar esta sección. Intenta seleccionarla nuevamente."); }
   };
 
   const handleTab = (_, v) => { setTab(v); loadTab(v); };

@@ -15,7 +15,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import {
   Button, Avatar, Dialog, DialogTitle, DialogContent, DialogActions,
   IconButton, Select, MenuItem, FormControl, InputLabel,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, Typography
 } from "@mui/material";
 import {
   PersonAddOutlined, EditOutlined, PersonOffOutlined,
@@ -28,6 +28,15 @@ import s from "../styles/page.module.css";
 
 const GENDER_MAP  = { M: "Masculino", F: "Femenino", O: "Otro" };
 const STATUS_OPTS = [{ value: "active", label: "Activo" }, { value: "inactive", label: "Inactivo" }];
+const ROLE_LABELS = {
+  Pastor: "Pastor titular",
+  "Co-Pastor": "Pastor asociado",
+  "Anciano/a": "Anciano/a",
+  "Diácono/a": "Diácono/a",
+  Secretario: "Secretario/a general",
+  Tesorero: "Tesorero/a general"
+};
+const roleLabel = role => ROLE_LABELS[role] || role;
 
 const COLUMNS = [
   { label: "Nombre",     width: "22%" },
@@ -158,7 +167,7 @@ export default function Members() {
         searchPlaceholder="Buscar por nombre, email o teléfono..."
         filters={[{ label: "Estado", value: filterStatus, onChange: setFilterStatus, options: STATUS_OPTS }]}
         emptyText="No se encontraron miembros."
-        renderRow={(m, i) => (
+        renderRow={(m) => (
           <TableRow key={m.id} sx={{ '&:nth-of-type(even)': { bgcolor: '#F9FAFB' }, '&:hover': { bgcolor:"#f1f5f9" }, transition: 'background-color 0.2s' }}>
             <TableCell>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -174,7 +183,7 @@ export default function Members() {
                       letterSpacing: "0.05em", color: "#7c3aed", marginTop: 2,
                       display: "flex", alignItems: "center", gap: 3
                     }}>
-                      ◆ {m.church_role}
+                      ◆ {roleLabel(m.church_role)}
                     </span>
                   )}
                 </div>
@@ -216,10 +225,17 @@ export default function Members() {
       )}
 
       {/* Member form dialog */}
-      <Dialog open={showMemberForm} onClose={() => setShowMemberForm(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editing ? "Editar Miembro" : "Nuevo Miembro"}</DialogTitle>
-        <DialogContent dividers>
-          <MemberForm initial={editing} onSubmit={handleSubmit} onCancel={() => setShowMemberForm(false)} submitting={submitting} />
+      <Dialog open={showMemberForm} onClose={() => !submitting && setShowMemberForm(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ pb: 1.5 }}>
+          <Typography component="span" sx={{ display:"block", fontSize:20, fontWeight:750, color:"#0f172a" }}>
+            {editing ? "Editar miembro" : "Registrar nuevo miembro"}
+          </Typography>
+          <Typography component="span" sx={{ display:"block", mt:.35, fontSize:12.5, color:"#64748b", fontWeight:400 }}>
+            {editing ? "Actualiza su información personal y congregacional." : "Crea su ficha para el directorio y el control de asistencia."}
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ px:{ xs:2, sm:3 }, pt:2.5 }}>
+          <MemberForm key={editing?.id || "new-member"} initial={editing} onSubmit={handleSubmit} onCancel={() => setShowMemberForm(false)} submitting={submitting} />
         </DialogContent>
       </Dialog>
 
@@ -239,11 +255,11 @@ export default function Members() {
                   ["Nacimiento",selectedMember.birth_date],["Género",GENDER_MAP[selectedMember.gender]||selectedMember.gender],
                   ["Estado Civil",selectedMember.marital_status],["Ocupación",selectedMember.occupation],
                   ["Ingreso",selectedMember.join_date],["Bautismo",selectedMember.baptism_date],
-                  ["Emergencia",selectedMember.emergency_contact], ["Cargo", selectedMember.church_role]
+                  ["Emergencia",selectedMember.emergency_contact], ["Responsabilidad", roleLabel(selectedMember.church_role)]
                 ].map(([l,v]) => (
                   <div key={l}>
                     <p style={{ fontSize:10, color:"var(--text-muted)", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:2 }}>{l}</p>
-                    <p style={{ fontSize:13, color: l === "Cargo" && v ? "#7c3aed" : "var(--text-primary)", fontWeight: l === "Cargo" && v ? 700 : 400 }}>{v||"—"}</p>
+                    <p style={{ fontSize:13, color: l === "Responsabilidad" && v ? "#7c3aed" : "var(--text-primary)", fontWeight: l === "Responsabilidad" && v ? 700 : 400 }}>{v||"—"}</p>
                   </div>
                 ))}
               </div>

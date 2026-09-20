@@ -3,24 +3,24 @@
  * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
  */
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
-  SpeedOutlined             as DashboardIcon,      /* Speedometer — overview/metrics */
-  BadgeOutlined             as MembersIcon,         /* ID badge — directory */
-  VolunteerActivismOutlined as MinistriesIcon,      /* Heart+hand — service/volunteering */
-  ReceiptLongOutlined       as FinanceIcon,         /* Receipt — expenses/income */
-  ViewKanbanOutlined        as ProjectsIcon,        /* Kanban — project boards */
-  CalendarMonthOutlined     as EventsIcon,          /* Month calendar — scheduled events */
-  WorkspacePremiumOutlined  as PrivilegesIcon,      /* Award ribbon — premium privileges */
-  SpeakerNotesOutlined      as AnnouncementsIcon,   /* Speaker notes — broadcasts */
-  HowToRegOutlined          as AttendanceIcon,      /* Checkmark registration */
-  QueryStatsOutlined        as ReportsIcon,         /* Data analytics */
-  ManageAccountsOutlined    as AdminIcon,           /* Account config — user mgmt */
-  TuneOutlined              as SettingsIcon,        /* Sliders — configuration */
-  AccountBalanceOutlined    as ChurchIcon,          /* Used only for logo mark */
-  DomainOutlined            as WorkspaceIcon,       /* Building/domain — ministry portal */
+  DashboardOutlined         as DashboardIcon,
+  PeopleAltOutlined         as MembersIcon,
+  GroupsOutlined            as MinistriesIcon,
+  AccountBalanceWalletOutlined as FinanceIcon,
+  FolderOutlined            as ProjectsIcon,
+  CalendarMonthOutlined     as EventsIcon,
+  AssignmentIndOutlined     as PrivilegesIcon,
+  CampaignOutlined          as AnnouncementsIcon,
+  FactCheckOutlined         as AttendanceIcon,
+  AssessmentOutlined        as ReportsIcon,
+  AdminPanelSettingsOutlined as AdminIcon,
+  SettingsOutlined          as SettingsIcon,
+  AccountBalanceOutlined    as ChurchIcon,
+  DomainOutlined            as WorkspaceIcon,
   LogoutOutlined            as LogoutIcon,
   MenuOutlined              as MenuIcon,
   LanguageOutlined          as LanguageIcon,
@@ -28,29 +28,62 @@ import {
   ChevronLeft,
   KeyboardDoubleArrowLeft,
   KeyboardDoubleArrowRight,
-  Business, AttachMoney, MenuBook, Palette, Lock, Backup, History, PersonOutlined,
-  AccountBalanceWallet, CallReceived, CallMade, Flag, Savings
+  AttachMoney, MenuBook, PersonOutlined, AccountBalanceWallet,
+  CallReceived, CallMade, Flag, Savings, AccountBalance
 } from "@mui/icons-material";
 
 import { Tooltip } from "@mui/material";
 import styles from "./MainLayout.module.css";
 import { getSettings } from "../api/settings";
+import { userHasModuleAccess } from "../components/userAccess";
 
 const ICON_SIZE = 17;
 
-const MENU_ITEMS = (t, hasAccess, isAdmin, isSuperAdmin, user) => [
+const MENU_ITEMS = (t, hasAccess, isAdmin, user) => [
   { title: t("sidebar.dashboard"),     icon: <DashboardIcon     sx={{ fontSize: ICON_SIZE }} />, path: "/",            show: hasAccess("dashboard") },
   { title: t("sidebar.members"),       icon: <MembersIcon       sx={{ fontSize: ICON_SIZE }} />, path: "/members",     show: hasAccess("members") },
-  { title: t("sidebar.ministries"), icon: <MinistriesIcon sx={{ fontSize: ICON_SIZE }} />, path: "/ministries", show: hasAccess("ministries") || user?.modules?.some(m => m.startsWith("ministry.")) || isAdmin },
-  { title: t("sidebar.finance"), icon: <FinanceIcon sx={{ fontSize: ICON_SIZE }} />, path: "/finance", show: hasAccess("finance") },
+  { title: t("sidebar.ministries"), icon: <MinistriesIcon sx={{ fontSize: ICON_SIZE }} />, path: "/ministries", show: hasAccess("ministries") || user?.modules?.includes("workspace") || user?.modules?.some(m => m.startsWith("ministry.")) || isAdmin },
+  {
+    title: t("sidebar.finance"), icon: <FinanceIcon sx={{ fontSize: ICON_SIZE }} />,
+    group: "finance", show: hasAccess("finance"),
+    children: [
+      { title: t("sidebar.finance_summary"), icon: <AccountBalanceWallet sx={{ fontSize: 15 }} />, path: "/finance", exact: true, show: hasAccess("finance") },
+      { title: t("sidebar.cash"), icon: <AttachMoney sx={{ fontSize: 15 }} />, path: "/finance/cash", show: hasAccess("finance.cash") },
+      { title: t("sidebar.offerings"), icon: <Savings sx={{ fontSize: 15 }} />, path: "/finance/offerings", show: hasAccess("finance.offerings") },
+      { title: t("sidebar.incomes"), icon: <CallReceived sx={{ fontSize: 15 }} />, path: "/finance/incomes", show: hasAccess("finance.incomes") },
+      { title: t("sidebar.expenses"), icon: <CallMade sx={{ fontSize: 15 }} />, path: "/finance/expenses", show: hasAccess("finance.expenses") },
+      { title: t("sidebar.goals"), icon: <Flag sx={{ fontSize: 15 }} />, path: "/finance/goals", show: hasAccess("finance.goals") },
+      { title: t("sidebar.deposits"), icon: <AccountBalance sx={{ fontSize: 15 }} />, path: "/finance/deposits", show: hasAccess("finance.deposits") },
+    ],
+  },
   { title: t("sidebar.projects"),      icon: <ProjectsIcon      sx={{ fontSize: ICON_SIZE }} />, path: "/projects",     show: hasAccess("projects") },
   { title: t("sidebar.events"),        icon: <EventsIcon        sx={{ fontSize: ICON_SIZE }} />, path: "/events",       show: hasAccess("events") },
   { title: t("sidebar.privileges"),    icon: <PrivilegesIcon    sx={{ fontSize: ICON_SIZE }} />, path: "/privileges",   show: hasAccess("privileges") },
   { title: t("sidebar.announcements"), icon: <AnnouncementsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/announcements", show: hasAccess("announcements") },
   { title: t("sidebar.attendance"),    icon: <AttendanceIcon    sx={{ fontSize: ICON_SIZE }} />, path: "/attendance",   show: hasAccess("attendance") },
-  { title: t("sidebar.reports"), icon: <ReportsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/reports", show: hasAccess("reports") },
-  { title: t("sidebar.users"),         icon: <AdminIcon         sx={{ fontSize: ICON_SIZE }} />, path: "/usuarios",     show: isAdmin },
-  { title: t("sidebar.settings"), icon: <SettingsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/settings", show: true },
+  {
+    title: t("sidebar.reports"), icon: <ReportsIcon sx={{ fontSize: ICON_SIZE }} />,
+    group: "reports", show: hasAccess("reports"),
+    children: [
+      { title: t("sidebar.reports_summary"), icon: <ReportsIcon sx={{ fontSize: 15 }} />, path: "/reports", exact: true, show: hasAccess("reports") },
+      { title: t("sidebar.monthly_report"), icon: <MenuBook sx={{ fontSize: 15 }} />, path: "/reports/monthly", show: hasAccess("reports.monthly") },
+      { title: t("sidebar.bank_report"), icon: <AccountBalance sx={{ fontSize: 15 }} />, path: "/reports/bank-monthly", show: hasAccess("reports.monthly") },
+      { title: t("sidebar.annual_report"), icon: <EventsIcon sx={{ fontSize: 15 }} />, path: "/reports/annual", show: hasAccess("reports.annual") },
+      { title: t("sidebar.members_report"), icon: <MembersIcon sx={{ fontSize: 15 }} />, path: "/reports/members", show: hasAccess("reports.members") },
+      { title: t("sidebar.projects_report"), icon: <ProjectsIcon sx={{ fontSize: 15 }} />, path: "/reports/projects", show: hasAccess("reports.projects") },
+      { title: t("sidebar.contributions_report"), icon: <Savings sx={{ fontSize: 15 }} />, path: "/reports/contributions", show: hasAccess("reports.contributions") },
+      { title: t("sidebar.attendance_report"), icon: <AttendanceIcon sx={{ fontSize: 15 }} />, path: "/reports/attendance", show: hasAccess("reports.attendance") },
+      { title: t("sidebar.ministries_report"), icon: <MinistriesIcon sx={{ fontSize: 15 }} />, path: "/reports/ministries", show: hasAccess("reports.ministries") },
+    ],
+  },
+  {
+    title: t("sidebar.administration"), icon: <AdminIcon sx={{ fontSize: ICON_SIZE }} />,
+    group: "administration", show: true,
+    children: [
+      { title: t("sidebar.users"), icon: <AdminIcon sx={{ fontSize: 15 }} />, path: "/usuarios", show: isAdmin },
+      { title: t("sidebar.settings"), icon: <SettingsIcon sx={{ fontSize: 15 }} />, path: "/settings", show: true },
+    ],
+  },
 ];
 
 
@@ -75,6 +108,11 @@ export default function MainLayout({ children }) {
   const dropdownRef = useRef(null);
   const langRef     = useRef(null);
 
+  const logout = useCallback(() => {
+    ["token", "refresh_token", "user"].forEach(key => localStorage.removeItem(key));
+    navigate("/login");
+  }, [navigate]);
+
   /* Load user + settings */
   useEffect(() => {
     const raw = localStorage.getItem("user");
@@ -83,7 +121,7 @@ export default function MainLayout({ children }) {
       catch { logout(); }
     }
     getSettings().then(res => setSettings(res.data)).catch(() => {});
-  }, []);
+  }, [logout]);
 
   /* Close menus on outside click */
   useEffect(() => {
@@ -99,39 +137,31 @@ export default function MainLayout({ children }) {
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   const isAdmin = user?.is_admin || user?.is_super_admin;
-  const isSuperAdmin = user?.is_super_admin;
+  const hasAccess = useCallback(
+    moduleId => userHasModuleAccess(user, moduleId),
+    [user]
+  );
 
-  const hasAccess = (mod) => {
-    if (!user) return false;
-    if (user.is_admin) return true;
-    
-    if (mod.includes(".")) {
-      const parent = mod.split(".")[0];
-      const hasSpecific = user.modules?.includes(mod);
-      if (hasSpecific) return true;
-      
-      const hasParent = user.modules?.includes(parent);
-      const hasAnySubmoduleOfParent = user.modules?.some(m => m.startsWith(`${parent}.`));
-      
-      return hasParent && !hasAnySubmoduleOfParent;
-    }
-    
-    return user.modules?.includes(mod);
-  };
-
-  const menuItems = MENU_ITEMS(t, hasAccess, isAdmin, isSuperAdmin, user);
+  const menuItems = useMemo(() => (
+    MENU_ITEMS(t, hasAccess, isAdmin, user).map(item => ({
+      ...item,
+      children: item.children?.filter(child => child.show !== false),
+    }))
+  ), [t, hasAccess, isAdmin, user]);
 
   // For breadcrumb and routing: flatten all allowed items
-  const allPaths = menuItems
-    .filter(m => m.show !== false)
-    .flatMap(m => m.children ? m.children : [m]);
+  const allPaths = useMemo(() => (
+    menuItems
+      .filter(item => item.show !== false)
+      .flatMap(item => item.children?.length ? item.children : (item.path ? [item] : []))
+  ), [menuItems]);
 
   /* Verify route access on navigation */
   useEffect(() => {
     if (!user) return; // Wait until user is parsed
-    if (user.is_admin) return; // Admins have full access
+    if (user.is_admin || user.is_super_admin) return; // Admins have full access
 
-    const ministryAccess = hasAccess("ministries") || user.modules?.some(m => m.startsWith("ministry."));
+    const ministryAccess = hasAccess("ministries") || user.modules?.includes("workspace") || user.modules?.some(m => m.startsWith("ministry."));
 
     // Check if the current route matches any allowed path
     const isAllowed = allPaths.some(m => 
@@ -148,7 +178,7 @@ export default function MainLayout({ children }) {
     if (location.pathname === "/ministries/admin" && !isAdmin) {
         navigate("/ministries", { replace: true });
     }
-  }, [location.pathname, user, menuItems, navigate]);
+  }, [location.pathname, user, allPaths, navigate, hasAccess, isAdmin]);
 
   const toggleCollapse = () => {
     const next = !collapsed;
@@ -156,16 +186,11 @@ export default function MainLayout({ children }) {
     localStorage.setItem("sidebar_collapsed", String(next));
   };
 
-  const logout = () => {
-    ["token", "refresh_token", "user"].forEach(k => localStorage.removeItem(k));
-    navigate("/login");
-  };
-
   const changeLanguage = (lng) => { i18n.changeLanguage(lng); setLangOpen(false); };
 
-  const pageTitle = allPaths.find(m =>
+  const pageTitle = [...allPaths].sort((a, b) => b.path.length - a.path.length).find(m =>
     m.path === location.pathname ||
-    (m.path !== "/" && location.pathname.startsWith(m.path))
+    (!m.exact && m.path !== "/" && location.pathname.startsWith(`${m.path}/`))
   )?.title ?? "Panel";
 
   const toggleGroup = (groupKey) => {
@@ -182,7 +207,7 @@ export default function MainLayout({ children }) {
   const isGroupActive = (item) =>
     item.children?.some(c =>
       location.pathname === c.path ||
-      (c.path !== "/" && location.pathname.startsWith(c.path + "/"))
+      (!c.exact && c.path !== "/" && location.pathname.startsWith(c.path + "/"))
     );
 
   useEffect(() => {
@@ -213,12 +238,12 @@ export default function MainLayout({ children }) {
         {/* Brand */}
         <div className={styles.logo}>
           <div className={styles.logoMark}>
-            <ChurchIcon sx={{ fontSize: 14, color: "#fff" }} />
+            <ChurchIcon sx={{ fontSize: 16 }} />
           </div>
           {!collapsed && (
             <div className={styles.logoText}>
               <div className={styles.logoName}>{settings?.church_name || "Ministerio"}</div>
-              <div className={styles.logoBadge}>{settings?.church_address || t("dashboard.subtitle")}</div>
+              <div className={styles.logoBadge}>Gestión congregacional</div>
             </div>
           )}
         </div>
@@ -258,6 +283,7 @@ export default function MainLayout({ children }) {
                     <button
                       className={`${styles.navBtn} ${groupActive ? styles.groupActive : ""}`}
                       onClick={() => toggleGroup(item.group)}
+                      aria-expanded={isExpanded}
                     >
                       <span className={styles.navIcon}>{item.icon}</span>
                       <span className={styles.navTitle}>{item.title}</span>
@@ -270,12 +296,13 @@ export default function MainLayout({ children }) {
                       <ul className={styles.subList}>
                         {item.children.map(child => {
                           const childActive = location.pathname === child.path ||
-                            (child.path !== "/" && child.path !== "/settings" && child.path !== "/finance" && child.path !== "/ministries" && location.pathname.startsWith(child.path + "/"));
+                            (!child.exact && child.path !== "/" && location.pathname.startsWith(child.path + "/"));
                           return (
                             <li key={child.path}>
                               <button
                                 className={`${styles.subBtn} ${childActive ? styles.subActive : ""}`}
                                 onClick={() => navigate(child.path)}
+                                aria-current={childActive ? "page" : undefined}
                               >
                                 <span className={styles.subIcon}>{child.icon}</span>
                                 <span className={styles.subTitle}>{child.title}</span>
@@ -314,7 +341,6 @@ export default function MainLayout({ children }) {
                     >
                       <span className={styles.navIcon}>{item.icon}</span>
                       <span className={styles.navTitle}>{item.title}</span>
-                      {active && <ChevronRight className={styles.navArrow} sx={{ fontSize: 14 }} />}
                     </button>
                   )}
                 </li>
@@ -340,7 +366,10 @@ export default function MainLayout({ children }) {
       <header className={`${styles.topbar} ${collapsed ? styles.collapsed : ""}`}>
         <button
           className={styles.hamburger}
-          onClick={() => setMobileOpen(v => !v)}
+          onClick={() => setMobileOpen(open => {
+            if (!open && collapsed) setCollapsed(false);
+            return !open;
+          })}
           aria-label="Abrir menú"
         >
           <MenuIcon sx={{ fontSize: 16 }} />

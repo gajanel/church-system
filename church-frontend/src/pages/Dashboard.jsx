@@ -6,11 +6,11 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getMembers } from "../api/members";
 import { getMinistries } from "../api/ministries";
-import { getOfferings, getIncomes, getExpenses, getMonthlySummary } from "../api/finance";
+import { getOfferings, getExpenses, getMonthlySummary } from "../api/finance";
 import { getPublicSettings } from "../api/settings";
 import {
   Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Box, Typography
+  TableHead, TableRow, Box, Typography, Alert, Button
 } from "@mui/material";
 import { TrendingUp, TrendingDown, People, AccountBalance, AccountBalanceWallet } from "@mui/icons-material";
 
@@ -45,9 +45,9 @@ function BarChart({ data }) {
             <span className={styles.barValue} style={{ fontWeight: 700, color: d.color }}>Q{(d.value / 1000).toFixed(1)}k</span>
             <div className={styles.bar} style={{ 
               height: `${Math.max(pct, 2)}%`, 
-              background: `linear-gradient(to top, ${d.color}, ${d.color}cc)`,
+              background: d.color,
               borderRadius: '4px 4px 0 0',
-              boxShadow: `0 4px 12px ${d.color}33`,
+              boxShadow: "none",
               transition: 'height 1s cubic-bezier(0.4, 0, 0.2, 1)'
             }} />
             <span className={styles.barLabel} style={{ fontWeight: 600 }}>{d.label}</span>
@@ -98,7 +98,7 @@ function GaugeChart({ value, max = 10000, label = "Avance" }) {
             style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)" }}
           />
         )}
-        <text x="100" y="93" textAnchor="middle" fontSize="34" fontWeight="900" fill="var(--text-primary)" fontFamily="Outfit, sans-serif">
+        <text x="100" y="93" textAnchor="middle" fontSize="34" fontWeight="900" fill="var(--text-primary)" fontFamily="var(--font)">
           {hasGoal ? `${Math.round(pct)}%` : "—"}
         </text>
         <text x="100" y="113" textAnchor="middle" fontSize="11" fontWeight="700" fill={color}>
@@ -180,6 +180,8 @@ function DonutChart({ value, max }) {
    ══════════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   const location = useLocation();
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [summary, setSummary]             = useState(null);
   const [members, setMembers]             = useState([]);
   const [ministries, setMinistries]       = useState([]);
@@ -188,24 +190,29 @@ export default function Dashboard() {
   const [sysSettings, setSysSettings]    = useState(null);
 
   useEffect(() => {
+    let active = true;
     getPublicSettings().then(r => setSysSettings(r.data)).catch(() => {});
     Promise.all([
       getMonthlySummary(THIS_MONTH, THIS_YEAR),
       getMembers(1, 1000),
       getMinistries(),
       getOfferings(1, 10),
-      getIncomes(1, 10),
       getExpenses(1, 10),
-    ]).then(([s, m, min, o, _i, e]) => {
+    ]).then(([s, m, min, o, e]) => {
+      if (!active) return;
       setSummary(s?.data || {});
       setMembers(m?.data?.items || []);
       setMinistries(min?.data || []);
       setOfferings(o?.data?.items?.slice(0, 3) || []);
       setExpenses(e?.data?.items?.slice(0, 2) || []);
     }).catch(err => {
+      if (active) setLoadError(true);
       console.error("Dashboard loading error:", err);
     });
-  }, [location.key]);
+    return () => { active = false; };
+  }, [location.key, attempt]);
+
+  if (loadError) return <Alert severity="error" action={<Button color="inherit" onClick={() => { setLoadError(false); setAttempt(n => n + 1); }}>Reintentar</Button>}>No se pudo cargar el resumen. Comprueba la conexión y tus permisos.</Alert>;
 
   if (!summary) return <DashboardSkeleton />;
 
@@ -278,7 +285,7 @@ export default function Dashboard() {
           mt: 0.5,
           p: "12px 16px",
           borderRadius: 1,
-          background: "#fff",
+          background: "var(--surface-card)",
           border: "1px solid var(--border)",
           borderLeft: "4px solid var(--color-primary)",
           display: "flex",
@@ -287,7 +294,7 @@ export default function Dashboard() {
         }}>
           <Typography variant="body2" sx={{ 
             fontStyle: 'italic', 
-            color: '#50575e',
+            color: "var(--text-secondary)",
             fontSize: '0.85rem',
             lineHeight: 1.5,
           }}>

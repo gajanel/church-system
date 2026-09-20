@@ -6,41 +6,50 @@
 }
 
 .card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
   padding: 28px 24px;
-  text-align: center;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: none;
   appearance: none;
   width: 100%;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
-  border-color: #d1d5db;
+  transform: none;
+  box-shadow: none;
+  border-color: #b9c7d6;
 }
 
 .iconWrap {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   flex-shrink: 0;
+  color: #66778a;
+  background: #f5f7f9;
+  border: 1px solid #dce3ea;
 }
 
 .iconWrap svg {
-  width: 30px;
-  height: 30px;
+  width: 20px;
+  height: 20px;
+}
+
+.card:hover .iconWrap {
+  color: #2878c8;
+  background: #f4f8fc;
+  border-color: #b9d1e8;
 }
 
 .cardTitle {
@@ -61,6 +70,7 @@
 .cardArrow {
   font-size: 0.8rem;
   font-weight: 700;
+  color: #52739a;
   letter-spacing: 0.02em;
   margin-top: auto;
   transition: transform 0.2s ease;
@@ -77,3 +87,5 @@
 @media (max-width: 600px) {
   .grid { grid-template-columns: 1fr; }
 }
+
+.card:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
