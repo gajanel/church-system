@@ -1,0 +1,599 @@
+.appContainer {
+  padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hero Section */
+.heroSection {
+  background: linear-gradient(135deg, var(--bg-surface), var(--bg-surface-hover));
+  border-bottom: 1px solid var(--border-color);
+  padding: 3rem 2rem 0;
+  border-radius: 0 0 24px 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+  margin-bottom: 2rem;
+}
+
+.heroContent {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(to right, var(--primary-color), #60a5fa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.heroSubtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.heroStats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  background: var(--bg-body);
+  display: inline-flex;
+  padding: 1rem 2rem;
+  border-radius: 100px;
+  border: 1px solid var(--border-color);
+}
+
+.statBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statBoxLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.statBoxValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.statBoxDivider {
+  width: 1px;
+  height: 30px;
+  background: var(--border-color);
+}
+
+/* Switcher */
+.viewSwitcher {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.switchBtn {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switchBtn:hover {
+  color: var(--text-primary);
+}
+
+.switchBtnActive {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+.mainContent {
+  padding: 0 2rem 4rem;
+}
+
+/* Bento Grid */
+.bentoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.bentoHero {
+  grid-column: 1 / -1;
+  background: var(--bg-surface);
+  border-radius: 24px;
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.03);
+}
+
+.bentoCard {
+  background: var(--bg-surface);
+  border-radius: 24px;
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+}
+
+.bentoCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.05);
+}
+
+.bentoWatermark {
+  position: absolute;
+  top: -20px;
+  right: -10px;
+  font-size: 8rem;
+  font-weight: 900;
+  color: rgba(var(--primary-color-rgb, 59, 130, 246), 0.03);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.bentoCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  z-index: 1;
+}
+
+.bentoCardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-right: 1rem;
+}
+
+.bentoCardBadge {
+  background: rgba(var(--primary-color-rgb, 59, 130, 246), 0.1);
+  color: var(--primary-color);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.bentoProgressWrap {
+  margin-top: auto;
+  z-index: 1;
+}
+
+.bentoProgressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.bentoProgressValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.bentoProgressBar {
+  height: 8px;
+  background: var(--bg-body);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bentoProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), #60a5fa);
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+.bentoMessage {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 1rem;
+  z-index: 1;
+}
+
+/* Charts inside Bento */
+.barChartContainer {
+  width: 100%;
+}
+
+.chartTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+}
+
+.barChartWrapper {
+  display: flex;
+  height: 250px;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.barColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.barValue {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.barTrack {
+  width: 100%;
+  max-width: 60px;
+  height: 100%;
+  background: var(--bg-body);
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+.barFill {
+  width: 100%;
+  background: linear-gradient(to top, var(--primary-color), #3b82f6);
+  border-radius: 8px 8px 0 0;
+  transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.barLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 1rem;
+}
+
+/* Editor Layout (Sidebar + Main) */
+.editorLayout {
+  display: flex;
+  gap: 2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 600px;
+}
+
+.editorSidebar {
+  width: 300px;
+  background: var(--bg-body);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarTitle {
+  padding: 2rem 1.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.sidebarNavBtn {
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebarNavBtn:hover {
+  background: var(--bg-surface-hover);
+}
+
+.sidebarNavActive {
+  background: var(--bg-surface) !important;
+  border-left-color: var(--primary-color) !important;
+}
+
+.navBtnHeader {
+  margin-bottom: 0.5rem;
+}
+
+.navBtnTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.navBtnProgress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.navBtnBar {
+  flex: 1;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.navBtnFill {
+  height: 100%;
+  background: var(--primary-color);
+  border-radius: 2px;
+}
+
+.navBtnPct {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+/* Form Area */
+.editorContent {
+  flex: 1;
+  padding: 3rem;
+  overflow-y: auto;
+}
+
+.formHeader {
+  margin-bottom: 3rem;
+}
+
+.formHeader h2 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.formHeader p {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.formSection {
+  margin-bottom: 4rem;
+}
+
+.sectionHeading {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.sectionHeading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+  margin-left: 1rem;
+}
+
+.inputGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.inputCard {
+  background: var(--bg-body);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: border-color 0.2s;
+}
+
+.inputCard:focus-within {
+  border-color: var(--primary-color);
+}
+
+.inputLabel {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.elegantInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border-color);
+  padding: 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.elegantInput:focus {
+  border-bottom-color: var(--primary-color);
+}
+
+.inputMeta {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.inputProgress {
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.inputProgressFill {
+  height: 100%;
+  background: var(--primary-color);
+}
+
+.commitGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.commitCard {
+  background: var(--bg-body);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.commitTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+.modernSegment {
+  display: flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+.modernSegmentBtn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modernSegmentActive {
+  background: var(--bg-body);
+  color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.modernSaveBtn {
+  padding: 1rem 2.5rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.modernSaveBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(var(--primary-color-rgb, 59, 130, 246), 0.3);
+}
+
+/* Status Badge mapping */
+.statusCompleted { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+.statusOngoing { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+.statusProgress { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.statusStart { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+
+@media (max-width: 1024px) {
+  .bentoGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .editorLayout {
+    flex-direction: column;
+  }
+  .editorSidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .sidebarNavBtn {
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    min-width: 250px;
+  }
+  .sidebarNavActive {
+    border-bottom-color: var(--primary-color) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .bentoGrid {
+    grid-template-columns: 1fr;
+  }
+  .heroStats {
+    flex-direction: column;
+    gap: 1rem;
+    border-radius: 24px;
+    width: 100%;
+  }
+  .statBoxDivider {
+    width: 100%;
+    height: 1px;
+  }
+}

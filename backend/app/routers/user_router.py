@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from typing import List
@@ -7,6 +10,7 @@ from slowapi.util import get_remote_address
 from app.schemas.user_schema import LoginSchema, UserCreate, UserUpdate, UserResponse
 from app.database.connection import get_db
 from app.models.user_model import User
+from app.models.member_model import Member
 from app.utils.security import verify_password
 from app.utils.jwt import create_access_token, create_refresh_token, SECRET_KEY, ALGORITHM
 from app.utils.dependencies import get_current_user, only_admin
@@ -27,6 +31,8 @@ def login(request: Request, data: LoginSchema, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == data.username).first()
     if not user:
         raise _auth_error
+    if not getattr(user, 'is_active', True):
+        raise HTTPException(status_code=401, detail="Usuario desactivado. Contacte a un administrador.")
     if not verify_password(data.password, user.password):
         raise _auth_error
     
@@ -39,7 +45,8 @@ def login(request: Request, data: LoginSchema, db: Session = Depends(get_db)):
         action="LOGIN",
         module="Seguridad",
         description="Inicio de sesión exitoso",
-        ip_address=request.client.host
+        ip_address=request.client.host,
+        device=request.headers.get("user-agent", "Desconocido")
     ))
     
     return {
@@ -51,6 +58,7 @@ def login(request: Request, data: LoginSchema, db: Session = Depends(get_db)):
             "name": user.name,
             "username": user.username,
             "is_admin": user.is_admin,
+            "is_super_admin": user.is_super_admin,
             "modules": user.modules,
             "must_change_password": user.must_change_password
         }
@@ -69,6 +77,8 @@ def refresh_token(data: TokenRefreshRequest, db: Session = Depends(get_db)):
         user = db.query(User).filter(User.username == username).first()
         if not user:
             raise HTTPException(status_code=401, detail="Usuario no encontrado")
+        if not user.is_active:
+            raise HTTPException(status_code=401, detail="Usuario desactivado")
             
         new_access_token = create_access_token(data={"sub": user.username})
         return {
@@ -105,6 +115,8 @@ def get_users(db: Session = Depends(get_db), user=Depends(only_admin)):
 
 @router.get("/users/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    if user.id != user_id and not (user.is_admin or user.is_super_admin):
+        raise HTTPException(status_code=403, detail="No tienes permisos para consultar este usuario")
     u = user_service.get_user_by_id(db, user_id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -112,9 +124,14 @@ def get_user(user_id: int, db: Session = Depends(get_db), user=Depends(get_curre
 
 @router.post("/users", response_model=UserResponse)
 def create_user(data: UserCreate, db: Session = Depends(get_db), user=Depends(only_admin)):
+    if not user.is_super_admin and (data.is_admin or data.is_super_admin):
+        raise HTTPException(status_code=403, detail="Solo un súper administrador puede crear administradores")
+    if data.member_id is not None and not db.query(Member).filter(Member.id == data.member_id).first():
+        raise HTTPException(status_code=400, detail="El miembro seleccionado no existe")
+    conflict = user_service.get_user_conflict(db, data.username, data.email, data.member_id)
+    if conflict:
+        raise HTTPException(status_code=400, detail=conflict)
     u = user_service.create_user(db, data)
-    if not u:
-        raise HTTPException(status_code=400, detail="El usuario ya existe")
     
     audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
         user_id=user.id,
@@ -126,9 +143,58 @@ def create_user(data: UserCreate, db: Session = Depends(get_db), user=Depends(on
 
 @router.put("/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, data: UserUpdate, db: Session = Depends(get_db), user=Depends(only_admin)):
-    u = user_service.update_user(db, user_id, data.model_dump(exclude_unset=True))
-    if not u:
+    target_user = user_service.get_user_by_id(db, user_id)
+    if not target_user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+    # Un admin no puede editar a otro admin (solo super admin, o a sí mismo)
+    if (target_user.is_admin or target_user.is_super_admin) and not user.is_super_admin and user.id != target_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permisos para modificar a otro administrador")
+
+    # Un admin regular no puede otorgar/quitar el rol de admin o super_admin
+    if not user.is_super_admin:
+        if data.is_admin is not None and data.is_admin != target_user.is_admin:
+            raise HTTPException(status_code=403, detail="No tienes permisos para cambiar el rol de administrador")
+        if data.is_super_admin is not None and data.is_super_admin != target_user.is_super_admin:
+            raise HTTPException(status_code=403, detail="No tienes permisos para cambiar el rol de súper administrador")
+
+    if user.id == target_user.id:
+        if data.is_active is False:
+            raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
+        removes_admin = target_user.is_admin and data.is_admin is False
+        removes_super_admin = target_user.is_super_admin and data.is_super_admin is False
+        if removes_admin or removes_super_admin:
+            raise HTTPException(status_code=400, detail="No puedes reducir los permisos de tu propia cuenta")
+
+    update_data = data.model_dump(exclude_unset=True)
+    effective_super_admin = data.is_super_admin if data.is_super_admin is not None else target_user.is_super_admin
+    effective_admin = data.is_admin if data.is_admin is not None else target_user.is_admin
+    if effective_super_admin:
+        update_data["is_admin"] = True
+        effective_admin = True
+    if effective_admin:
+        update_data["modules"] = []
+
+    next_member_id = data.member_id if "member_id" in data.model_fields_set else target_user.member_id
+    if next_member_id is not None and not db.query(Member).filter(Member.id == next_member_id).first():
+        raise HTTPException(status_code=400, detail="El miembro seleccionado no existe")
+    conflict = user_service.get_user_conflict(
+        db,
+        data.username if data.username is not None else target_user.username,
+        data.email if data.email is not None else target_user.email,
+        next_member_id,
+        exclude_user_id=user_id,
+    )
+    if conflict:
+        raise HTTPException(status_code=400, detail=conflict)
+
+    u = user_service.update_user(db, user_id, update_data)
+    audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
+        user_id=user.id,
+        action="UPDATE",
+        module="Gestión Usuarios",
+        description=f"Actualizó al usuario {u.username} ({u.name})"
+    ))
     return u
 
 @router.delete("/users/{user_id}")
@@ -137,6 +203,12 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user=Depends(only_a
     if not target_user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
         
+    # Un admin no puede eliminar/desactivar a otro admin (solo super admin, y no a sí mismo)
+    if user.id == target_user.id:
+        raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
+    if (target_user.is_admin or target_user.is_super_admin) and not user.is_super_admin:
+        raise HTTPException(status_code=403, detail="No tienes permisos para desactivar a otro administrador")
+        
     username = target_user.username
     deleted = user_service.delete_user(db, user_id)
     if not deleted:
@@ -144,8 +216,8 @@ def delete_user(user_id: int, db: Session = Depends(get_db), user=Depends(only_a
 
     audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
         user_id=user.id,
-        action="DELETE",
+        action="UPDATE",
         module="Gestión Usuarios",
-        description=f"Eliminó al usuario {username}"
+        description=f"Desactivó al usuario {username}"
     ))
-    return {"message": "Usuario eliminado correctamente"}
+    return {"message": "Usuario desactivado correctamente"}

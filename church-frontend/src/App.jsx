@@ -1,27 +1,61 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 
 // Layouts and Core Components (kept static for stability)
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { API_URL } from "./api/api";
+import SessionGuard from "./components/SessionGuard";
 
 // Lazy Loaded Pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Members = lazy(() => import("./pages/Members"));
 const Login = lazy(() => import("./pages/Login"));
 const Ministries = lazy(() => import("./pages/Ministries"));
-const Finance = lazy(() => import("./pages/Finance"));
+const FinanceLanding    = lazy(() => import("./pages/finance/FinanceLanding"));
+const FinanceLayout    = lazy(() => import("./pages/finance/FinanceLayout"));
+const CashRegister     = lazy(() => import("./pages/finance/CashRegister"));
+const FinanceOfferings = lazy(() => import("./pages/finance/Offerings"));
+const FinanceIncomes = lazy(() => import("./pages/finance/Incomes"));
+const FinanceExpenses = lazy(() => import("./pages/finance/Expenses"));
+const FinanceGoals = lazy(() => import("./pages/finance/Goals"));
+const FinanceDeposits = lazy(() => import("./pages/finance/Deposits"));
 const Projects = lazy(() => import("./pages/Projects"));
 const Events = lazy(() => import("./pages/Events"));
-const Reports = lazy(() => import("./pages/Reports"));
+const ReportsLanding = lazy(() => import("./pages/reports/ReportsLanding"));
+const ReportsLayout = lazy(() => import("./pages/reports/ReportsLayout"));
+const FinancialMonthly = lazy(() => import("./pages/reports/FinancialMonthly"));
+const FinancialBankMonthly = lazy(() => import("./pages/reports/FinancialBankMonthly"));
+const FinancialAnnual = lazy(() => import("./pages/reports/FinancialAnnual"));
+const MembersReport = lazy(() => import("./pages/reports/MembersReport"));
+const ProjectsReport = lazy(() => import("./pages/reports/ProjectsReport"));
+const MemberContributions = lazy(() => import("./pages/reports/MemberContributions"));
+const AttendanceReport = lazy(() => import("./pages/reports/AttendanceReport"));
+const MinistriesReport = lazy(() => import("./pages/reports/MinistriesReport"));
 const Users = lazy(() => import("./pages/Users"));
 const Privileges = lazy(() => import("./pages/Privileges"));
 const Announcements = lazy(() => import("./pages/Announcements"));
 const Projection = lazy(() => import("./pages/Projection"));
 const Attendance = lazy(() => import("./pages/Attendance"));
-const Settings = lazy(() => import("./pages/Settings"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const SettingsLanding = lazy(() => import("./pages/settings/SettingsLanding"));
+const SettingsLayout = lazy(() => import("./pages/settings/SettingsLayout"));
+const IdentitySettings = lazy(() => import("./pages/settings/Identity"));
+const FinanceSettings = lazy(() => import("./pages/settings/FinanceSettings"));
+const VerseSettings = lazy(() => import("./pages/settings/VerseSettings"));
+const BrandSettings = lazy(() => import("./pages/settings/BrandSettings"));
+const SecuritySettings = lazy(() => import("./pages/settings/SecuritySettings"));
+const DataSettings = lazy(() => import("./pages/settings/DataSettings"));
+const AppearanceSettings = lazy(() => import("./pages/settings/AppearanceSettings"));
+const AuditSettings = lazy(() => import("./pages/settings/AuditSettings"));
+const NotFound  = lazy(() => import("./pages/NotFound"));
+const MinistryWorkspace = lazy(() => import("./pages/MinistryWorkspace"));
+const MinistryDetail    = lazy(() => import("./pages/MinistryDetail"));
+const MinistriesLanding = lazy(() => import("./pages/MinistriesLanding"));
 
 // Loading Component
 const PageLoader = () => (
@@ -42,11 +76,12 @@ function App() {
     }
 
     // 2. Dynamic Branding Transformation
-    // Recuperamos la configuración para aplicar el branding "Premium"
     const applyBranding = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/settings/public`);
-        const data = await response.json(); // el endpoint devuelve el objeto directamente
+        const baseUrl = API_URL;
+        const response = await fetch(`${baseUrl}/settings/public`);
+        if (!response.ok) return;
+        const data = await response.json();
         
         if (data && data.primary_color) {
           const root = document.documentElement;
@@ -57,11 +92,12 @@ function App() {
           }
           document.title = data.church_name || "Sistema de Gestión Ministerial";
         }
-      } catch (error) {
-        // Silencioso — el branding por defecto ya está en tokens.css
+      } catch {
+        // Silencioso
       }
     };
     applyBranding();
+
 
     // Listen for theme changes from Settings page
     const onStorage = (e) => {
@@ -79,106 +115,71 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Dashboard />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
+      <SessionGuard />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Suspense fallback={<PageLoader />}><Login /></Suspense>} />
+        <Route path="/projection" element={<Suspense fallback={<PageLoader />}><Projection /></Suspense>} />
+        <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
 
-          <Route
-            path="/members"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Members />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
+        {/* Protected Routes with MainLayout */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Suspense fallback={<PageLoader />}>
+                  <Outlet />
+                </Suspense>
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/members" element={<Members />} />
+          <Route path="/ministries" element={<MinistriesLanding />} />
+          <Route path="/ministries/admin" element={<Ministries />} />
+          <Route path="/ministry-workspace" element={<MinistryWorkspace />} />
+          <Route path="/ministry-workspace/:ministrySlug" element={<MinistryDetail />} />
+          <Route path="/finance" element={<FinanceLayout />}>
+            <Route index element={<FinanceLanding />} />
+            <Route path="cash" element={<CashRegister />} />
+            <Route path="offerings" element={<FinanceOfferings />} />
+            <Route path="incomes" element={<FinanceIncomes />} />
+            <Route path="expenses" element={<FinanceExpenses />} />
+            <Route path="goals" element={<FinanceGoals />} />
+            <Route path="deposits" element={<FinanceDeposits />} />
+          </Route>
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/reports" element={<ReportsLayout />}>
+            <Route index element={<ReportsLanding />} />
+            <Route path="monthly" element={<FinancialMonthly />} />
+            <Route path="bank-monthly" element={<FinancialBankMonthly />} />
+            <Route path="annual" element={<FinancialAnnual />} />
+            <Route path="members" element={<MembersReport />} />
+            <Route path="projects" element={<ProjectsReport />} />
+            <Route path="contributions" element={<MemberContributions />} />
+            <Route path="attendance" element={<AttendanceReport />} />
+            <Route path="ministries" element={<MinistriesReport />} />
+          </Route>
+          <Route path="/privileges" element={<Privileges />} />
+          <Route path="/announcements" element={<Announcements />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/usuarios" element={<Users />} />
+          <Route path="/settings" element={<SettingsLayout />}>
+            <Route index element={<SettingsLanding />} />
+            <Route path="identity" element={<IdentitySettings />} />
+            <Route path="finance" element={<FinanceSettings />} />
+            <Route path="verse" element={<VerseSettings />} />
+            <Route path="brand" element={<BrandSettings />} />
+            <Route path="security" element={<SecuritySettings />} />
+            <Route path="data" element={<DataSettings />} />
+            <Route path="appearance" element={<AppearanceSettings />} />
+            <Route path="audit" element={<AuditSettings />} />
+          </Route>
+        </Route>
+      </Routes>
 
-          <Route
-            path="/ministries"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Ministries />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/finance"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Finance />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/projects"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Projects />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/events"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Events />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="/reports" element={<ProtectedRoute><MainLayout><Reports /></MainLayout></ProtectedRoute>} />
-          <Route path="/privileges" element={<ProtectedRoute><MainLayout><Privileges /></MainLayout></ProtectedRoute>} />
-          <Route path="/announcements" element={<ProtectedRoute><MainLayout><Announcements /></MainLayout></ProtectedRoute>} />
-          <Route path="/attendance" element={<ProtectedRoute><MainLayout><Attendance /></MainLayout></ProtectedRoute>} />
-          
-          <Route
-            path="/usuarios"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Users />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Settings />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="/projection" element={<Projection />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
     </BrowserRouter>
   );
 }

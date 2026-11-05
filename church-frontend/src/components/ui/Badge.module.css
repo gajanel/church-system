@@ -1,4 +1,4 @@
-/* Badge.module.css — Snipe-IT AdminLTE style labels */
+/* Badge.module.css — Corporate Flat status labels */
 
 .badge {
   display: inline-flex;
@@ -7,20 +7,20 @@
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  border-radius: var(--radius-sm);   /* Snipe-IT uses squarer badges */
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
 }
 
 /* ── Sizes ── */
-.sm  { font-size: 10px; padding: 2px 7px; }
-.md  { font-size: 11px; padding: 3px 9px; }
-.lg  { font-size: 12px; padding: 4px 11px; }
+.sm  { font-size: 10px; padding: 2px 6px; }
+.md  { font-size: 11px; padding: 2px 8px; }
+.lg  { font-size: 12px; padding: 3px 10px; }
 
-/* ── Variants — Snipe-IT status colors ── */
+/* ── Variants — flat corporate ── */
 .default {
-  background: #ECF0F5;
-  color: #555555;
-  border-color: #D2D6DE;
+  background: #F3F4F6;
+  color: #374151;
+  border-color: #E5E7EB;
 }
 .primary {
   background: var(--color-primary-light);

@@ -1,4 +1,7 @@
-from pydantic import BaseModel
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
+from pydantic import BaseModel, Field
 from datetime import date, datetime
 from typing import Optional, List
 
@@ -33,6 +36,15 @@ class OfferingPaginatedResponse(BaseModel):
     page: int
     size: int
     pages: int
+    filtered_total: float = 0
+
+
+class OfferingTitheCreate(BaseModel):
+    start_date: date
+    end_date: date
+    application_date: date
+    percentage: float = Field(default=10, gt=0, le=100)
+    observations: Optional[str] = None
 
 # ── Ingresos ──
 class IncomeCreate(BaseModel):
@@ -79,6 +91,7 @@ class ExpenseResponse(BaseModel):
     amount: float
     date: date
     observations: Optional[str]
+    document_url: Optional[str] = None
     created_by: int
     created_at: datetime
     created_by_name: Optional[str] = None
@@ -110,10 +123,28 @@ class FixedExpenseResponse(BaseModel):
         from_attributes = True
 
 
+# ── Cuentas Bancarias ──
+class BankAccountCreate(BaseModel):
+    bank_name: str
+    account_name: str
+    account_number: str
+
+class BankAccountResponse(BaseModel):
+    id: int
+    bank_name: str
+    account_name: str
+    account_number: str
+    created_by: int
+    created_at: datetime
+    created_by_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 # ── Boletas de Depósito ──
 class BankDepositCreate(BaseModel):
     slip_number: str
-    bank_name: str
+    bank_account_id: int
     amount: float
     date: date
     observations: Optional[str] = None
@@ -121,7 +152,9 @@ class BankDepositCreate(BaseModel):
 class BankDepositResponse(BaseModel):
     id: int
     slip_number: str
-    bank_name: str
+    bank_name: Optional[str] = None
+    bank_account_id: Optional[int] = None
+    bank_account: Optional[BankAccountResponse] = None
     amount: float
     date: date
     observations: Optional[str]
@@ -135,6 +168,73 @@ class BankDepositResponse(BaseModel):
 
 class BankDepositPaginatedResponse(BaseModel):
     items: List[BankDepositResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
+# ── Inyecciones Caja → Banco ──
+class BankInjectionCreate(BaseModel):
+    bank_account_id: int
+    amount: float
+    date: date
+    slip_number: Optional[str] = None
+    observations: Optional[str] = None
+
+class BankInjectionResponse(BaseModel):
+    id: int
+    bank_name: Optional[str] = None
+    bank_account_id: Optional[int] = None
+    bank_account: Optional[BankAccountResponse] = None
+    amount: float
+    date: date
+    slip_number: Optional[str]
+    observations: Optional[str]
+    image_url: Optional[str] = None
+    created_by: int
+    created_at: datetime
+    created_by_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class BankInjectionPaginatedResponse(BaseModel):
+    items: List[BankInjectionResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
+# ── Retiros / Salidas Bancarias ──
+class BankWithdrawalCreate(BaseModel):
+    bank_account_id: int
+    amount: float
+    date: date
+    concept: str
+    reference_number: Optional[str] = None
+    observations: Optional[str] = None
+
+class BankWithdrawalResponse(BaseModel):
+    id: int
+    bank_account_id: Optional[int] = None
+    bank_account: Optional[BankAccountResponse] = None
+    amount: float
+    date: date
+    concept: str
+    reference_number: Optional[str] = None
+    observations: Optional[str] = None
+    image_url: Optional[str] = None
+    created_by: int
+    created_at: datetime
+    created_by_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class BankWithdrawalPaginatedResponse(BaseModel):
+    items: List[BankWithdrawalResponse]
     total: int
     page: int
     size: int

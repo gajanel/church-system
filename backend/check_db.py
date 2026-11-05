@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from sqlalchemy import create_engine, text
 from app.database.connection import DATABASE_URL
 

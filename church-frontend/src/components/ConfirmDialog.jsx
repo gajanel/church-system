@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from "@mui/material";
 
 export default function ConfirmDialog({ open, title, content, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", confirmColor = "error" }) {

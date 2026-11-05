@@ -1,4 +1,7 @@
-import random
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
+import secrets
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -20,10 +23,6 @@ DAYS_OF_SERVICE = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábad
 # ── Gestión de Tipos de Privilegios (Catálogo Dinámico) ──────────────────────
 def get_privilege_types(db: Session):
     rows = db.query(PrivilegeType).all()
-    if not rows:
-        # Si está vacío, inicializar con los defaults y re-consultar
-        initialize_privileges(db)
-        rows = db.query(PrivilegeType).all()
     return rows
 
 def create_privilege_type(db: Session, data: PrivilegeTypeCreate):
@@ -266,9 +265,19 @@ def auto_generate_schedule(db: Session, week_start: date, user_id: int, days: li
                 ))
                 continue
 
-            # Filtrar: preferir no repetir en el mismo día
-            not_today = [c for c in candidates if c not in assigned_today]
-            pool_candidates = not_today if not_today else candidates
+            # Filtrar: NO repetir en el mismo día bajo ninguna circunstancia
+            pool_candidates = [c for c in candidates if c not in assigned_today]
+            
+            if not pool_candidates:
+                new_entries.append(WeeklyPrivilegeSchedule(
+                    week_start=week_start,
+                    day_name=day,
+                    privilege=privilege,
+                    member_id=None,
+                    notes="Candidatos ocupados en otro privilegio",
+                    created_by=user_id,
+                ))
+                continue
 
             # Ordenar por menor frecuencia reciente (distribución equitativa)
             pool_candidates.sort(key=lambda mid: recent_count.get(mid, 0))
@@ -276,7 +285,7 @@ def auto_generate_schedule(db: Session, week_start: date, user_id: int, days: li
             # Entre los de menor frecuencia, escoger aleatoriamente
             min_freq = recent_count.get(pool_candidates[0], 0)
             least_used = [c for c in pool_candidates if recent_count.get(c, 0) == min_freq]
-            chosen = random.choice(least_used)
+            chosen = secrets.choice(least_used)
 
             assigned_today.add(chosen)
             recent_count[chosen] = recent_count.get(chosen, 0) + 1

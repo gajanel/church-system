@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from sqlalchemy import Column, Integer, String, Float, Date, DateTime, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime

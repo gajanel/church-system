@@ -1,19 +1,22 @@
-# ETAPA 1: Construcción
-FROM node:20-alpine AS build-stage
+FROM node:20.19.5-alpine3.22 AS build
+
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-# Argumento para la URL de la API durante la construcción
+COPY --chown=node:node package.json package-lock.json ./
+USER node
+RUN npm ci --ignore-scripts --no-audit --no-fund
+
+COPY --chown=node:node index.html vite.config.js eslint.config.js ./
+COPY --chown=node:node public ./public
+COPY --chown=node:node src ./src
+
 ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
-# ETAPA 2: Producción con Nginx
-FROM nginx:stable-alpine
-# Copiar los archivos compilados desde la etapa anterior
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-# Copiar configuración de Nginx para manejar el SPA (History API)
+FROM nginxinc/nginx-unprivileged:1.27.5-alpine3.21
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 8080
+USER 101
 CMD ["nginx", "-g", "daemon off;"]

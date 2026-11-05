@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -5,9 +8,9 @@ from typing import List, Optional
 from app.database.connection import get_db
 from app.schemas.event_schema import EventCreate, EventUpdate, EventResponse
 from app.services import event_service
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, require_module
 
-router = APIRouter(prefix="/events", tags=["events"])
+router = APIRouter(prefix="/events", tags=["events"], dependencies=[Depends(require_module("events"))])
 
 
 @router.get("/", response_model=List[EventResponse])

@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { useState, useEffect, useCallback } from "react";
 import { getEvents, getEventsSummary, createEvent, updateEvent, deleteEvent } from "../api/events";
 import {
@@ -56,6 +60,9 @@ export default function Events() {
   
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState({ title: "", content: "", onConfirm: () => {} });
+
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isSuper = currentUser?.is_super_admin;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -203,8 +210,12 @@ export default function Events() {
             </CardBody>
             <div style={{ display:"flex", flexDirection:"column", justifyContent:"center", gap:6, padding:"12px 16px", borderLeft:"1px solid var(--border)" }}>
               <Button size="small" startIcon={<Visibility sx={{ fontSize:13 }} />} onClick={() => setSelected(ev)}>Ver</Button>
-              <Button size="small" color="primary" startIcon={<Edit sx={{ fontSize:13 }} />} onClick={() => openForm(ev)}>Editar</Button>
-              <Button size="small" color="error" startIcon={<Delete sx={{ fontSize:13 }} />} onClick={() => handleDelete(ev.id)}>Borrar</Button>
+              {isSuper && (
+                <>
+                  <Button size="small" color="primary" startIcon={<Edit sx={{ fontSize:13 }} />} onClick={() => openForm(ev)}>Editar</Button>
+                  <Button size="small" color="error" startIcon={<Delete sx={{ fontSize:13 }} />} onClick={() => handleDelete(ev.id)}>Borrar</Button>
+                </>
+              )}
             </div>
           </Card>
         ))}
@@ -215,7 +226,7 @@ export default function Events() {
   return (
     <div className={s.page}>
       <PageHeader title="Calendario y Eventos" subtitle="Planifica servicios, actividades, retiros y conferencias del ministerio.">
-        <Button variant="contained" startIcon={<AddAlarm />} onClick={() => openForm()}>Nuevo Evento</Button>
+        <Button variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }} size="small" startIcon={<AddAlarm />} onClick={() => openForm()}>Nuevo Evento</Button>
       </PageHeader>
 
       {error && !showForm && <div className={s.errorText}>{error}</div>}
@@ -300,7 +311,7 @@ export default function Events() {
           </DialogContent>
           <DialogActions sx={{ px:3, py:2 }}>
             <Button onClick={() => setShowForm(false)} color="inherit">Cancelar</Button>
-            <Button type="submit" variant="contained">Guardar Evento</Button>
+            <Button type="submit" variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }}>Guardar Evento</Button>
           </DialogActions>
         </form>
       </Dialog>
@@ -340,9 +351,13 @@ export default function Events() {
               </div>
             </DialogContent>
             <DialogActions sx={{ px:3, py:2 }}>
-              <Button color="error" startIcon={<Delete />} onClick={() => handleDelete(selected.id)} sx={{ mr:"auto" }}>Eliminar</Button>
-              <Button variant="outlined" startIcon={<Edit />} onClick={() => { setSelected(null); openForm(selected); }}>Editar</Button>
-              <Button onClick={() => setSelected(null)} variant="contained">Cerrar</Button>
+              {isSuper && (
+                <>
+                  <Button color="error" startIcon={<Delete />} onClick={() => handleDelete(selected.id)} sx={{ mr:"auto" }}>Eliminar</Button>
+                  <Button variant="outlined" startIcon={<Edit />} onClick={() => { setSelected(null); openForm(selected); }}>Editar</Button>
+                </>
+              )}
+              <Button onClick={() => setSelected(null)} variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none", fontWeight:600, '&:hover':{bgcolor:"#1E293B"} }}>Cerrar</Button>
             </DialogActions>
           </>
         )}

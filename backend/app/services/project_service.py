@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from sqlalchemy.orm import Session
 from app.models.project_model import Project
 from app.schemas.project_schema import ProjectCreate, ProjectUpdate

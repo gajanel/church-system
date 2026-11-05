@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 import json
 import io
 from datetime import datetime
@@ -7,7 +10,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pydantic import BaseModel
 from app.database.connection import get_db
-from app.schemas.settings_schema import SettingsResponse, SettingsUpdate
+from app.schemas.settings_schema import PublicSettingsResponse, SettingsResponse, SettingsUpdate
 from app.services import settings_service
 from app.utils.dependencies import only_admin, get_current_user
 from app.models import user_model
@@ -21,7 +24,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def get_settings(db: Session = Depends(get_db), user = Depends(get_current_user)):
     return settings_service.get_settings(db)
 
-@router.get("/public", response_model=SettingsResponse)
+@router.get("/public", response_model=PublicSettingsResponse)
 def get_public_settings(db: Session = Depends(get_db)):
     """Retorna la configuración básica sin necesidad de autenticación."""
     return settings_service.get_settings(db)

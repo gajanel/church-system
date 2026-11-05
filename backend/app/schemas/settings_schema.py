@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -33,6 +36,17 @@ class SettingsUpdate(BaseModel):
 class SettingsResponse(SettingsBase):
     id: int
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class PublicSettingsResponse(BaseModel):
+    church_name: str
+    church_logo_url: Optional[str] = None
+    primary_color: str
+    secondary_color: str
+    font_family: str
+    app_language: str
 
     class Config:
         from_attributes = True

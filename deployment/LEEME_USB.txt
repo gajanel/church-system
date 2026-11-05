@@ -1,0 +1,40 @@
+SIGDEM 1.1.0 - INSTALACION DESDE USB
+====================================
+
+1. Conecta la memoria USB a la computadora de produccion.
+2. Abre la carpeta SIGDEM_1.1.0.
+3. Haz clic derecho en instalar_produccion.bat.
+4. Selecciona "Ejecutar como administrador".
+5. Si existe una instalacion anterior en C:\, el instalador conserva automaticamente
+   su .env, fotografias y documentos.
+6. Solo en una instalacion nueva se abrira el archivo .env.
+7. En ese caso, completa DATABASE_URL, guarda y ejecuta el instalador nuevamente.
+8. Espera a que se abra http://localhost:8000.
+9. Ejecuta verificar_sistema.bat para comprobar la API y la base de datos.
+
+SI LA VERSION ANTERIOR ESTA EN OTRA CARPETA:
+- Abre instalar_produccion.bat con el Bloc de notas.
+- Busca: set "LEGACY_DIR_MANUAL="
+- Escribe la carpeta anterior. Ejemplo:
+  set "LEGACY_DIR_MANUAL=D:\SIGDEM"
+- Guarda el archivo y ejecutalo como administrador.
+- No escribas la ruta del archivo .env; escribe solamente la carpeta que lo contiene.
+
+El sistema se instala en C:\ProgramData\SIGDEM y se inicia al ingresar a Windows.
+La memoria USB puede retirarse despues de completar la instalacion.
+
+Archivos utiles:
+- iniciar_sistema.bat: inicia el sistema y abre el navegador.
+- detener_sistema.bat: detiene el backend.
+- verificar_sistema.bat: comprueba archivos, API y base de datos.
+- desinstalar_arranque.bat: quita el inicio automatico y la regla de firewall.
+
+IMPORTANTE:
+- El paquete no contiene contrasenas ni claves del equipo donde fue compilado.
+- En la primera instalacion se crea .env y se genera una SECRET_KEY aleatoria.
+- El sistema requiere PostgreSQL porque sus migraciones utilizan funciones propias de ese motor.
+- Debes configurar DATABASE_URL en C:\ProgramData\SIGDEM\.env antes del primer inicio.
+- No publiques ni compartas el contenido del archivo .env instalado.
+- Realiza una copia de seguridad de la base de datos antes de actualizar.
+- Al actualizar desde C:\, se crea ademas un respaldo de .env y static en
+  C:\ProgramData\SIGDEM_Backups. Este respaldo no sustituye el respaldo de PostgreSQL.

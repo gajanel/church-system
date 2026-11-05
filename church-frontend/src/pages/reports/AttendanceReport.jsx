@@ -1,0 +1,189 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
+import { useState } from "react";
+import { Box, Typography, Button, Grid, Card, CardContent, Select, MenuItem, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow, Chip } from "@mui/material";
+import { Assessment, Print, TableChart } from "@mui/icons-material";
+import { useOutletContext } from "react-router-dom";
+import API from "../../api/api";
+import { nowYear, nowMonth, MONTHS_ES, VerticalBars, printAttendancePDF, exportToExcel, ReportSkeleton } from "./utils";
+
+export default function AttendanceReport() {
+  const { settings } = useOutletContext();
+  const [month, setMonth] = useState(nowMonth);
+  const [year, setYear] = useState(nowYear);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get(`/reports/attendance?month=${month}&year=${year}&_t=${Date.now()}`);
+      setData(res.data);
+    } catch { setData(null); }
+    setLoading(false);
+  };
+
+  return (
+    <Box>
+      <Box sx={{ 
+        display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', 
+        p: 2, mb: 4, bgcolor: "white", borderRadius: 1, 
+        border: "1px solid #e5e7eb" 
+      }}>
+        <Typography variant="subtitle2" fontWeight={700} color="text.secondary" sx={{ mr: 2 }}>Parámetros del reporte:</Typography>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Mes</InputLabel>
+          <Select value={month} label="Mes" onChange={e => setMonth(+e.target.value)}>
+            {MONTHS_ES.map((m, i) => <MenuItem key={i} value={i + 1}>{m}</MenuItem>)}
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>Año</InputLabel>
+          <Select value={year} label="Año" onChange={e => setYear(+e.target.value)}>
+            {[nowYear, nowYear - 1, nowYear - 2].map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+          </Select>
+        </FormControl>
+        
+        <Box sx={{ flexGrow: 1 }} />
+        
+        <Button variant="contained" disableElevation startIcon={<Assessment />} onClick={load} sx={{ bgcolor: "#0F172A", "&:hover": { bgcolor: "#1E293B" }, textTransform: "none" }}>
+          Ver Reporte
+        </Button>
+        {data && (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button variant="outlined" startIcon={<Print />} onClick={() => printAttendancePDF(data, month, year, settings)} sx={{ textTransform: "none", color: "#0F172A", borderColor: "#e5e7eb" }}>
+              Exportar PDF
+            </Button>
+            <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
+              const rows = [
+                ["BALANCE MENSUAL DE ASISTENCIA", `${MONTHS_ES[data.period.month - 1].toUpperCase()} ${data.period.year}`],
+                [],
+                ["RESUMEN"],
+                ["Servicios Realizados", data.summary.total_records],
+                ["Asistencia Total", data.summary.grand_total],
+                ["Promedio por Culto", data.summary.avg_attendance],
+                ["Nuevos Convertidos", data.summary.total_converts],
+                [],
+                ["TOTALES POR CATEGORÍA"],
+                ["Niños 4-12", "Adolescentes 13-17", "Jóvenes 18-35", "Mujeres 36-60", "Hombres 36-60", "Adulto mayor 61+", "Visitas"],
+                [data.category_totals.children, data.category_totals.teens, data.category_totals.youth, data.category_totals.women, data.category_totals.men, data.category_totals.seniors, data.category_totals.visitors],
+                [],
+                ["HISTORIAL DETALLADO"],
+                ["Fecha", "Tipo de Culto", "Niños 4-12", "Adolescentes 13-17", "Jóvenes 18-35", "Mujeres 36-60", "Hombres 36-60", "Adulto mayor 61+", "Visitas", "Convertidos", "Total"],
+                ...data.records.map(r => [r.date, r.service_type, r.children, r.teens, r.youth, r.women, r.men, r.seniors, r.visitors, r.converts, r.total])
+              ];
+              exportToExcel(`Reporte_Asistencia_${MONTHS_ES[data.period.month - 1]}_${data.period.year}`, rows);
+            }} sx={{ textTransform: "none", color: "#059669", borderColor: "#059669" }}>
+              Exportar Excel
+            </Button>
+          </Box>
+        )}
+      </Box>
+
+      {loading ? (
+        <ReportSkeleton />
+      ) : !data ? (
+        <Box sx={{ p: 6, bgcolor: "white", borderRadius: 1, border: "1px solid #e5e7eb", minHeight: 400, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <Assessment sx={{ fontSize: 60, color: "#cbd5e1", mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" fontWeight={600}>Balance de Asistencia</Typography>
+          <Typography variant="body2" color="text.secondary" textAlign="center" maxWidth={400} mt={1}>Selecciona el mes y haz clic en "Ver Reporte" para procesar las métricas de asistencia e integración de nuevos creyentes.</Typography>
+        </Box>
+      ) : (
+        <Box id="report-attendance">
+          <Typography variant="h5" fontWeight="800" mb={3} color="#0F172A">Balance mensual de asistencia — {MONTHS_ES[data.period.month - 1]} {data.period.year}</Typography>
+
+          <Grid container spacing={3} mb={4}>
+            {[
+              { label: "Servicios en el Mes", value: data.summary.total_records, color: "#3b82f6" },
+              { label: "Asistencia Total Acumulada", value: data.summary.grand_total, color: "#8b5cf6" },
+              { label: "Promedio General", value: data.summary.avg_attendance, color: "#16a34a" },
+              { label: "Total Nuevos Convertidos", value: data.summary.total_converts, color: "#dc2626" },
+            ].map(m => (
+              <Grid item xs={12} sm={6} md={3} key={m.label}>
+                <Card sx={{ borderTop: `4px solid ${m.color}`, height: '100%', textAlign: 'center', boxShadow: "none", borderLeft: "1px solid #e5e7eb", borderRight: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
+                  <CardContent>
+                    <Typography variant="overline" color="text.secondary" fontWeight="700">{m.label}</Typography>
+                    <Typography variant="h4" fontWeight="800" sx={{ mt: 1 }}>{m.value}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          <Grid container spacing={4} mb={4}>
+            <Grid item xs={12} md={6}>
+              <Card sx={{ height: '100%', p: 2, boxShadow: "none", border: "1px solid #e5e7eb" }}>
+                <Typography variant="subtitle2" fontWeight="700" color="text.secondary" mb={2} textTransform="uppercase">Distribución por Categorías (Acumulada)</Typography>
+                <VerticalBars isCurrency={false} data={[
+                  { label: "Niños · 4–12", value: data.category_totals.children, color: "#10b981" },
+                  { label: "Adolescentes · 13–17", value: data.category_totals.teens, color: "#0ea5e9" },
+                  { label: "Jóvenes · 18–35", value: data.category_totals.youth, color: "#8b5cf6" },
+                  { label: "Mujeres · 36–60", value: data.category_totals.women, color: "#ec4899" },
+                  { label: "Hombres · 36–60", value: data.category_totals.men, color: "#2563eb" },
+                  { label: "Adulto mayor · 61+", value: data.category_totals.seniors, color: "#64748b" },
+                  { label: "Visitas", value: data.category_totals.visitors, color: "#f59e0b" },
+                ]} />
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', boxShadow: "none", border: "1px solid #e5e7eb" }}>
+                 <Typography variant="h6" fontWeight="700" color="#1e3a8a">Mantenimiento de la Obra</Typography>
+                 <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ maxWidth: 300, mt: 1 }}>
+                   El promedio de asistencia general de <strong>{data.summary.avg_attendance}</strong> personas por culto refleja la fidelidad de la congregación durante el mes de {MONTHS_ES[month-1]}.
+                 </Typography>
+                 <Box sx={{ mt: 3, p: 2, bgcolor: '#fef2f2', borderRadius: 2, border: '1px solid', borderColor: '#fca5a5', width: '100%', maxWidth: 300 }}>
+                    <Typography variant="h4" fontWeight="800" color="#dc2626" textAlign="center">
+                      {data.summary.total_converts}
+                    </Typography>
+                    <Typography variant="caption" fontWeight="700" display="block" textAlign="center" color="#dc2626">NUEVAS ALMAS (CONVERTIDOS)</Typography>
+                 </Box>
+              </Card>
+            </Grid>
+          </Grid>
+
+          <Card sx={{ overflow: 'hidden', boxShadow: "none", border: "1px solid #e5e7eb" }}>
+            <Typography variant="subtitle1" fontWeight="700" sx={{ p: 2, bgcolor: '#f8fafc', borderBottom: "1px solid #e5e7eb" }}>
+              Historial Detallado del Mes
+            </Typography>
+            <Table size="small">
+              <TableHead sx={{ bgcolor: '#f8fafc' }}>
+                <TableRow>
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Actividad</TableCell>
+                  <TableCell align="center">Niñ.</TableCell>
+                  <TableCell align="center">Adol.</TableCell>
+                  <TableCell align="center">Jóv.</TableCell>
+                  <TableCell align="center">Muj.</TableCell>
+                  <TableCell align="center">Hom.</TableCell>
+                  <TableCell align="center">A. may.</TableCell>
+                  <TableCell align="center">Vis.</TableCell>
+                  <TableCell align="center" sx={{ color: '#dc2626', fontWeight: 'bold' }}>Conv.</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold' }}>Total</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {data.records.map((r, i) => (
+                  <TableRow key={i} hover>
+                    <TableCell>{r.date}</TableCell>
+                    <TableCell><Chip label={r.service_type} size="small" variant="outlined" /></TableCell>
+                    <TableCell align="center">{r.children}</TableCell>
+                    <TableCell align="center">{r.teens}</TableCell>
+                    <TableCell align="center">{r.youth}</TableCell>
+                    <TableCell align="center">{r.women}</TableCell>
+                    <TableCell align="center">{r.men}</TableCell>
+                    <TableCell align="center">{r.seniors}</TableCell>
+                    <TableCell align="center">{r.visitors}</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold', color: '#dc2626' }}>{r.converts}</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>{r.total}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </Box>
+      )}
+    </Box>
+  );
+}

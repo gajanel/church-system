@@ -1,0 +1,123 @@
+/* MinistryWorkspace.module.css */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+/* ── Ministry Card ── */
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: #FAFAFA;
+}
+
+.cardIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: #1e3a5f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ── Module chips ── */
+.moduleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.moduleChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #FFFFFF;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.moduleChip:hover {
+  border-color: #1e3a5f;
+  background: var(--color-primary-light);
+}
+
+.moduleChip.disabled {
+  opacity: 0.4;
+  background: #F9FAFB;
+}
+
+.toggle {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin-left: 2px;
+}
+
+.toggle.on  { background: #D1FAE5; color: #065F46; }
+.toggle.off { background: #FEE2E2; color: #991B1B; }
+
+/* ── Footer hint ── */
+.cardFooter {
+  padding: 7px 14px;
+  border-top: 1px solid var(--border);
+  background: #FAFAFA;
+}
+
+.footerHint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-disabled);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .grid { grid-template-columns: 1fr; }
+}

@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from sqlalchemy import Column, Integer, String, Date, DateTime
 from datetime import datetime
 from app.database.connection import Base
@@ -32,5 +35,6 @@ class Member(Base):
     occupation = Column(String(100), nullable=True)
     join_date = Column(Date, nullable=True)
     emergency_contact = Column(String(100), nullable=True)
+    church_role = Column(String(50), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)

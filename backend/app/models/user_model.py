@@ -1,4 +1,8 @@
-from sqlalchemy import Column, Integer, String, Boolean, JSON
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
+from sqlalchemy import Column, Integer, String, Boolean, JSON, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.connection import Base
 
 class User(Base):
@@ -10,5 +14,10 @@ class User(Base):
     email = Column(String, nullable=False)
     password = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False)
+    is_super_admin = Column(Boolean, default=False)
     modules = Column(JSON, default=list)
     must_change_password = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
+    member_id = Column(Integer, ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
+
+    member = relationship("Member")

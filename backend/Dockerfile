@@ -1,31 +1,24 @@
-# Imagen base de Python ligera
-FROM python:3.10-slim
+FROM python:3.12.12-slim-bookworm
 
-# Evitar que Python genere archivos .pyc y permitir logs en tiempo real
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias (para psycopg2 y otros)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 
-# Copiar requerimientos e instalar dependencias de Python
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --chown=app:app requirements.txt ./requirements.txt
+RUN python -m pip install --no-cache-dir --only-binary=:all: -r requirements.txt
 
-# Copiar el resto del código
-COPY . .
+COPY --chown=app:app app ./app
+COPY --chown=app:app migrations ./migrations
+COPY --chown=app:app main.py ./main.py
 
-# Crear carpetas para archivos estáticos si no existen
-RUN mkdir -p static/members static/uploads/deposits
+RUN mkdir -p static/members static/uploads/deposits static/uploads/expenses \
+    && chown -R app:app /app/static
 
-# Exponer el puerto de FastAPI
+USER app
 EXPOSE 8000
 
-# Comando para arrancar con Uvicorn (modo producción)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]

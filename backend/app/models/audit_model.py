@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey
 from sqlalchemy.sql import func
 from app.database.connection import Base
@@ -12,4 +15,5 @@ class AuditLog(Base):
     description = Column(String, nullable=True) # human readable description
     details = Column(JSON, nullable=True)    # optional technical details (old/new values)
     ip_address = Column(String, nullable=True)
+    device = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

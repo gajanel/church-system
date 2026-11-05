@@ -1,12 +1,15 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.database.connection import get_db
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, require_module
 from app.schemas.attendance_schema import AttendanceCreate, AttendanceUpdate, AttendanceResponse
 from app.services import attendance_service
 
-router = APIRouter(prefix="/attendance", tags=["Attendance"])
+router = APIRouter(prefix="/attendance", tags=["Attendance"], dependencies=[Depends(require_module("attendance"))])
 
 @router.get("", response_model=List[AttendanceResponse])
 def get_attendance(db: Session = Depends(get_db), user=Depends(get_current_user)):

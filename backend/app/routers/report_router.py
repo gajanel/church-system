@@ -1,3 +1,6 @@
+# Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+# Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import extract, func
@@ -5,16 +8,25 @@ from typing import Optional
 from datetime import date
 
 from app.database.connection import get_db
-from app.utils.dependencies import get_current_user
-from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense
+from app.utils.dependencies import get_current_user, require_scoped_module
+from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense, BankInjection, OfferingTitheApplication
 from app.models.member_model import Member
 from app.models.event_model import Event
 from app.models.project_model import Project
 from app.models.offering_model import Offering
 from app.models.offering_type_model import OfferingType
 from app.models.attendance_model import Attendance
+from app.utils.finance_balances import cash_balance, contributor_name
 
-router = APIRouter(prefix="/reports", tags=["Reports"])
+router = APIRouter(prefix="/reports", tags=["Reports"], dependencies=[Depends(require_scoped_module("reports", {
+    "/reports/attendance": "reports.attendance",
+    "/reports/financial/monthly": "reports.monthly",
+    "/reports/financial/bank-monthly": "reports.monthly",
+    "/reports/financial/annual": "reports.annual",
+    "/reports/members": "reports.members",
+    "/reports/projects": "reports.projects",
+    "/reports/member/": "reports.contributions",
+}))])
 
 
 # ── 0. Reporte de Asistencia Mensual ──
@@ -34,7 +46,7 @@ def report_attendance(
         return {
             "period": {"month": month, "year": year},
             "summary": {"total_records": 0, "grand_total": 0, "avg_attendance": 0, "total_converts": 0},
-            "category_totals": {"men": 0, "women": 0, "youth": 0, "children": 0, "visitors": 0},
+            "category_totals": {"men": 0, "women": 0, "youth": 0, "children": 0, "teens": 0, "seniors": 0, "visitors": 0},
             "records": []
         }
 
@@ -42,6 +54,8 @@ def report_attendance(
     total_women = sum(r.women for r in records)
     total_youth = sum(r.youth for r in records)
     total_children = sum(r.children for r in records)
+    total_teens = sum(r.teens for r in records)
+    total_seniors = sum(r.seniors for r in records)
     total_visitors = sum(r.visitors for r in records)
     total_converts = sum(r.converts for r in records)
     
@@ -61,6 +75,8 @@ def report_attendance(
             "women": total_women,
             "youth": total_youth,
             "children": total_children,
+            "teens": total_teens,
+            "seniors": total_seniors,
             "visitors": total_visitors,
         },
         "records": [
@@ -72,6 +88,8 @@ def report_attendance(
                 "women": r.women,
                 "youth": r.youth,
                 "children": r.children,
+                "teens": r.teens,
+                "seniors": r.seniors,
                 "visitors": r.visitors,
                 "converts": r.converts,
                 "total": r.total,
@@ -81,7 +99,7 @@ def report_attendance(
     }
 
 
-# ── 1. Reporte Financiero Mensual ──
+# ── 1. Reporte Financiero Mensual (Caja de Ofrendas) ──
 @router.get("/financial/monthly")
 def report_financial_monthly(
     month: int = Query(..., ge=1, le=12),
@@ -89,6 +107,33 @@ def report_financial_monthly(
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
+    first_day = date(year, month, 1)
+
+    # El saldo de apertura corresponde al cierre acumulado anterior al día 1.
+    previous_offerings = db.query(func.sum(ChurchOffering.amount)).filter(
+        ChurchOffering.date < first_day
+    ).scalar() or 0
+    previous_incomes = db.query(func.sum(ChurchIncome.amount)).filter(
+        ChurchIncome.date < first_day
+    ).scalar() or 0
+    previous_expenses = db.query(func.sum(ChurchExpense.amount)).filter(
+        ChurchExpense.date < first_day
+    ).scalar() or 0
+    previous_tithe = db.query(func.sum(OfferingTitheApplication.amount)).filter(
+        OfferingTitheApplication.application_date < first_day,
+        OfferingTitheApplication.status == "applied",
+    ).scalar() or 0
+    previous_injections = db.query(func.sum(BankInjection.amount)).filter(
+        BankInjection.date < first_day
+    ).scalar() or 0
+    carried_balance = cash_balance(
+        previous_offerings,
+        previous_incomes,
+        previous_expenses,
+        previous_injections,
+        previous_tithe,
+    )
+
     offerings = db.query(ChurchOffering).filter(
         extract("month", ChurchOffering.date) == month,
         extract("year", ChurchOffering.date) == year,
@@ -103,11 +148,38 @@ def report_financial_monthly(
         extract("month", ChurchExpense.date) == month,
         extract("year", ChurchExpense.date) == year,
     ).all()
+    
+    injections = db.query(BankInjection).filter(
+        extract("month", BankInjection.date) == month,
+        extract("year", BankInjection.date) == year,
+    ).all()
+    tithe_applications = db.query(OfferingTitheApplication).filter(
+        extract("month", OfferingTitheApplication.application_date) == month,
+        extract("year", OfferingTitheApplication.application_date) == year,
+        OfferingTitheApplication.status == "applied",
+    ).all()
 
     total_offerings = sum(o.amount for o in offerings)
-    total_incomes = sum(i.amount for i in incomes)
+    # Compatibilidad: registros antiguos llamados "Saldo inicial" pasan a formar
+    # parte de la apertura y dejan de contarse como ingreso operativo del mes.
+    opening_incomes = [
+        item for item in incomes
+        if "saldo inicial" in (item.income_type or "").strip().lower()
+    ]
+    regular_incomes = [item for item in incomes if item not in opening_incomes]
+    opening_adjustment = sum(item.amount for item in opening_incomes)
+    initial_balance = carried_balance + opening_adjustment
+    total_incomes = sum(i.amount for i in regular_incomes)
     total_expenses = sum(e.amount for e in expenses)
-    balance = total_offerings + total_incomes - total_expenses
+    total_injections = sum(inj.amount for inj in injections)
+    tithe_amount = sum(item.amount for item in tithe_applications)
+    other_expenses = float(total_expenses)
+    
+    # El saldo final conserva la caja anterior y aplica los movimientos del mes.
+    period_net = cash_balance(
+        total_offerings, total_incomes, other_expenses, total_injections, tithe_amount
+    )
+    balance = initial_balance + period_net
 
     monthly_goal = db.query(func.sum(FixedExpense.amount)).scalar() or 0
 
@@ -119,13 +191,22 @@ def report_financial_monthly(
     expenses_by_type = {}
     for e in expenses:
         expenses_by_type[e.expense_type] = expenses_by_type.get(e.expense_type, 0) + e.amount
+        
+    for inj in injections:
+        expenses_by_type["Traslado a Bancos"] = expenses_by_type.get("Traslado a Bancos", 0) + inj.amount
 
     return {
         "period": {"month": month, "year": year},
         "summary": {
+            "initial_balance": round(initial_balance, 2),
             "total_offerings": round(total_offerings, 2),
             "total_incomes": round(total_incomes, 2),
-            "total_expenses": round(total_expenses, 2),
+            "total_expenses": round(other_expenses + tithe_amount + total_injections, 2),
+            "pure_expenses": round(total_expenses, 2),
+            "other_expenses": round(other_expenses, 2),
+            "tithe_amount": tithe_amount,
+            "total_injections": round(total_injections, 2),
+            "period_net": round(period_net, 2),
             "balance": round(balance, 2),
             "monthly_goal": round(monthly_goal, 2),
             "goal_completion_pct": round((total_offerings + total_incomes) / monthly_goal * 100, 1) if monthly_goal > 0 else 0,
@@ -134,9 +215,100 @@ def report_financial_monthly(
         "expenses_by_type": [{"type": k, "amount": round(v, 2)} for k, v in expenses_by_type.items()],
         "transactions": {
             "offerings": [{"date": str(o.date), "type": o.offering_type, "amount": o.amount, "donor": o.donor_name} for o in offerings],
-            "incomes": [{"date": str(i.date), "type": i.income_type, "amount": i.amount, "donor": i.donor_name} for i in incomes],
+            "incomes": [{
+                "date": str(i.date),
+                "type": i.income_type,
+                "amount": i.amount,
+                "donor": contributor_name(i.donor_name, i.member),
+            } for i in regular_incomes],
             "expenses": [{"date": str(e.date), "type": e.expense_type, "amount": e.amount, "observations": e.observations} for e in expenses],
+            "injections": [{"date": str(i.date), "type": "Traslado a Bancos", "amount": i.amount, "observations": i.observations} for i in injections],
         },
+    }
+
+# ── 1.5. Reporte de Bancos (Caja General) ──
+@router.get("/financial/bank-monthly")
+def report_financial_bank_monthly(
+    month: int = Query(..., ge=1, le=12),
+    year: int = Query(..., ge=2000),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    from app.models.finance_model import BankDeposit, BankInjection, BankWithdrawal, BankAccount
+    
+    deposits = db.query(BankDeposit).filter(
+        extract("month", BankDeposit.date) == month,
+        extract("year", BankDeposit.date) == year,
+    ).all()
+    
+    injections = db.query(BankInjection).filter(
+        extract("month", BankInjection.date) == month,
+        extract("year", BankInjection.date) == year,
+    ).all()
+    
+    withdrawals = db.query(BankWithdrawal).filter(
+        extract("month", BankWithdrawal.date) == month,
+        extract("year", BankWithdrawal.date) == year,
+    ).all()
+    
+    accounts = db.query(BankAccount).all()
+    account_map = {acc.id: f"{acc.bank_name} - {acc.account_number}" for acc in accounts}
+    
+    total_deposits = sum(d.amount for d in deposits)
+    total_injections = sum(i.amount for i in injections)
+    total_withdrawals = sum(w.amount for w in withdrawals)
+    
+    # Agrupación de ingresos a banco (depósitos e inyecciones) y retiros
+    transactions = []
+    
+    for d in deposits:
+        transactions.append({
+            "id": f"dep-{d.id}",
+            "date": str(d.date),
+            "type": "Depósito (Directo)",
+            "account": account_map.get(d.bank_account_id, "Desconocida"),
+            "amount": d.amount,
+            "observations": d.observations,
+            "reference": d.slip_number,
+            "sign": "+"
+        })
+        
+    for inj in injections:
+        transactions.append({
+            "id": f"inj-{inj.id}",
+            "date": str(inj.date),
+            "type": "Inyección (Desde Caja)",
+            "account": account_map.get(inj.bank_account_id, "Desconocida"),
+            "amount": inj.amount,
+            "observations": inj.observations,
+            "reference": inj.slip_number,
+            "sign": "+"
+        })
+        
+    for w in withdrawals:
+        transactions.append({
+            "id": f"wd-{w.id}",
+            "date": str(w.date),
+            "type": "Retiro/Salida",
+            "account": account_map.get(w.bank_account_id, "Desconocida"),
+            "amount": w.amount,
+            "observations": w.concept,
+            "reference": w.reference_number,
+            "sign": "-"
+        })
+        
+    transactions.sort(key=lambda x: x["date"], reverse=True)
+    
+    return {
+        "period": {"month": month, "year": year},
+        "summary": {
+            "total_deposits": round(total_deposits, 2),
+            "total_injections": round(total_injections, 2),
+            "total_incomes": round(total_deposits + total_injections, 2),
+            "total_withdrawals": round(total_withdrawals, 2),
+            "net_flow": round((total_deposits + total_injections) - total_withdrawals, 2)
+        },
+        "transactions": transactions
     }
 
 
@@ -163,16 +335,25 @@ def report_financial_annual(
         func.sum(ChurchExpense.amount).label("total")
     ).filter(extract("year", ChurchExpense.date) == year).group_by("month").all()
 
+    tithes_by_month = db.query(
+        extract("month", OfferingTitheApplication.application_date).label("month"),
+        func.sum(OfferingTitheApplication.amount).label("total")
+    ).filter(
+        extract("year", OfferingTitheApplication.application_date) == year,
+        OfferingTitheApplication.status == "applied",
+    ).group_by("month").all()
+
     # Convertir a diccionarios para lookup O(1)
     off_map = {int(r.month): float(r.total) for r in offerings_by_month}
     inc_map = {int(r.month): float(r.total) for r in incomes_by_month}
     exp_map = {int(r.month): float(r.total) for r in expenses_by_month}
+    tithe_map = {int(r.month): float(r.total) for r in tithes_by_month}
 
     monthly_data = []
     for m in range(1, 13):
         t_off = off_map.get(m, 0)
         t_inc = inc_map.get(m, 0)
-        t_exp = exp_map.get(m, 0)
+        t_exp = exp_map.get(m, 0) + tithe_map.get(m, 0)
         monthly_data.append({
             "month": m,
             "total_offerings": round(t_off, 2),

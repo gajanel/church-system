@@ -1,14 +1,18 @@
+/*
+ * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
+ * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
+ */
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { getMembers } from "../api/members";
 import { getMinistries } from "../api/ministries";
-import { getOfferings, getIncomes, getExpenses, getMonthlySummary } from "../api/finance";
+import { getOfferings, getExpenses, getMonthlySummary } from "../api/finance";
 import { getPublicSettings } from "../api/settings";
 import {
   Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Box, Typography
+  TableHead, TableRow, Box, Typography, Alert, Button
 } from "@mui/material";
-import { TrendingUp, TrendingDown, People, AccountBalance, AccountBalanceWallet, LocalOffer } from "@mui/icons-material";
+import { TrendingUp, TrendingDown, People, AccountBalance, AccountBalanceWallet } from "@mui/icons-material";
 
 import { Card, CardHeader, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
@@ -41,9 +45,9 @@ function BarChart({ data }) {
             <span className={styles.barValue} style={{ fontWeight: 700, color: d.color }}>Q{(d.value / 1000).toFixed(1)}k</span>
             <div className={styles.bar} style={{ 
               height: `${Math.max(pct, 2)}%`, 
-              background: `linear-gradient(to top, ${d.color}, ${d.color}cc)`,
+              background: d.color,
               borderRadius: '4px 4px 0 0',
-              boxShadow: `0 4px 12px ${d.color}33`,
+              boxShadow: "none",
               transition: 'height 1s cubic-bezier(0.4, 0, 0.2, 1)'
             }} />
             <span className={styles.barLabel} style={{ fontWeight: 600 }}>{d.label}</span>
@@ -60,16 +64,20 @@ function BarChart({ data }) {
 function GaugeChart({ value, max = 10000, label = "Avance" }) {
   const hasGoal = max > 0;
   const pct = hasGoal ? Math.min(100, Math.max(0, ((value || 0) / max) * 100)) : 0;
-  
-  let color = "var(--color-error)";
-  if (!hasGoal) color = "var(--text-muted)";
-  else if (pct >= 40 && pct < 75) color = "var(--color-warning)";
-  else if (pct >= 75) color = "var(--color-success)";
 
-  const statusText = !hasGoal ? "Sin Meta" : (pct < 40 ? "Bajo" : pct < 75 ? "Medio" : "Excelente");
+  let color = "var(--text-muted)";
+  if (hasGoal && pct < 40)       color = "var(--color-error)";
+  else if (hasGoal && pct < 75)  color = "var(--color-warning)";
+  else if (hasGoal && pct >= 75) color = "var(--color-success)";
+
+  const statusText = !hasGoal
+    ? "Sin meta"
+    : pct < 40 ? "Bajo" : pct < 75 ? "Medio" : "Excelente";
 
   const R = 75, sw = 14, C = 2 * Math.PI * R;
-  const offset = C - (pct / 100) * C;
+  // When there's no goal, don't draw any arc — just show the background track
+  const offset = hasGoal ? C - (pct / 100) * C : C;
+
   return (
     <div className={styles.chartWrap}>
       <svg width="220" height="220" viewBox="0 0 200 200">
@@ -79,20 +87,24 @@ function GaugeChart({ value, max = 10000, label = "Avance" }) {
             <stop offset="100%" stopColor={color} stopOpacity="0.8" />
           </linearGradient>
         </defs>
-        <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth={sw} />
-        <circle
-          cx="100" cy="100" r={R} fill="none" stroke="url(#gaugeGradient)" strokeWidth={sw}
-          strokeDasharray={C} strokeDashoffset={offset} strokeLinecap="round"
-          transform="rotate(-90 100 100)"
-          style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)" }}
-        />
-        <text x="100" y="95" textAnchor="middle" fontSize="36" fontWeight="900" fill="var(--text-primary)" fontFamily="Outfit, sans-serif">
-          {Math.round(pct)}%
+        {/* Background track */}
+        <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth={sw} />
+        {/* Progress arc — hidden when no goal */}
+        {hasGoal && (
+          <circle
+            cx="100" cy="100" r={R} fill="none" stroke="url(#gaugeGradient)" strokeWidth={sw}
+            strokeDasharray={C} strokeDashoffset={offset} strokeLinecap="round"
+            transform="rotate(-90 100 100)"
+            style={{ transition: "stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)" }}
+          />
+        )}
+        <text x="100" y="93" textAnchor="middle" fontSize="34" fontWeight="900" fill="var(--text-primary)" fontFamily="var(--font)">
+          {hasGoal ? `${Math.round(pct)}%` : "—"}
         </text>
-        <text x="100" y="115" textAnchor="middle" fontSize="11" fontWeight="800" fill={color} textTransform="uppercase" letterSpacing="0.1em">
+        <text x="100" y="113" textAnchor="middle" fontSize="11" fontWeight="700" fill={color}>
           {statusText}
         </text>
-        <text x="100" y="135" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--text-muted)" textTransform="uppercase">
+        <text x="100" y="132" textAnchor="middle" fontSize="10" fontWeight="600" fill="var(--text-muted)">
           {label}
         </text>
       </svg>
@@ -105,12 +117,15 @@ function GaugeChart({ value, max = 10000, label = "Avance" }) {
    ══════════════════════════════════════════════════════════════ */
 function DonutChart({ value, max }) {
   const hasGoal = max > 0;
-  const pct = hasGoal ? Math.min(100, Math.max(0, ((value || 0) / max) * 100)) : 0;
-  const deficit = hasGoal ? Math.max(0, 100 - pct) : 0;
-  
-  const bgGradient = hasGoal 
-    ? `conic-gradient(var(--color-success) 0% ${pct}%, var(--color-error) ${pct}% 100%)`
-    : `conic-gradient(rgba(0,0,0,0.05) 0% 100%)`;
+  const pct     = hasGoal ? Math.min(100, Math.max(0, ((value || 0) / max) * 100)) : 0;
+  const deficit  = hasGoal ? Math.max(0, 100 - pct) : 0;
+
+  // Neutral grey when no goal is set; green/red split when there is a goal
+  const bgGradient = !hasGoal
+    ? `conic-gradient(rgba(0,0,0,0.07) 0% 100%)`
+    : pct === 0
+      ? `conic-gradient(rgba(0,0,0,0.07) 0% 100%)`  // no income yet — don't paint red
+      : `conic-gradient(var(--color-success) 0% ${pct}%, rgba(0,0,0,0.07) ${pct}% 100%)`;
 
   return (
     <div className={styles.chartWrap} style={{ flexDirection: "column", gap: 20 }}>
@@ -118,33 +133,44 @@ function DonutChart({ value, max }) {
         width: 150, height: 150, borderRadius: "50%",
         background: bgGradient,
         position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+        boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
       }}>
         <div style={{
           width: 100, height: 100, background: "var(--surface-card)", borderRadius: "50%",
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           border: '1px solid var(--border)'
         }}>
-          <span style={{ fontSize: 22, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>{Math.round(pct)}%</span>
-          <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 700, textTransform: 'uppercase' }}>Logrado</span>
+          <span style={{ fontSize: 22, fontWeight: 900, color: "var(--text-primary)", lineHeight: 1 }}>
+            {hasGoal ? `${Math.round(pct)}%` : "—"}
+          </span>
+          <span style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 700, textTransform: 'uppercase' }}>
+            {hasGoal ? "Logrado" : "Sin meta"}
+          </span>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 10, height: 10, background: hasGoal ? "var(--color-success)" : "rgba(0,0,0,0.1)", borderRadius: "2px" }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: 'uppercase' }}>Meta</span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)" }}>{Math.round(pct)}%</span>
+
+      {hasGoal ? (
+        <div style={{ display: "flex", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 10, height: 10, background: "var(--color-success)", borderRadius: "2px" }} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: 'uppercase' }}>Logrado</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)" }}>{Math.round(pct)}%</span>
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 10, height: 10, background: "rgba(0,0,0,0.15)", borderRadius: "2px" }} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: 'uppercase' }}>Restante</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)" }}>{Math.round(deficit)}%</span>
+            </div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 10, height: 10, background: hasGoal ? "var(--color-error)" : "rgba(0,0,0,0.1)", borderRadius: "2px" }} />
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", textTransform: 'uppercase' }}>Déficit</span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "var(--text-primary)" }}>{Math.round(deficit)}%</span>
-          </div>
-        </div>
-      </div>
+      ) : (
+        <span style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>
+          Configure una meta mensual para ver el análisis
+        </span>
+      )}
     </div>
   );
 }
@@ -154,6 +180,8 @@ function DonutChart({ value, max }) {
    ══════════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   const location = useLocation();
+  const [loadError, setLoadError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [summary, setSummary]             = useState(null);
   const [members, setMembers]             = useState([]);
   const [ministries, setMinistries]       = useState([]);
@@ -162,24 +190,29 @@ export default function Dashboard() {
   const [sysSettings, setSysSettings]    = useState(null);
 
   useEffect(() => {
+    let active = true;
     getPublicSettings().then(r => setSysSettings(r.data)).catch(() => {});
     Promise.all([
       getMonthlySummary(THIS_MONTH, THIS_YEAR),
       getMembers(1, 1000),
       getMinistries(),
       getOfferings(1, 10),
-      getIncomes(1, 10),
       getExpenses(1, 10),
-    ]).then(([s, m, min, o, _i, e]) => {
-      setSummary(s.data);
-      setMembers(m.data.items);
-      setMinistries(min.data);
-      setOfferings(o.data.items.slice(0, 3));
-      setExpenses(e.data.items.slice(0, 2));
+    ]).then(([s, m, min, o, e]) => {
+      if (!active) return;
+      setSummary(s?.data || {});
+      setMembers(m?.data?.items || []);
+      setMinistries(min?.data || []);
+      setOfferings(o?.data?.items?.slice(0, 3) || []);
+      setExpenses(e?.data?.items?.slice(0, 2) || []);
     }).catch(err => {
+      if (active) setLoadError(true);
       console.error("Dashboard loading error:", err);
     });
-  }, [location.key]);
+    return () => { active = false; };
+  }, [location.key, attempt]);
+
+  if (loadError) return <Alert severity="error" action={<Button color="inherit" onClick={() => { setLoadError(false); setAttempt(n => n + 1); }}>Reintentar</Button>}>No se pudo cargar el resumen. Comprueba la conexión y tus permisos.</Alert>;
 
   if (!summary) return <DashboardSkeleton />;
 
@@ -189,9 +222,9 @@ export default function Dashboard() {
 
   const METRICS = [
     {
-      label: "Caja General",
-      value: fmt(summary.total_historical_incomes),
-      sub: "Fondos acumulados",
+      label: "Caja de Ofrendas",
+      value: fmt(summary.offering_cash),
+      sub: "Efectivo en circulación",
       subClass: styles.textMuted,
       icon: <AccountBalanceWallet sx={{ fontSize: 18 }} />,
       iconClass: styles.iconPrimary,
@@ -231,9 +264,9 @@ export default function Dashboard() {
   ];
 
   const CHART_DATA = [
-    { label: "Ofrendas",   value: summary.total_offerings, color: "#2563eb" },
-    { label: "Ingresos",   value: summary.total_incomes,   color: "#10b981" },
-    { label: "Gastos",     value: summary.total_expenses,  color: "#ef4444" },
+    { label: "Ofrendas",   value: summary.total_offerings || 0, color: "#2563eb" },
+    { label: "Ingresos",   value: summary.total_incomes || 0,   color: "#10b981" },
+    { label: "Gastos",     value: summary.total_expenses || 0,  color: "#ef4444" },
   ];
 
   const capMonth = MONTH_NAME.charAt(0).toUpperCase() + MONTH_NAME.slice(1);
@@ -245,67 +278,39 @@ export default function Dashboard() {
         subtitle={`Supervisión financiera y administrativa — ${capMonth}`}
       />
 
-      {/* ── Banner de Versículo Bíblico — Dinámico ── */}
+      {/* ── Banner de Versículo Bíblico ── */}
       {sysSettings?.bible_verse && (
         <Box sx={{ 
-          mb: 4, 
-          mt: 1,
-          p: 3, 
-          borderRadius: "24px",
-          background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-          border: "1px solid rgba(0,0,0,0.05)",
-          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.01)",
+          mb: 3,
+          mt: 0.5,
+          p: "12px 16px",
+          borderRadius: 1,
+          background: "var(--surface-card)",
+          border: "1px solid var(--border)",
+          borderLeft: "4px solid var(--color-primary)",
           display: "flex",
           alignItems: "center",
-          gap: 3,
-          position: "relative",
-          overflow: "hidden",
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0, right: 0, bottom: 0,
-            width: "4px",
-            background: "linear-gradient(to bottom, #3b82f6, #8b5cf6)",
-          }
+          gap: 2,
         }}>
-          <Box sx={{ 
-            display: { xs: 'none', sm: 'flex' },
-            p: 1.5, 
-            borderRadius: "16px", 
-            background: "rgba(59, 130, 246, 0.1)",
-            color: "#3b82f6"
+          <Typography variant="body2" sx={{ 
+            fontStyle: 'italic', 
+            color: "var(--text-secondary)",
+            fontSize: '0.85rem',
+            lineHeight: 1.5,
           }}>
-            <LocalOffer fontSize="medium" />
-          </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body1" sx={{ 
-              fontStyle: 'italic', 
-              color: '#1e293b',
-              fontSize: '1.05rem',
-              lineHeight: 1.6,
-              fontWeight: 500,
-            }}>
-              {sysSettings.bible_verse}
-            </Typography>
-          </Box>
+            {sysSettings.bible_verse}
+          </Typography>
         </Box>
       )}
 
       {/* ── Métricas ── */}
-      <div className={styles.metricsGrid}>
+      <div className={styles.metricsTabs}>
         {METRICS.map((m, i) => (
-          <Card key={i}>
-            <CardBody>
-              <div className={styles.metricInner}>
-                <div className={styles.metricTop}>
-                  <span className={styles.metricLabel}>{m.label}</span>
-                  <div className={`${styles.metricIcon} ${m.iconClass}`}>{m.icon}</div>
-                </div>
-                <div className={styles.metricValue}>{m.value}</div>
-                <div className={`${styles.metricSub} ${m.subClass}`}>{m.sub}</div>
-              </div>
-            </CardBody>
-          </Card>
+          <div key={i} className={styles.metricTab}>
+            <span className={styles.metricLabel}>{m.label}</span>
+            <div className={styles.metricValue}>{m.value}</div>
+            <div className={`${styles.metricSub} ${m.subClass}`}>{m.sub}</div>
+          </div>
         ))}
       </div>
 
