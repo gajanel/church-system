@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearSessionData, markSessionActivity } from "./session";
 
 export const API_URL = (import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? `${window.location.protocol}//${window.location.hostname}:8000` : window.location.origin)).replace(/\/$/, "");
@@ -7,7 +8,7 @@ const API = axios.create({ baseURL: API_URL, timeout: 30000 });
 let refreshPromise = null;
 
 function clearSession() {
-  ["token", "refresh_token", "user"].forEach(key => localStorage.removeItem(key));
+  clearSessionData();
   if (window.location.pathname !== "/login") window.location.assign("/login");
 }
 
@@ -40,6 +41,7 @@ API.interceptors.response.use(response => response, async error => {
         // A completed logout must not be reversed by an in-flight refresh.
         if (localStorage.getItem("refresh_token") !== refreshToken) throw new Error("La sesión cambió");
         localStorage.setItem("token", data.access_token);
+        markSessionActivity();
         return data.access_token;
       }).finally(() => { refreshPromise = null; });
     }

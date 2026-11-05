@@ -39,3 +39,14 @@ class SettingsResponse(SettingsBase):
 
     class Config:
         from_attributes = True
+
+class PublicSettingsResponse(BaseModel):
+    church_name: str
+    church_logo_url: Optional[str] = None
+    primary_color: str
+    secondary_color: str
+    font_family: str
+    app_language: str
+
+    class Config:
+        from_attributes = True

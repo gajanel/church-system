@@ -11,10 +11,12 @@ function harness(post) {
   const ctx = {
     axios: { create: () => api, post },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, val) => storage.set(key, val), removeItem: key => storage.delete(key) },
+    clearSessionData: () => storage.clear(),
+    markSessionActivity: () => storage.set('session_last_activity', String(Date.now())),
     window: { location: { origin: 'https://church.example', protocol: 'https:', hostname: 'church.example', pathname: '/', assign() { redirected++; } } },
   };
   vm.createContext(ctx);
-  vm.runInContext(source.replace('import axios from "axios";', '').replaceAll('import.meta.env.VITE_API_BASE_URL', 'undefined').replaceAll('import.meta.env.DEV', 'false').replaceAll('export const ', 'const ').replace('export default API;', 'globalThis.url = API_URL;'), ctx);
+  vm.runInContext(source.replace('import axios from "axios";', '').replace('import { clearSessionData, markSessionActivity } from "./session";', '').replaceAll('import.meta.env.VITE_API_BASE_URL', 'undefined').replaceAll('import.meta.env.DEV', 'false').replaceAll('export const ', 'const ').replace('export default API;', 'globalThis.url = API_URL;'), ctx);
   return { ctx, storage, error: retry => onError({ response: { status: 401 }, config: { headers: {}, _retry: retry } }), retried: () => retried, redirected: () => redirected };
 }
 test('production uses the HTTPS origin', () => { assert.equal(harness().ctx.url, 'https://church.example'); });

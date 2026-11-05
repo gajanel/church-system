@@ -60,7 +60,11 @@ export default function FinancialMonthly() {
             <Button variant="outlined" startIcon={<TableChart />} onClick={() => {
               let allTx = [];
               data.transactions.offerings.forEach(o => allTx.push({ ...o, type_cat: 'offering', desc: o.type === "servicio" ? "Ofrenda" : `Ofrenda especial${o.donor ? ' - ' + o.donor : ''}` }));
-              data.transactions.incomes.forEach(i => allTx.push({ ...i, type_cat: 'income', desc: i.type + (i.donor ? ` - ${i.donor}` : '') }));
+              data.transactions.incomes.forEach(i => allTx.push({
+                ...i,
+                type_cat: 'income',
+                desc: i.type + (i.donor ? ` - ${i.donor}` : '')
+              }));
               data.transactions.expenses.forEach(e => allTx.push({ ...e, type_cat: 'expense', desc: e.type + (e.observations ? ` - ${e.observations}` : '') }));
               if (data.transactions.injections) {
                 data.transactions.injections.forEach(inj => allTx.push({ ...inj, type_cat: 'expense', desc: inj.type + (inj.observations ? ` - ${inj.observations}` : '') }));
@@ -68,26 +72,15 @@ export default function FinancialMonthly() {
             
               allTx.sort((a, b) => new Date(a.date) - new Date(b.date));
             
-              let saldoInicial = 0;
-              let diezmoManual = 0;
-              
-              allTx.forEach(t => {
-                if ((t.type_cat === 'income' || t.type_cat === 'offering') && t.desc.toLowerCase().includes("saldo inicial")) {
-                  saldoInicial += parseFloat(t.amount);
-                }
-                if (t.type_cat === 'expense' && t.desc.toLowerCase().includes("diezmo")) {
-                  diezmoManual += parseFloat(t.amount);
-                }
-              });
-            
               const ofrendasLimpio = parseFloat(data.summary.total_offerings);
-              const aportacionesLimpio = parseFloat(data.summary.total_incomes) - saldoInicial;
+              const saldoInicial = parseFloat(data.summary.initial_balance || 0);
+              const aportacionesLimpio = parseFloat(data.summary.total_incomes);
               
-              const diezmoGastos = ofrendasLimpio * 0.10;
-              const gastosLimpio = parseFloat(data.summary.pure_expenses) - diezmoManual;
+              const diezmoGastos = parseFloat(data.summary.tithe_amount || 0);
+              const gastosLimpio = parseFloat(data.summary.other_expenses || 0);
               const totalInyecciones = parseFloat(data.summary.total_injections || 0);
               
-              const saldoFinal = ofrendasLimpio + aportacionesLimpio + saldoInicial - diezmoGastos - gastosLimpio - totalInyecciones;
+              const saldoFinal = parseFloat(data.summary.balance || 0);
 
               const rows = [
                 ["REGISTROS DE OFRENDAS Y GASTOS"],
@@ -137,10 +130,11 @@ export default function FinancialMonthly() {
 
           <Grid container spacing={3} mb={4}>
             {[
+              { label: "Saldo Inicial", value: fmt(data.summary.initial_balance), color: "#475569" },
               { label: "Total Ofrendas", value: fmt(data.summary.total_offerings), color: "#1d4ed8" },
               { label: "Ingresos Adicionales", value: fmt(data.summary.total_incomes), color: "#16a34a" },
               { label: "Total Egresos (Incl. Banco)", value: fmt(data.summary.total_expenses), color: "#dc2626" },
-              { label: "Efectivo Disponible", value: fmt(data.summary.balance), color: data.summary.balance >= 0 ? "#16a34a" : "#dc2626" },
+              { label: "Saldo Final en Caja", value: fmt(data.summary.balance), color: data.summary.balance >= 0 ? "#16a34a" : "#dc2626" },
             ].map(m => (
               <Grid item xs={12} sm={6} md={3} key={m.label}>
                 <Card sx={{ borderTop: `4px solid ${m.color}`, height: '100%', boxShadow: "none", border: "1px solid #e5e7eb" }}>

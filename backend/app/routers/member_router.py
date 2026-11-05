@@ -4,7 +4,7 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
 from sqlalchemy.orm import Session
 from app.database.connection import get_db
-from app.utils.dependencies import get_current_user, only_admin
+from app.utils.dependencies import get_current_user, only_admin, require_module
 from app.schemas.member_schema import MemberCreate, MemberUpdate, MemberResponse, MemberPaginatedResponse
 from app.services import member_service
 from app.services import member_ministry_service
@@ -21,7 +21,7 @@ from typing import List
 # Límite máximo de tamaño para fotos de miembros: 5 MB
 MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_module("members"))])
 
 @router.get("/members", response_model=MemberPaginatedResponse)
 def get_members(

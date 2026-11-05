@@ -109,6 +109,11 @@ export default function Members() {
     setMemberMins(mm.data); setShowDetails(true);
   };
 
+  const openDetailFromRow = (event, member) => {
+    if (event.target.closest("button")) return;
+    openDetalle(member);
+  };
+
   const handleAssign = async () => {
     if (!selectedMinId || !selectedRoleId) { setError("Selecciona ministerio y rol"); return; }
     try {
@@ -168,7 +173,15 @@ export default function Members() {
         filters={[{ label: "Estado", value: filterStatus, onChange: setFilterStatus, options: STATUS_OPTS }]}
         emptyText="No se encontraron miembros."
         renderRow={(m) => (
-          <TableRow key={m.id} sx={{ '&:nth-of-type(even)': { bgcolor: '#F9FAFB' }, '&:hover': { bgcolor:"#f1f5f9" }, transition: 'background-color 0.2s' }}>
+          <TableRow
+            key={m.id}
+            hover
+            tabIndex={0}
+            title="Doble clic para ver la ficha completa"
+            onDoubleClick={event => openDetailFromRow(event, m)}
+            onKeyDown={event => { if (event.key === "Enter") openDetailFromRow(event, m); }}
+            sx={{ cursor:"pointer", '&:nth-of-type(even)': { bgcolor: '#F9FAFB' }, '&:hover': { bgcolor:"#eef3f8" }, '&:focus-visible': { outline:"2px solid #1d4ed8", outlineOffset:-2 }, transition: 'background-color 0.15s' }}
+          >
             <TableCell>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 <Avatar src={photoUrl(m)} sx={{ width:32, height:32, fontSize:12, fontWeight:700, borderRadius:"50%",
@@ -240,22 +253,26 @@ export default function Members() {
       </Dialog>
 
       {/* Detail dialog */}
-      <Dialog open={showDetails} onClose={() => setShowDetails(false)} maxWidth="sm" fullWidth>
+      <Dialog open={showDetails} onClose={() => setShowDetails(false)} maxWidth="md" fullWidth>
         {selectedMember && (
           <>
             <DialogTitle sx={{ display:"flex", alignItems:"center", gap:1.5 }}>
-              <Avatar src={photoUrl(selectedMember)} sx={{ bgcolor:"#1e3a5f", borderRadius:"3px", width:28, height:28, fontSize:12 }}>
+              <Avatar src={photoUrl(selectedMember)} sx={{ bgcolor:"#1e3a5f", width:44, height:44, fontSize:15 }}>
                 {!selectedMember.photo_url && selectedMember.first_name?.[0]}
               </Avatar>
-              {selectedMember.first_name} {selectedMember.last_name}
+              <div>
+                <Typography sx={{ fontSize:18, fontWeight:750 }}>{selectedMember.first_name} {selectedMember.last_name}</Typography>
+                <Typography sx={{ fontSize:12, color:"#64748b" }}>Ficha completa del miembro</Typography>
+              </div>
             </DialogTitle>
             <DialogContent dividers>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"10px 24px", marginBottom:20 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(190px, 1fr))", gap:"16px 28px", marginBottom:24 }}>
                 {[["Teléfono",selectedMember.phone],["Email",selectedMember.email],["Dirección",selectedMember.address],
                   ["Nacimiento",selectedMember.birth_date],["Género",GENDER_MAP[selectedMember.gender]||selectedMember.gender],
                   ["Estado Civil",selectedMember.marital_status],["Ocupación",selectedMember.occupation],
                   ["Ingreso",selectedMember.join_date],["Bautismo",selectedMember.baptism_date],
-                  ["Emergencia",selectedMember.emergency_contact], ["Responsabilidad", roleLabel(selectedMember.church_role)]
+                  ["Emergencia",selectedMember.emergency_contact], ["Responsabilidad", roleLabel(selectedMember.church_role)],
+                  ["Estado", selectedMember.status === "active" ? "Activo" : "Inactivo"]
                 ].map(([l,v]) => (
                   <div key={l}>
                     <p style={{ fontSize:10, color:"var(--text-muted)", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:2 }}>{l}</p>

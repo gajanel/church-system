@@ -10,6 +10,7 @@ import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "./layouts/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { API_URL } from "./api/api";
+import SessionGuard from "./components/SessionGuard";
 
 // Lazy Loaded Pages
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -114,6 +115,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <SessionGuard />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Suspense fallback={<PageLoader />}><Login /></Suspense>} />

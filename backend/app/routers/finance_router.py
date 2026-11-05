@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
 # Este código es confidencial y propietario. No está permitida su distribución ni modificación.
 
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, Query
 from sqlalchemy.orm import Session
 from datetime import date
 import math
@@ -10,12 +10,12 @@ import shutil
 import uuid
 
 from app.database.connection import get_db
-from app.utils.dependencies import get_current_user, only_finance
+from app.utils.dependencies import get_current_user, only_finance, require_scoped_module
 from app.schemas.finance_schema import (
     OfferingCreate, IncomeCreate, ExpenseCreate, FixedExpenseCreate, BankDepositCreate,
     OfferingPaginatedResponse, IncomePaginatedResponse, ExpensePaginatedResponse, BankDepositPaginatedResponse,
     BankInjectionPaginatedResponse, BankAccountCreate, BankAccountResponse,
-    BankWithdrawalPaginatedResponse
+    BankWithdrawalPaginatedResponse, OfferingTitheCreate
 )
 from app.services import finance_service
 from app.services import audit_service
@@ -24,19 +24,39 @@ from app.schemas import audit_schema
 # Límite máximo para recibos/boletas de depósito: 5 MB
 MAX_DEPOSIT_FILE_SIZE = 5 * 1024 * 1024
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_scoped_module("finance", {
+    "/finance/offerings": "finance.offerings",
+    "/finance/offering-tithes": "finance.offerings",
+    "/finance/incomes": "finance.incomes",
+    "/finance/expenses": "finance.expenses",
+    "/finance/fixed-expenses": "finance.goals",
+    "/finance/deposits": "finance.deposits",
+    "/finance/cash-register": "finance.cash",
+    "/finance/injections": "finance.cash",
+    "/finance/withdrawals": "finance.cash",
+    "/finance/bank-accounts": "finance.cash",
+}))])
 
 # ── Ofrendas ──
 @router.get("/finance/offerings", response_model=OfferingPaginatedResponse)
-def get_offerings(page: int = 1, size: int = 50, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def get_offerings(
+    page: int = Query(1, ge=1), size: int = Query(50, ge=1, le=200),
+    date_from: date | None = None, date_to: date | None = None,
+    offering_type: str | None = None, search: str | None = None,
+    db: Session = Depends(get_db), user=Depends(get_current_user),
+):
     skip = (page - 1) * size
-    items, total = finance_service.get_offerings(db, skip=skip, limit=size)
+    items, total, filtered_total = finance_service.get_offerings(
+        db, skip=skip, limit=size, date_from=date_from, date_to=date_to,
+        offering_type=offering_type, search=search,
+    )
     return {
         "items": items,
         "total": total,
         "page": page,
         "size": size,
-        "pages": math.ceil(total / size) if total > 0 else 0
+        "pages": math.ceil(total / size) if total > 0 else 0,
+        "filtered_total": round(filtered_total, 2),
     }
 
 @router.post("/finance/offerings")
@@ -55,6 +75,43 @@ def delete_offering(offering_id: int, db: Session = Depends(get_db), user=Depend
     if not finance_service.delete_offering(db, offering_id):
         raise HTTPException(status_code=404, detail="Ofrenda no encontrada")
     return {"message": "Eliminada correctamente"}
+
+
+@router.get("/finance/offering-tithes")
+def get_offering_tithes(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    return finance_service.get_tithe_applications(db)
+
+
+@router.get("/finance/offering-tithes/preview")
+def preview_offering_tithe(
+    start_date: date, end_date: date, percentage: float = Query(10, gt=0, le=100),
+    db: Session = Depends(get_db), user=Depends(get_current_user),
+):
+    try:
+        return finance_service.get_tithe_preview(db, start_date, end_date, percentage)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/finance/offering-tithes")
+def create_offering_tithe(data: OfferingTitheCreate, db: Session = Depends(get_db), user=Depends(only_finance)):
+    try:
+        result = finance_service.create_tithe_application(db, data, user.id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    audit_service.create_audit_log(db, audit_schema.AuditLogCreate(
+        user_id=user.id, action="CREATE", module="Finanzas",
+        description=f"Aplicó {data.percentage}% de diezmo sobre ofrendas (Q{result['amount']})",
+    ))
+    return result
+
+
+@router.patch("/finance/offering-tithes/{application_id}/cancel")
+def cancel_offering_tithe(application_id: int, db: Session = Depends(get_db), user=Depends(only_finance)):
+    result = finance_service.cancel_tithe_application(db, application_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Aplicación de diezmo no encontrada")
+    return result
 
 # ── Ingresos ──
 @router.get("/finance/incomes", response_model=IncomePaginatedResponse)

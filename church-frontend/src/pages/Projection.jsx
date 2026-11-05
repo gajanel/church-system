@@ -3,7 +3,7 @@
  * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
  */
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { WS_URL } from "../api/api";
 
 export default function Projection() {
@@ -80,7 +80,9 @@ export default function Projection() {
           } else {
             setPlaylist([]);
           }
-        } catch (err) {}
+        } catch {
+          localStorage.removeItem("projection_playlist");
+        }
       } else if (e.key === "projection_force_reload") {
         window.location.reload();
       }
@@ -189,7 +191,7 @@ export default function Projection() {
       {/* Anuncio Individual Animado */}
       <AnimatePresence>
         {isAnnouncement && !playlist.length && (
-          <motion.div
+          <Motion.div
             key={payload.data.id}
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -203,14 +205,14 @@ export default function Projection() {
             <p style={{ fontSize: "3.5vw", fontWeight: "500", color: "#f8fafc", lineHeight: "1.4", whiteSpace: "pre-wrap" }}>
               {payload.data.content}
             </p>
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
       {/* Playlist de Anuncios Animada */}
       <AnimatePresence>
         {playlist.length > 0 && (
-          <motion.div
+          <Motion.div
             key={playlist[currentIndex]?.id}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -237,7 +239,7 @@ export default function Projection() {
                  ))}
                </div>
             )}
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 

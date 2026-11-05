@@ -40,6 +40,24 @@ class ChurchIncome(Base):
     created_by_user = relationship("User", foreign_keys=[created_by])
 
 
+class OfferingTitheApplication(Base):
+    __tablename__ = "offering_tithe_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    start_date = Column(Date, nullable=False, index=True)
+    end_date = Column(Date, nullable=False, index=True)
+    application_date = Column(Date, nullable=False, index=True)
+    percentage = Column(Float, nullable=False)
+    base_amount = Column(Float, nullable=False)
+    amount = Column(Float, nullable=False)
+    status = Column(String(20), nullable=False, default="applied", index=True)
+    observations = Column(String(300), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    created_by_user = relationship("User", foreign_keys=[created_by])
+
+
 class ChurchExpense(Base):
     __tablename__ = "church_expenses"
 

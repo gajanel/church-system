@@ -9,6 +9,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useToast } from "../components/ui/Toast";
 import { getPublicSettings } from "../api/settings";
 import { API_URL } from "../api/api";
+import { clearSessionData, saveSession } from "../api/session";
 import styles from "./Login.module.css";
 
 function Login() {
@@ -32,6 +33,12 @@ function Login() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "1") {
+      clearSessionData();
+      setError("La sesión terminó por inactividad. Ingresa nuevamente.");
+      return;
+    }
     if (localStorage.getItem("token")) navigate("/");
   }, [navigate]);
 
@@ -56,9 +63,7 @@ function Login() {
         setUserToSave(data.user);
         setNeedsPwChange(true);
       } else {
-        localStorage.setItem("token",         data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
-        localStorage.setItem("user",          JSON.stringify(data.user));
+        saveSession({ accessToken: data.access_token, refreshToken: data.refresh_token, user: data.user });
         navigate("/");
       }
     } catch { setError("Error de conexión. Verifica tu red."); }
@@ -78,9 +83,11 @@ function Login() {
         body: JSON.stringify({ current_password: password, new_password: newPassword }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.detail || "Error al cambiar contraseña"); setLoading(false); return; }
-      localStorage.setItem("token", tokenToSave);
-      if (refreshToSave) localStorage.setItem("refresh_token", refreshToSave);
-      localStorage.setItem("user",  JSON.stringify({ ...userToSave, must_change_password: false }));
+      saveSession({
+        accessToken: tokenToSave,
+        refreshToken: refreshToSave,
+        user: { ...userToSave, must_change_password: false },
+      });
       navigate("/");
     } catch { setError("Error de conexión."); }
     setLoading(false);

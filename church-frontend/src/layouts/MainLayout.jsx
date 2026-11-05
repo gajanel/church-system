@@ -28,14 +28,14 @@ import {
   ChevronLeft,
   KeyboardDoubleArrowLeft,
   KeyboardDoubleArrowRight,
-  AttachMoney, MenuBook, PersonOutlined, AccountBalanceWallet,
-  CallReceived, CallMade, Flag, Savings, AccountBalance
+  PersonOutlined
 } from "@mui/icons-material";
 
 import { Tooltip } from "@mui/material";
 import styles from "./MainLayout.module.css";
 import { getSettings } from "../api/settings";
 import { userHasModuleAccess } from "../components/userAccess";
+import { clearSessionData } from "../api/session";
 
 const ICON_SIZE = 17;
 
@@ -43,45 +43,19 @@ const MENU_ITEMS = (t, hasAccess, isAdmin, user) => [
   { title: t("sidebar.dashboard"),     icon: <DashboardIcon     sx={{ fontSize: ICON_SIZE }} />, path: "/",            show: hasAccess("dashboard") },
   { title: t("sidebar.members"),       icon: <MembersIcon       sx={{ fontSize: ICON_SIZE }} />, path: "/members",     show: hasAccess("members") },
   { title: t("sidebar.ministries"), icon: <MinistriesIcon sx={{ fontSize: ICON_SIZE }} />, path: "/ministries", show: hasAccess("ministries") || user?.modules?.includes("workspace") || user?.modules?.some(m => m.startsWith("ministry.")) || isAdmin },
-  {
-    title: t("sidebar.finance"), icon: <FinanceIcon sx={{ fontSize: ICON_SIZE }} />,
-    group: "finance", show: hasAccess("finance"),
-    children: [
-      { title: t("sidebar.finance_summary"), icon: <AccountBalanceWallet sx={{ fontSize: 15 }} />, path: "/finance", exact: true, show: hasAccess("finance") },
-      { title: t("sidebar.cash"), icon: <AttachMoney sx={{ fontSize: 15 }} />, path: "/finance/cash", show: hasAccess("finance.cash") },
-      { title: t("sidebar.offerings"), icon: <Savings sx={{ fontSize: 15 }} />, path: "/finance/offerings", show: hasAccess("finance.offerings") },
-      { title: t("sidebar.incomes"), icon: <CallReceived sx={{ fontSize: 15 }} />, path: "/finance/incomes", show: hasAccess("finance.incomes") },
-      { title: t("sidebar.expenses"), icon: <CallMade sx={{ fontSize: 15 }} />, path: "/finance/expenses", show: hasAccess("finance.expenses") },
-      { title: t("sidebar.goals"), icon: <Flag sx={{ fontSize: 15 }} />, path: "/finance/goals", show: hasAccess("finance.goals") },
-      { title: t("sidebar.deposits"), icon: <AccountBalance sx={{ fontSize: 15 }} />, path: "/finance/deposits", show: hasAccess("finance.deposits") },
-    ],
-  },
+  { title: t("sidebar.finance_summary"), icon: <FinanceIcon sx={{ fontSize: ICON_SIZE }} />, path: "/finance", show: hasAccess("finance") },
   { title: t("sidebar.projects"),      icon: <ProjectsIcon      sx={{ fontSize: ICON_SIZE }} />, path: "/projects",     show: hasAccess("projects") },
   { title: t("sidebar.events"),        icon: <EventsIcon        sx={{ fontSize: ICON_SIZE }} />, path: "/events",       show: hasAccess("events") },
   { title: t("sidebar.privileges"),    icon: <PrivilegesIcon    sx={{ fontSize: ICON_SIZE }} />, path: "/privileges",   show: hasAccess("privileges") },
   { title: t("sidebar.announcements"), icon: <AnnouncementsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/announcements", show: hasAccess("announcements") },
   { title: t("sidebar.attendance"),    icon: <AttendanceIcon    sx={{ fontSize: ICON_SIZE }} />, path: "/attendance",   show: hasAccess("attendance") },
-  {
-    title: t("sidebar.reports"), icon: <ReportsIcon sx={{ fontSize: ICON_SIZE }} />,
-    group: "reports", show: hasAccess("reports"),
-    children: [
-      { title: t("sidebar.reports_summary"), icon: <ReportsIcon sx={{ fontSize: 15 }} />, path: "/reports", exact: true, show: hasAccess("reports") },
-      { title: t("sidebar.monthly_report"), icon: <MenuBook sx={{ fontSize: 15 }} />, path: "/reports/monthly", show: hasAccess("reports.monthly") },
-      { title: t("sidebar.bank_report"), icon: <AccountBalance sx={{ fontSize: 15 }} />, path: "/reports/bank-monthly", show: hasAccess("reports.monthly") },
-      { title: t("sidebar.annual_report"), icon: <EventsIcon sx={{ fontSize: 15 }} />, path: "/reports/annual", show: hasAccess("reports.annual") },
-      { title: t("sidebar.members_report"), icon: <MembersIcon sx={{ fontSize: 15 }} />, path: "/reports/members", show: hasAccess("reports.members") },
-      { title: t("sidebar.projects_report"), icon: <ProjectsIcon sx={{ fontSize: 15 }} />, path: "/reports/projects", show: hasAccess("reports.projects") },
-      { title: t("sidebar.contributions_report"), icon: <Savings sx={{ fontSize: 15 }} />, path: "/reports/contributions", show: hasAccess("reports.contributions") },
-      { title: t("sidebar.attendance_report"), icon: <AttendanceIcon sx={{ fontSize: 15 }} />, path: "/reports/attendance", show: hasAccess("reports.attendance") },
-      { title: t("sidebar.ministries_report"), icon: <MinistriesIcon sx={{ fontSize: 15 }} />, path: "/reports/ministries", show: hasAccess("reports.ministries") },
-    ],
-  },
+  { title: t("sidebar.reports_summary"), icon: <ReportsIcon sx={{ fontSize: ICON_SIZE }} />, path: "/reports", show: hasAccess("reports") },
   {
     title: t("sidebar.administration"), icon: <AdminIcon sx={{ fontSize: ICON_SIZE }} />,
     group: "administration", show: true,
     children: [
       { title: t("sidebar.users"), icon: <AdminIcon sx={{ fontSize: 15 }} />, path: "/usuarios", show: isAdmin },
-      { title: t("sidebar.settings"), icon: <SettingsIcon sx={{ fontSize: 15 }} />, path: "/settings", show: true },
+      { title: t("sidebar.settings"), icon: <SettingsIcon sx={{ fontSize: 15 }} />, path: "/settings", show: isAdmin },
     ],
   },
 ];
@@ -109,7 +83,7 @@ export default function MainLayout({ children }) {
   const langRef     = useRef(null);
 
   const logout = useCallback(() => {
-    ["token", "refresh_token", "user"].forEach(key => localStorage.removeItem(key));
+    clearSessionData();
     navigate("/login");
   }, [navigate]);
 

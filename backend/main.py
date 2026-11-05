@@ -4,8 +4,9 @@
 import os
 import logging
 from contextlib import asynccontextmanager
+from urllib.parse import urlunsplit
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response, status as http_status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, FileResponse
@@ -18,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── Detectar entorno ──────────────────────────────────────────────────
-ENV = os.getenv("ENV", "development").lower()
+ENV = os.getenv("ENV", os.getenv("ENVIRONMENT", "development")).lower()
 IS_PRODUCTION = ENV == "production"
 
 from sqlalchemy.orm import Session
@@ -72,12 +73,18 @@ def create_initial_admin(db: Session):
     
     admin = db.query(User).filter(User.username == "admin").first()
     if not admin:
-        logger.info("👤 Creando usuario administrador inicial (admin/admin123)...")
+        initial_password = os.getenv("INITIAL_ADMIN_PASSWORD")
+        if IS_PRODUCTION and not initial_password:
+            raise RuntimeError(
+                "No existe un administrador. Define INITIAL_ADMIN_PASSWORD para crear el primero."
+            )
+        initial_password = initial_password or "admin123"
+        logger.info("Creando usuario administrador inicial...")
         new_admin = User(
             name="Administrador",
             username="admin",
             email="admin@sistema.com",
-            password=hash_password("admin123"),
+            password=hash_password(initial_password),
             is_admin=True,
             is_super_admin=True,
             modules=["members", "ministries", "finance", "projects", "events", "reports", "users", "settings"],
@@ -89,6 +96,7 @@ def create_initial_admin(db: Session):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 Iniciando sistema — ejecutando migraciones de base de datos...")
+    db = None
     try:
         # Asegurar que las tablas base existan antes de correr scripts de alteración
         Base.metadata.create_all(bind=engine)
@@ -110,11 +118,14 @@ async def lifespan(app: FastAPI):
         # Crear admin inicial si no existe
         db = SessionLocal()
         create_initial_admin(db)
-        db.close()
         
         logger.info("✅ Todas las migraciones y semilla de datos completadas exitosamente.")
     except Exception as e:
         logger.error(f"❌ Error crítico en migraciones: {e}", exc_info=True)
+        raise
+    finally:
+        if db is not None:
+            db.close()
     yield
     logger.info("⏹️  Sistema detenido.")
 
@@ -136,16 +147,19 @@ app = FastAPI(
 app.state.limiter = limiter
 
 # ── Middleware: orden importa (primero CORS, luego GZip) ───────────
-raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+local_dev_origin = urlunsplit(("http", "localhost:5173", "", "", ""))
+raw_origins = os.getenv("ALLOWED_ORIGINS", "" if IS_PRODUCTION else local_dev_origin)
 allowed_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+if IS_PRODUCTION:
+    insecure_origins = [origin for origin in allowed_origins if not origin.lower().startswith("https://")]
+    if insecure_origins:
+        raise RuntimeError("En producción, todos los ALLOWED_ORIGINS deben usar HTTPS")
 logger.info(f"CORS: Orígenes permitidos -> {allowed_origins}")
 
 # SEC-06: El regex de LAN solo aplica en entornos de desarrollo/local.
 # En producción, ALLOWED_ORIGINS debe contener únicamente el dominio exacto.
-_cors_regex = (
-    r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?"
-    if not IS_PRODUCTION else None
-)
+_local_scheme = "http"
+_cors_regex = rf"{_local_scheme}://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?" if not IS_PRODUCTION else None
 
 app.add_middleware(
     CORSMiddleware,
@@ -192,7 +206,7 @@ app.include_router(ministry_workspace_router)
 
 # ── Health check robusto ───────────────────────────────────────────
 @app.get("/health", tags=["Sistema"])
-def health_check():
+def health_check(response: Response):
     """Verifica que la API y la base de datos estén operativas."""
     try:
         db = SessionLocal()
@@ -203,9 +217,11 @@ def health_check():
         logger.error(f"Health check DB falló: {e}")
         db_status = "error"
 
-    status = "healthy" if db_status == "ok" else "degraded"
+    health_status = "healthy" if db_status == "ok" else "degraded"
+    if db_status != "ok":
+        response.status_code = http_status.HTTP_503_SERVICE_UNAVAILABLE
     # SEC-05: No exponer versión del sistema en producción
-    response = {"status": status, "database": db_status}
+    response = {"status": health_status, "database": db_status}
     if not IS_PRODUCTION:
         response["version"] = "1.1.0"
     return response

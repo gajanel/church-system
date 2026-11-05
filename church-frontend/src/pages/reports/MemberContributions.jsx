@@ -5,13 +5,12 @@
 import { useState, useEffect } from "react";
 import { Box, Typography, Button, Grid, Card, Autocomplete, TextField, Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, Chip } from "@mui/material";
 import { Assessment, Print, TableChart } from "@mui/icons-material";
-import { useOutletContext, useLocation } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import API from "../../api/api";
 import { fmt, printMemberContributionsPDF, exportToExcel, ReportSkeleton } from "./utils";
 
 export default function MemberContributions() {
   const { settings } = useOutletContext();
-  const location = useLocation();
   const [members, setMembers] = useState([]);
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const [data, setData] = useState(null);

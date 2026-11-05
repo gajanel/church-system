@@ -8,9 +8,9 @@ from typing import List
 from app.database.connection import get_db
 from app.schemas.project_schema import ProjectCreate, ProjectUpdate, ProjectResponse
 from app.services import project_service
-from app.utils.dependencies import get_current_user, only_admin
+from app.utils.dependencies import get_current_user, only_admin, require_module
 
-router = APIRouter(prefix="/projects", tags=["projects"])
+router = APIRouter(prefix="/projects", tags=["projects"], dependencies=[Depends(require_module("projects"))])
 
 
 @router.get("/", response_model=List[ProjectResponse])

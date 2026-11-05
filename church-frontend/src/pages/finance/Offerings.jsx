@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import { getOfferings, createOffering } from "../../api/finance";
+import { getOfferings, createOffering, getOfferingTithes, previewOfferingTithe, createOfferingTithe, cancelOfferingTithe } from "../../api/finance";
 import { getMembers } from "../../api/members";
 import {
   Button, TextField, Select, MenuItem, FormControl, InputLabel,
@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { ChevronLeft, ChevronRight, Delete, Add } from "@mui/icons-material";
 import { TableSkeleton } from "../../components/ui/SkeletonLoader";
+import styles from "./Offerings.module.css";
 
 /* ── Default offering types (always kept as base) ── */
 const DEFAULT_TYPES = ["servicio", "especial"];
@@ -22,13 +23,16 @@ const loadTypes = () => {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY));
     if (Array.isArray(saved) && saved.length > 0) return saved;
-  } catch {}
+  } catch {
+    // Usa los tipos predeterminados si el almacenamiento local está dañado.
+  }
   return [...DEFAULT_TYPES];
 };
 
 const saveTypes = (types) => localStorage.setItem(LS_KEY, JSON.stringify(types));
 
 const getToday = () => new Date().toISOString().split("T")[0];
+const getMonthStart = () => `${getToday().slice(0, 7)}-01`;
 const fmt = n => `Q ${parseFloat(n || 0).toFixed(2)}`;
 const G2 = { display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:16 };
 
@@ -60,6 +64,16 @@ export default function Offerings() {
   const [offerings, setOfferings] = useState([]);
   const [page, setPage]           = useState(1);
   const [total, setTotal]         = useState(1);
+  const [activeView, setActiveView] = useState("consult");
+  const [filteredTotal, setFilteredTotal] = useState(0);
+  const [filters, setFilters] = useState({ date_from:"", date_to:"", offering_type:"", search:"" });
+  const [appliedFilters, setAppliedFilters] = useState({});
+  const [tithes, setTithes] = useState([]);
+  const [tithePreview, setTithePreview] = useState(null);
+  const [titheForm, setTitheForm] = useState({
+    start_date:getMonthStart(), end_date:getToday(), application_date:getToday(),
+    percentage:"10", observations:""
+  });
 
   /* ── Custom types state ── */
   const [offeringTypes, setOfferingTypes] = useState(loadTypes);
@@ -82,15 +96,65 @@ export default function Offerings() {
   const loadOfferings = async () => {
     setLoading(true);
     try {
-      const res = await getOfferings(page, 10);
+      const res = await getOfferings(page, 10, appliedFilters);
       setOfferings(res.data?.items || []);
       setTotal(res.data?.pages || 1);
+      setFilteredTotal(res.data?.filtered_total || 0);
     } catch (err) { console.error(err); }
     setLoading(false);
   };
 
   useEffect(() => { loadMembersList(); }, []);
-  useEffect(() => { loadOfferings(); }, [page]);
+  useEffect(() => { loadOfferings(); }, [page, appliedFilters]);
+
+  const loadTithes = async () => {
+    try { const res = await getOfferingTithes(); setTithes(res.data || []); }
+    catch (err) { console.error(err); }
+  };
+
+  useEffect(() => { loadTithes(); }, []);
+
+  const applyFilters = () => {
+    setPage(1);
+    setAppliedFilters(Object.fromEntries(Object.entries(filters).filter(([, value]) => value)));
+  };
+
+  const clearFilters = () => {
+    setFilters({ date_from:"", date_to:"", offering_type:"", search:"" });
+    setPage(1);
+    setAppliedFilters({});
+  };
+
+  const onPreviewTithe = async e => {
+    e.preventDefault(); setError("");
+    try {
+      const res = await previewOfferingTithe({ start_date:titheForm.start_date, end_date:titheForm.end_date, percentage:parseFloat(titheForm.percentage) });
+      setTithePreview(res.data);
+    } catch (err) { setError(err.response?.data?.detail || "No se pudo calcular el diezmo"); }
+  };
+
+  const onApplyTithe = async () => {
+    setError("");
+    try {
+      await createOfferingTithe({ ...titheForm, percentage:parseFloat(titheForm.percentage), observations:titheForm.observations || null });
+      setTithePreview(null);
+      await loadTithes();
+      if (refreshSummary) refreshSummary();
+    } catch (err) { setError(err.response?.data?.detail || "No se pudo aplicar el diezmo"); }
+  };
+
+  const onCancelTithe = async id => {
+    try {
+      await cancelOfferingTithe(id);
+      await loadTithes();
+      if (refreshSummary) refreshSummary();
+    } catch { setError("No se pudo anular la aplicación"); }
+  };
+
+  const updateTitheField = (field, value) => {
+    setTitheForm(current => ({ ...current, [field]:value }));
+    setTithePreview(null);
+  };
 
   const onSubmit = async e => {
     e.preventDefault(); setError("");
@@ -104,6 +168,7 @@ export default function Offerings() {
       });
       setForm({ offering_type:offeringTypes[0]||"servicio", amount:"", date:getToday(), member_id:"", donor_name:"", observations:"" });
       loadOfferings();
+      setActiveView("consult");
       if (refreshSummary) refreshSummary();
     } catch { setError("Error al registrar ofrenda"); }
   };
@@ -141,7 +206,20 @@ export default function Offerings() {
     <>
       {error && <div style={{ color:"var(--color-error)", marginBottom:16 }}>{error}</div>}
 
+      <div className={styles.workspaceNav} role="tablist" aria-label="Gestión de ofrendas">
+        <button className={activeView === "consult" ? styles.activeNav : ""} onClick={() => setActiveView("consult")} role="tab" aria-selected={activeView === "consult"}>
+          <span className={styles.navIndex}>01</span><span><strong>Consultar</strong><small>Historial y filtros</small></span>
+        </button>
+        <button className={activeView === "register" ? styles.activeNav : ""} onClick={() => setActiveView("register")} role="tab" aria-selected={activeView === "register"}>
+          <span className={styles.navIndex}>02</span><span><strong>Registrar</strong><small>Nueva ofrenda</small></span>
+        </button>
+        <button className={activeView === "tithe" ? styles.activeNav : ""} onClick={() => setActiveView("tithe")} role="tab" aria-selected={activeView === "tithe"}>
+          <span className={styles.navIndex}>03</span><span><strong>Aplicar diezmo</strong><small>Cálculo y control</small></span>
+        </button>
+      </div>
+
       {/* ── Registration form ── */}
+      {activeView === "register" && <div className={styles.viewPanel}>
       <div style={{ marginBottom:24, boxShadow:"none", border:"1px solid #e5e7eb", borderRadius:"4px", background:"#fff" }}>
         <div style={{ padding:"12px 16px", borderBottom:"1px solid #e5e7eb", fontWeight:600, fontSize:"0.875rem", color:"#374151", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <span>Registrar Ofrenda</span>
@@ -186,9 +264,27 @@ export default function Offerings() {
           </form>
         </div>
       </div>
+      </div>}
 
-      {/* ── Offerings table ── */}
-      <p style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Historial de Ofrendas</p>
+      {/* ── Consultation ── */}
+      {activeView === "consult" && <div className={styles.viewPanel}>
+      <div style={{ marginBottom:24, border:"1px solid #e5e7eb", borderRadius:4, background:"#fff" }}>
+        <div style={{ padding:"12px 16px", borderBottom:"1px solid #e5e7eb", fontWeight:600, color:"#374151" }}>Consultar ofrendas</div>
+        <div style={{ padding:16 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(170px, 1fr))", gap:12 }}>
+            <TextField type="date" size="small" label="Desde" InputLabelProps={{ shrink:true }} value={filters.date_from} onChange={e => setFilters({...filters, date_from:e.target.value})} />
+            <TextField type="date" size="small" label="Hasta" InputLabelProps={{ shrink:true }} value={filters.date_to} onChange={e => setFilters({...filters, date_to:e.target.value})} />
+            <FormControl size="small"><InputLabel>Tipo</InputLabel><Select label="Tipo" value={filters.offering_type} onChange={e => setFilters({...filters, offering_type:e.target.value})}><MenuItem value="">Todos</MenuItem>{offeringTypes.map(t => <MenuItem key={t} value={t}>{typeLabel(t)}</MenuItem>)}</Select></FormControl>
+            <TextField size="small" label="Donante u observación" value={filters.search} onChange={e => setFilters({...filters, search:e.target.value})} onKeyDown={e => e.key === "Enter" && applyFilters()} />
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:14, gap:12, flexWrap:"wrap" }}>
+            <strong style={{ color:"#166534" }}>Total consultado: {fmt(filteredTotal)}</strong>
+            <div style={{ display:"flex", gap:8 }}><Button variant="text" onClick={clearFilters} sx={{ textTransform:"none" }}>Limpiar</Button><Button variant="contained" onClick={applyFilters} disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none" }}>Buscar</Button></div>
+          </div>
+        </div>
+      </div>
+
+      <p style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Resultados</p>
       {loading ? (
         <TableSkeleton rows={10} cols={6} />
       ) : (
@@ -216,6 +312,29 @@ export default function Offerings() {
         </TableWrap>
       )}
       <Pager page={page} total={total} onPage={setPage} />
+      </div>}
+
+      {/* ── Tithe applications ── */}
+      {activeView === "tithe" && <div className={styles.viewPanel}>
+      <div style={{ marginTop:28, border:"1px solid #e5e7eb", borderRadius:4, background:"#fff" }}>
+        <div style={{ padding:"12px 16px", borderBottom:"1px solid #e5e7eb" }}>
+          <strong style={{ color:"#374151" }}>Aplicación de diezmo sobre ofrendas</strong>
+          <p style={{ margin:"4px 0 0", fontSize:12, color:"#6b7280" }}>El saldo de caja cambia únicamente cuando confirmas una aplicación.</p>
+        </div>
+        <form onSubmit={onPreviewTithe} style={{ padding:16 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:12 }}>
+            <TextField required type="date" size="small" label="Ofrendas desde" InputLabelProps={{ shrink:true }} value={titheForm.start_date} onChange={e => updateTitheField("start_date", e.target.value)} />
+            <TextField required type="date" size="small" label="Ofrendas hasta" InputLabelProps={{ shrink:true }} value={titheForm.end_date} onChange={e => updateTitheField("end_date", e.target.value)} />
+            <TextField required type="number" size="small" label="Porcentaje" inputProps={{ min:"0.01", max:"100", step:"0.01" }} value={titheForm.percentage} onChange={e => updateTitheField("percentage", e.target.value)} />
+            <TextField required type="date" size="small" label="Fecha de aplicación" InputLabelProps={{ shrink:true }} value={titheForm.application_date} onChange={e => updateTitheField("application_date", e.target.value)} />
+            <TextField size="small" label="Observaciones" value={titheForm.observations} onChange={e => updateTitheField("observations", e.target.value)} />
+          </div>
+          {tithePreview && <div style={{ marginTop:14, padding:"12px 14px", background:"#f8fafc", border:"1px solid #e2e8f0", borderRadius:4, display:"flex", justifyContent:"space-between", gap:16, flexWrap:"wrap" }}><span>Base de ofrendas: <strong>{fmt(tithePreview.base_amount)}</strong></span><span>Diezmo a aplicar: <strong>{fmt(tithePreview.amount)}</strong></span></div>}
+          <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:14 }}><Button type="submit" variant="outlined" sx={{ textTransform:"none" }}>Calcular</Button>{tithePreview && <Button type="button" onClick={onApplyTithe} variant="contained" disableElevation sx={{ bgcolor:"#0F172A", textTransform:"none" }}>Confirmar aplicación</Button>}</div>
+        </form>
+        {tithes.length > 0 && <TableWrap><TableHead><TableRow><TableCell>Período</TableCell><TableCell>Base</TableCell><TableCell>Porcentaje</TableCell><TableCell>Aplicado</TableCell><TableCell>Estado</TableCell><TableCell>Responsable</TableCell><TableCell /></TableRow></TableHead><TableBody>{tithes.map(t => <TableRow key={t.id}><TableCell>{t.start_date} a {t.end_date}</TableCell><TableCell>{fmt(t.base_amount)}</TableCell><TableCell>{t.percentage}%</TableCell><TableCell sx={{ fontWeight:700 }}>{fmt(t.amount)}</TableCell><TableCell><Chip size="small" label={t.status === "applied" ? "Aplicado" : "Anulado"} color={t.status === "applied" ? "success" : "default"} variant="outlined" /></TableCell><TableCell>{t.created_by_name || "—"}</TableCell><TableCell align="right">{t.status === "applied" && <Button size="small" color="error" onClick={() => onCancelTithe(t.id)} sx={{ textTransform:"none" }}>Anular</Button>}</TableCell></TableRow>)}</TableBody></TableWrap>}
+      </div>
+      </div>}
 
       {/* ── Manage Types Dialog ── */}
       <Dialog open={manageOpen} onClose={() => setManageOpen(false)} maxWidth="xs" fullWidth>

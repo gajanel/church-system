@@ -12,9 +12,9 @@ import styles from "./Card.module.css";
  *   <CardBody>…</CardBody>
  * </Card>
  *
- * Props Card: className, noPad (bool)
+ * Props Card: className, style
  */
-export function Card({ children, className = "", noPad = false, style, ...rest }) {
+export function Card({ children, className = "", style, ...rest }) {
   return (
     <div className={`${styles.card} ${className}`} style={style} {...rest}>
       {children}

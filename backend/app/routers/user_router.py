@@ -115,6 +115,8 @@ def get_users(db: Session = Depends(get_db), user=Depends(only_admin)):
 
 @router.get("/users/{user_id}", response_model=UserResponse)
 def get_user(user_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    if user.id != user_id and not (user.is_admin or user.is_super_admin):
+        raise HTTPException(status_code=403, detail="No tienes permisos para consultar este usuario")
     u = user_service.get_user_by_id(db, user_id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")

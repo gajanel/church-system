@@ -13,7 +13,7 @@ import {
   AccountBalance, TrendingUp, TrendingDown, SwapHoriz,
   Add, Delete, ChevronLeft, ChevronRight, Refresh, AccountBalanceWallet
 } from "@mui/icons-material";
-import { getCashRegister, createInjection, getInjections, deleteInjection, getBankAccounts } from "../../api/finance";
+import { getCashRegister, createInjection, getBankAccounts } from "../../api/finance";
 import { TableSkeleton } from "../../components/ui/SkeletonLoader";
 
 /* ─── helpers ─────────────────────────────────────────────────────── */
@@ -96,12 +96,6 @@ export default function CashRegister() {
   const [injSaving, setInjSaving] = useState(false);
   const [injError,  setInjError]  = useState("");
 
-  // Injection history
-  const [injections, setInjections]  = useState([]);
-  const [injPage,    setInjPage]     = useState(1);
-  const [injPages,   setInjPages]    = useState(1);
-  const [injLoading, setInjLoading]  = useState(false);
-
   // Bank Accounts
   const [accounts, setAccounts] = useState([]);
 
@@ -115,16 +109,6 @@ export default function CashRegister() {
     setLoading(false);
   }, [selMonth, selYear]);
 
-  const loadInjections = useCallback(async () => {
-    setInjLoading(true);
-    try {
-      const res = await getInjections(injPage, 8);
-      setInjections(res.data?.items || []);
-      setInjPages(res.data?.pages || 1);
-    } catch (err) { console.error(err); }
-    setInjLoading(false);
-  }, [injPage]);
-
   const loadAccounts = useCallback(async () => {
     try {
       const res = await getBankAccounts();
@@ -133,7 +117,6 @@ export default function CashRegister() {
   }, []);
 
   useEffect(() => { loadCash(); },       [loadCash]);
-  useEffect(() => { loadInjections(); }, [loadInjections]);
   useEffect(() => { loadAccounts(); },   [loadAccounts]);
 
   /* create injection */
@@ -156,7 +139,6 @@ export default function CashRegister() {
       setInjForm({ bank_account_id: "", amount: "", date: getToday(), slip_number: "", observations: "" });
       setInjFile(null);
       loadCash();
-      loadInjections();
     } catch (err) {
       setInjError(err?.response?.data?.detail || "Error al registrar la inyección.");
     }

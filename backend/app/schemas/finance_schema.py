@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
 # Este código es confidencial y propietario. No está permitida su distribución ni modificación.
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date, datetime
 from typing import Optional, List
 
@@ -36,6 +36,15 @@ class OfferingPaginatedResponse(BaseModel):
     page: int
     size: int
     pages: int
+    filtered_total: float = 0
+
+
+class OfferingTitheCreate(BaseModel):
+    start_date: date
+    end_date: date
+    application_date: date
+    percentage: float = Field(default=10, gt=0, le=100)
+    observations: Optional[str] = None
 
 # ── Ingresos ──
 class IncomeCreate(BaseModel):
@@ -229,4 +238,4 @@ class BankWithdrawalPaginatedResponse(BaseModel):
     total: int
     page: int
     size: int
-    pages: int
+    pages: int

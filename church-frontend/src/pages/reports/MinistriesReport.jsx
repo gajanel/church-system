@@ -20,7 +20,6 @@ import {
 import { getAllMonthlyReports } from "../../api/ministryWorkspace";
 import { getMinistries } from "../../api/ministries";
 import { API_URL } from "../../api/api";
-import { useOutletContext } from "react-router-dom";
 import { exportToExcel } from "./utils";
 
 const MONTHS = [
@@ -214,7 +213,6 @@ function Kpi({ label, val, sub, color }) {
 }
 
 export default function MinistriesReport() {
-  const { settings } = useOutletContext();
   const [reports, setReports]         = useState([]);
   const [ministries, setMinistries]   = useState([]);
   const [loading, setLoading]         = useState(false);

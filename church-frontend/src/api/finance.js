@@ -4,9 +4,15 @@
  */
 import API from "./api";
 
-export const getOfferings = (p=1, s=50) => API.get(`/finance/offerings?page=${p}&size=${s}`);
+export const getOfferings = (p=1, s=50, filters={}) => API.get("/finance/offerings", {
+  params: { page:p, size:s, ...filters }
+});
 export const createOffering = (data) => API.post("/finance/offerings", data);
 export const deleteOffering = (id) => API.delete(`/finance/offerings/${id}`);
+export const getOfferingTithes = () => API.get("/finance/offering-tithes");
+export const previewOfferingTithe = (params) => API.get("/finance/offering-tithes/preview", { params });
+export const createOfferingTithe = (data) => API.post("/finance/offering-tithes", data);
+export const cancelOfferingTithe = (id) => API.patch(`/finance/offering-tithes/${id}/cancel`);
 
 export const getIncomes = (p=1, s=50) => API.get(`/finance/incomes?page=${p}&size=${s}`);
 export const createIncome = (data) => API.post("/finance/incomes", data);

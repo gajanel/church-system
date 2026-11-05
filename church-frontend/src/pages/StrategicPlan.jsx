@@ -3,7 +3,6 @@
  * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
  */
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { getStrategicPlan, updateStrategicPlanArea } from "../api/strategicPlan";
 import styles from "./StrategicPlan.module.css";
 import { CircularProgress } from "@mui/material";

@@ -3,15 +3,93 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy import extract, func, or_
-from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense, BankDeposit, BankInjection, BankAccount, BankWithdrawal
-from app.schemas.finance_schema import OfferingCreate, IncomeCreate, ExpenseCreate, FixedExpenseCreate, BankDepositCreate, BankInjectionCreate, BankAccountCreate, BankWithdrawalCreate
+from app.models.finance_model import ChurchOffering, ChurchIncome, ChurchExpense, FixedExpense, BankDeposit, BankInjection, BankAccount, BankWithdrawal, OfferingTitheApplication
+from app.models.member_model import Member
+from app.schemas.finance_schema import OfferingCreate, IncomeCreate, ExpenseCreate, FixedExpenseCreate, BankDepositCreate, BankInjectionCreate, BankAccountCreate, BankWithdrawalCreate, OfferingTitheCreate
+from app.utils.finance_balances import calculate_tithe
 
 # ── Ofrendas ──
-def get_offerings(db: Session, skip: int = 0, limit: int = 50):
+def get_offerings(db: Session, skip: int = 0, limit: int = 50, date_from=None, date_to=None, offering_type=None, search=None):
     query = db.query(ChurchOffering)
+    if date_from:
+        query = query.filter(ChurchOffering.date >= date_from)
+    if date_to:
+        query = query.filter(ChurchOffering.date <= date_to)
+    if offering_type:
+        query = query.filter(ChurchOffering.offering_type == offering_type)
+    if search:
+        term = f"%{search.strip()}%"
+        query = query.outerjoin(ChurchOffering.member).filter(or_(
+            ChurchOffering.donor_name.ilike(term),
+            ChurchOffering.observations.ilike(term),
+            func.concat(Member.first_name, " ", Member.last_name).ilike(term),
+        ))
     total = query.count()
+    filtered_total = query.with_entities(func.sum(ChurchOffering.amount)).scalar() or 0
     rows = query.order_by(ChurchOffering.date.desc()).offset(skip).limit(limit).all()
-    return [_format_offering(r) for r in rows], total
+    return [_format_offering(r) for r in rows], total, float(filtered_total)
+
+
+def get_tithe_applications(db: Session):
+    rows = db.query(OfferingTitheApplication).order_by(
+        OfferingTitheApplication.application_date.desc(), OfferingTitheApplication.id.desc()
+    ).all()
+    return [_format_tithe_application(row) for row in rows]
+
+
+def get_tithe_preview(db: Session, start_date, end_date, percentage):
+    if start_date > end_date:
+        raise ValueError("La fecha inicial no puede ser posterior a la fecha final")
+    base_amount = db.query(func.sum(ChurchOffering.amount)).filter(
+        ChurchOffering.date >= start_date, ChurchOffering.date <= end_date,
+    ).scalar() or 0
+    return {"base_amount": round(float(base_amount), 2), "percentage": percentage,
+            "amount": calculate_tithe(base_amount, percentage)}
+
+
+def create_tithe_application(db: Session, data: OfferingTitheCreate, user_id: int):
+    if data.start_date > data.end_date:
+        raise ValueError("La fecha inicial no puede ser posterior a la fecha final")
+    overlapping = db.query(OfferingTitheApplication).filter(
+        OfferingTitheApplication.status == "applied",
+        OfferingTitheApplication.start_date <= data.end_date,
+        OfferingTitheApplication.end_date >= data.start_date,
+    ).first()
+    if overlapping:
+        raise ValueError("El período seleccionado ya está incluido en otra aplicación activa")
+    preview = get_tithe_preview(db, data.start_date, data.end_date, data.percentage)
+    base_amount = preview["base_amount"]
+    if base_amount <= 0:
+        raise ValueError("No hay ofrendas en el período seleccionado")
+    amount = preview["amount"]
+    obj = OfferingTitheApplication(
+        **data.model_dump(), base_amount=float(base_amount), amount=amount,
+        status="applied", created_by=user_id,
+    )
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return _format_tithe_application(obj)
+
+
+def cancel_tithe_application(db: Session, application_id: int):
+    obj = db.query(OfferingTitheApplication).filter(OfferingTitheApplication.id == application_id).first()
+    if not obj:
+        return None
+    obj.status = "cancelled"
+    db.commit()
+    db.refresh(obj)
+    return _format_tithe_application(obj)
+
+
+def _format_tithe_application(row):
+    return {
+        "id": row.id, "start_date": row.start_date, "end_date": row.end_date,
+        "application_date": row.application_date, "percentage": row.percentage,
+        "base_amount": row.base_amount, "amount": row.amount, "status": row.status,
+        "observations": row.observations, "created_at": row.created_at,
+        "created_by_name": row.created_by_user.name if row.created_by_user else None,
+    }
 
 def create_offering(db: Session, data: OfferingCreate, user_id: int):
     obj = ChurchOffering(**data.model_dump(), created_by=user_id)
@@ -88,20 +166,9 @@ def get_expenses(db: Session, skip: int = 0, limit: int = 50):
     return [_format_expense(r) for r in rows], total
 
 def create_expense(db: Session, data: ExpenseCreate, user_id: int, document_url: str = None):
-    if data.expense_type == "Diezmo de Ofrendas":
-        today = data.date
-        total = db.query(func.sum(ChurchOffering.amount)).filter(
-            ChurchOffering.offering_type == "servicio",
-            extract("month", ChurchOffering.date) == today.month,
-            extract("year", ChurchOffering.date) == today.year,
-        ).scalar() or 0
-        amount = round(total * 0.10, 2)
-    else:
-        amount = data.amount
-
     obj = ChurchExpense(
         expense_type=data.expense_type,
-        amount=amount,
+        amount=data.amount,
         date=data.date,
         observations=data.observations,
         document_url=document_url,
@@ -149,6 +216,11 @@ def get_monthly_summary(db: Session, month: int, year: int):
         extract("month", ChurchExpense.date) == month,
         extract("year", ChurchExpense.date) == year,
     ).scalar() or 0
+    total_tithes = db.query(func.sum(OfferingTitheApplication.amount)).filter(
+        extract("month", OfferingTitheApplication.application_date) == month,
+        extract("year", OfferingTitheApplication.application_date) == year,
+        OfferingTitheApplication.status == "applied",
+    ).scalar() or 0
 
     monthly_goal = db.query(func.sum(FixedExpense.amount)).scalar() or 0
 
@@ -162,15 +234,18 @@ def get_monthly_summary(db: Session, month: int, year: int):
     total_offerings_hist = db.query(func.sum(ChurchOffering.amount)).scalar() or 0
     total_incomes_hist = db.query(func.sum(ChurchIncome.amount)).scalar() or 0
     total_expenses_hist = db.query(func.sum(ChurchExpense.amount)).scalar() or 0
-    offering_cash = (total_offerings_hist + total_incomes_hist) - total_expenses_hist - total_injections_hist
+    total_tithes_hist = db.query(func.sum(OfferingTitheApplication.amount)).filter(
+        OfferingTitheApplication.status == "applied"
+    ).scalar() or 0
+    offering_cash = (total_offerings_hist + total_incomes_hist) - total_expenses_hist - total_injections_hist - total_tithes_hist
 
     return {
         "month": month,
         "year": year,
         "total_offerings": round(total_offerings, 2),
         "total_incomes": round(total_incomes, 2),
-        "total_expenses": round(total_expenses, 2),
-        "balance": round(total_offerings + total_incomes - total_expenses, 2),
+        "total_expenses": round(total_expenses + total_tithes, 2),
+        "balance": round(total_offerings + total_incomes - total_expenses - total_tithes, 2),
         "monthly_goal": round(monthly_goal, 2),
         "total_historical_incomes": round(total_incomes_hist, 2),
         "cash_balance": round(cash_balance, 2),         # Caja General (bancos)
@@ -303,8 +378,11 @@ def get_cash_register(db: Session, month: int = None, year: int = None):
     total_offerings_hist  = db.query(func.sum(ChurchOffering.amount)).scalar() or 0
     total_incomes_hist    = db.query(func.sum(ChurchIncome.amount)).scalar() or 0
     total_expenses_hist   = db.query(func.sum(ChurchExpense.amount)).scalar() or 0
+    total_tithes_hist = db.query(func.sum(OfferingTitheApplication.amount)).filter(
+        OfferingTitheApplication.status == "applied"
+    ).scalar() or 0
     offering_cash = round(
-        (total_offerings_hist + total_incomes_hist) - total_expenses_hist - total_injections_hist, 2
+        (total_offerings_hist + total_incomes_hist) - total_expenses_hist - total_injections_hist - total_tithes_hist, 2
     )
 
     # Totales del mes seleccionado

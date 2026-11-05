@@ -49,7 +49,9 @@ export const userHasModuleAccess = (user, moduleId) => {
   if (user.is_admin || user.is_super_admin) return true;
 
   const modules = user.modules || [];
-  if (!moduleId.includes(".")) return modules.includes(moduleId);
+  if (!moduleId.includes(".")) {
+    return modules.includes(moduleId) || modules.some(item => item.startsWith(`${moduleId}.`));
+  }
 
   const parent = moduleId.split(".")[0];
   if (modules.includes(moduleId)) return true;

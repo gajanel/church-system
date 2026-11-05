@@ -189,7 +189,6 @@ export default function BanksModule() {
   const currentWd        = filteredWd.slice((wdPage - 1) * itemsPerPage, wdPage * itemsPerPage);
 
   // Totales de retiros
-  const totalWd = withdrawals.reduce((s, w) => s + (w.amount || 0), 0);
 
   // -- Account Handlers --
   const onAccSubmit = async e => {

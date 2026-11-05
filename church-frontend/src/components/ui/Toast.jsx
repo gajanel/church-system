@@ -2,7 +2,6 @@
  * Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
  * Este código es confidencial y propietario. No está permitida su distribución ni modificación.
  */
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useRef } from "react";
 import {
   CheckCircleOutline,

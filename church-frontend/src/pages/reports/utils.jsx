@@ -109,7 +109,7 @@ export const pdfHeader = (title, config, period = "") => {
   if (config?.church_logo_url) {
     try {
       logoSrc = new URL(config.church_logo_url, window.location.origin).href;
-    } catch (e) {
+    } catch {
       logoSrc = config.church_logo_url;
     }
   }
@@ -142,7 +142,6 @@ export const pdfClose = (win, config) => {
 };
 
 export const printFinancialMonthlyPDF = (data, month, year, config) => {
-  const fmtQ = n => `Q ${parseFloat(n || 0).toLocaleString("es-GT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   
   // Format dates manually to match "viernes, 1 de mayo de 2026"
   const formatDate = (dateStr) => {
@@ -159,39 +158,30 @@ export const printFinancialMonthlyPDF = (data, month, year, config) => {
 
   let allTx = [];
   data.transactions.offerings.forEach(o => allTx.push({ ...o, type_cat: 'offering', desc: o.type === "servicio" ? "Ofrenda" : `Ofrenda especial${o.donor ? ' - ' + o.donor : ''}` }));
-  data.transactions.incomes.forEach(i => allTx.push({ ...i, type_cat: 'income', desc: i.type + (i.donor ? ` - ${i.donor}` : '') }));
+  data.transactions.incomes.forEach(i => allTx.push({
+    ...i,
+    type_cat: 'income',
+    desc: i.type + (i.donor ? ` - ${i.donor}` : '')
+  }));
   data.transactions.expenses.forEach(e => allTx.push({ ...e, type_cat: 'expense', desc: e.type + (e.observations ? ` - ${e.observations}` : '') }));
 
   allTx.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-  let saldoInicial = 0;
-  let diezmoManual = 0;
-  
-  allTx.forEach(t => {
-    if ((t.type_cat === 'income' || t.type_cat === 'offering') && t.desc.toLowerCase().includes("saldo inicial")) {
-      saldoInicial += parseFloat(t.amount);
-    }
-    if (t.type_cat === 'expense' && t.desc.toLowerCase().includes("diezmo")) {
-      diezmoManual += parseFloat(t.amount);
-    }
-  });
-
+  const saldoInicial = parseFloat(data.summary.initial_balance || 0);
   const ofrendasLimpio = parseFloat(data.summary.total_offerings);
-  const aportacionesLimpio = parseFloat(data.summary.total_incomes) - saldoInicial;
+  const aportacionesLimpio = parseFloat(data.summary.total_incomes);
   
-  // Diezmo es estrictamente el 10% de las ofrendas
-  const diezmoGastos = ofrendasLimpio * 0.10;
-  // Gastos es el total de gastos puros menos lo que hayan registrado manualmente como diezmo
-  const gastosLimpio = parseFloat(data.summary.pure_expenses) - diezmoManual;
+  const diezmoGastos = parseFloat(data.summary.tithe_amount || 0);
+  const gastosLimpio = parseFloat(data.summary.other_expenses || 0);
   const totalInyecciones = parseFloat(data.summary.total_injections || 0);
-  const saldoFinal = ofrendasLimpio + aportacionesLimpio + saldoInicial - diezmoGastos - gastosLimpio - totalInyecciones;
+  const saldoFinal = parseFloat(data.summary.balance || 0);
 
   // Resolver la URL del logo para que funcione en window.open (about:blank)
   let logoSrc = '';
   if (config?.church_logo_url) {
     try {
       logoSrc = new URL(config.church_logo_url, window.location.origin).href;
-    } catch (e) {
+    } catch {
       logoSrc = config.church_logo_url;
     }
   }

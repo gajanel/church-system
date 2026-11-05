@@ -5,10 +5,8 @@
 import { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getMonthlySummary } from "../../api/finance";
-import { Tabs, Tab, Paper, Button } from "@mui/material";
-import {
-  AccountBalanceWallet, CallMade, CallReceived, Flag, Savings, AccountBalance, ArrowBack
-} from "@mui/icons-material";
+import { Button } from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import { PageHeader } from "../../components/ui/PageHeader";
 import s from "../../styles/page.module.css";
 
@@ -54,10 +52,6 @@ export default function FinanceLayout() {
     "/finance/deposits": "Bancos"
   };
   const currentTitle = titles[tabValue] || "Finanzas y Contabilidad";
-
-  const handleTabChange = (_, newValue) => {
-    navigate(newValue);
-  };
 
   return (
     <div className={s.page}>

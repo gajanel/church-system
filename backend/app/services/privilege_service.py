@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2026 GEAG. Todos los derechos reservados.
 # Este código es confidencial y propietario. No está permitida su distribución ni modificación.
 
-import random
+import secrets
 from datetime import date, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -285,7 +285,7 @@ def auto_generate_schedule(db: Session, week_start: date, user_id: int, days: li
             # Entre los de menor frecuencia, escoger aleatoriamente
             min_freq = recent_count.get(pool_candidates[0], 0)
             least_used = [c for c in pool_candidates if recent_count.get(c, 0) == min_freq]
-            chosen = random.choice(least_used)
+            chosen = secrets.choice(least_used)
 
             assigned_today.add(chosen)
             recent_count[chosen] = recent_count.get(chosen, 0) + 1

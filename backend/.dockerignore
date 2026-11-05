@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite*
+build/
+dist/
+runtime_packages/
+runtime_venv/
+tests/
+venv/
+static/uploads/

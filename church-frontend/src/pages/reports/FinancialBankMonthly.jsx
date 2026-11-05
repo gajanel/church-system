@@ -5,12 +5,10 @@
 import { useState } from "react";
 import { Box, Typography, Button, Grid, Card, CardContent, Select, MenuItem, FormControl, InputLabel, Table, TableBody, TableCell, TableHead, TableRow, Chip } from "@mui/material";
 import { Assessment, Print, TableChart } from "@mui/icons-material";
-import { useOutletContext } from "react-router-dom";
 import API from "../../api/api";
 import { fmt, nowYear, nowMonth, MONTHS_ES, ReportSkeleton, exportToExcel } from "./utils";
 
 export default function FinancialBankMonthly() {
-  const { settings } = useOutletContext();
   const [month, setMonth] = useState(nowMonth);
   const [year, setYear] = useState(nowYear);
   const [data, setData] = useState(null);

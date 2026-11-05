@@ -1,57 +1,66 @@
 @echo off
-echo ==========================================
-echo Iniciando Generacion de Release GEAG
-echo ==========================================
+setlocal EnableExtensions
+cd /d "%~dp0"
 
-REM 1. Compilar Frontend
-call build_frontend.bat
-
-REM 2. Compilar Backend
-call build_backend.bat
-
-REM 3. Ensamblar Instalador
-echo ==========================================
-echo Ensamblando carpeta Instalador_SIGDEM
-echo ==========================================
-if exist Instalador_SIGDEM rmdir /s /q Instalador_SIGDEM
-mkdir Instalador_SIGDEM
-
-echo Copiando Frontend...
-xcopy /E /I /Y church-frontend\dist Instalador_SIGDEM\frontend > nul
-
-echo Copiando Backend ejecutable...
-copy backend\dist\SIGDEM_Backend.exe Instalador_SIGDEM\ > nul
-
-echo Copiando archivo de configuracion .env...
-copy backend\.env Instalador_SIGDEM\ > nul
-
-echo Creando script de inicio manual...
-echo @echo off > Instalador_SIGDEM\iniciar_sistema.bat
-echo echo Iniciando Sistema SIGDEM... >> Instalador_SIGDEM\iniciar_sistema.bat
-echo start SIGDEM_Backend.exe >> Instalador_SIGDEM\iniciar_sistema.bat
-echo echo El sistema esta corriendo. Entra a http://localhost:8000 en tu navegador. >> Instalador_SIGDEM\iniciar_sistema.bat
-echo pause >> Instalador_SIGDEM\iniciar_sistema.bat
-
-echo Creando script de instalacion de arranque automatico...
-echo @echo off > Instalador_SIGDEM\instalar_arranque.bat
-echo echo ======================================================== >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo 1. Abriendo puerto 8000 en el Firewall para red local... >> Instalador_SIGDEM\instalar_arranque.bat
-echo netsh advfirewall firewall add rule name="SIGDEM System" dir=in action=allow protocol=TCP localport=8000 >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo ======================================================== >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo 2. Instalando el sistema en el arranque automatico de Windows... >> Instalador_SIGDEM\instalar_arranque.bat
-echo set "TARGET=%%APPDATA%%\Microsoft\Windows\Start Menu\Programs\Startup\SIGDEM_System.vbs" >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo Set WshShell = CreateObject("WScript.Shell"^) ^> "%%TARGET%%" >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo WshShell.Run chr(34^) ^& "%%~dp0SIGDEM_Backend.exe" ^& chr(34^), 0 ^>^> "%%TARGET%%" >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo ======================================================== >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo Listo! El sistema se iniciara silenciosamente cada vez que prendas la computadora. >> Instalador_SIGDEM\instalar_arranque.bat
-echo echo (Recuerda ejecutar este archivo como Administrador si el firewall dio error) >> Instalador_SIGDEM\instalar_arranque.bat
-echo pause >> Instalador_SIGDEM\instalar_arranque.bat
+if not exist "%~dp0VERSION" (
+    echo ERROR: No se encontro el archivo VERSION.
+    exit /b 1
+)
+set /P "APP_VERSION="<"%~dp0VERSION"
+set "RELEASE_DIR=%~dp0Instalador_SIGDEM"
+set "RELEASE_ZIP=%~dp0SIGDEM_USB_v%APP_VERSION%.zip"
 
 echo ==========================================
-echo ¡PROCESO COMPLETADO EXITOSAMENTE!
+echo Generando paquete SIGDEM %APP_VERSION% para USB
 echo ==========================================
-echo Se ha creado la carpeta "Instalador_SIGDEM".
-echo Esta carpeta es la que debes copiar a la computadora de la iglesia.
-echo Adentro incluye el ejecutable (.exe), la pagina (frontend) y los scripts de arranque.
+
+call "%~dp0build_frontend.bat"
+if errorlevel 1 goto :error
+
+call "%~dp0build_backend.bat"
+if errorlevel 1 goto :error
+
+if not exist "deployment\production.env.example" (
+    echo ERROR: Falta deployment\production.env.example.
+    goto :error
+)
+
+if exist "%RELEASE_DIR%" rmdir /S /Q "%RELEASE_DIR%"
+mkdir "%RELEASE_DIR%"
+if errorlevel 1 goto :error
+
+echo Copiando frontend...
+xcopy "church-frontend\dist" "%RELEASE_DIR%\frontend\" /E /I /Y /Q >nul
+if errorlevel 1 goto :error
+
+echo Copiando backend y configuracion...
+copy /Y "backend\dist\SIGDEM_Backend.exe" "%RELEASE_DIR%\SIGDEM_Backend.exe" >nul
+if errorlevel 1 goto :error
+copy /Y "deployment\production.env.example" "%RELEASE_DIR%\.env.example" >nul
+if errorlevel 1 goto :error
+
+echo Copiando herramientas de instalacion...
+copy /Y "deployment\*.bat" "%RELEASE_DIR%\" >nul
+if errorlevel 1 goto :error
+copy /Y "deployment\LEEME_USB.txt" "%RELEASE_DIR%\LEEME_USB.txt" >nul
+if errorlevel 1 goto :error
+copy /Y "VERSION" "%RELEASE_DIR%\VERSION" >nul
+copy /Y "CHANGELOG.md" "%RELEASE_DIR%\CHANGELOG.md" >nul
+
+echo Comprimiendo paquete...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-ChildItem -LiteralPath '%RELEASE_DIR%' -Force ^| Compress-Archive -DestinationPath '%RELEASE_ZIP%' -Force"
+if errorlevel 1 goto :error
+
+echo.
 echo ==========================================
-pause
+echo PAQUETE CREADO CORRECTAMENTE
+echo ==========================================
+echo Carpeta: %RELEASE_DIR%
+echo Archivo: %RELEASE_ZIP%
+echo Usa preparar_usb.bat para copiarlo a una memoria USB.
+exit /b 0
+
+:error
+echo.
+echo ERROR: No se pudo generar el paquete de produccion.
+exit /b 1

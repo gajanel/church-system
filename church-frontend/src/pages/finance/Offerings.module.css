@@ -1,0 +1,78 @@
+.workspaceNav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 22px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #dfe4ea;
+  border-radius: 8px;
+}
+
+.workspaceNav button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 68px;
+  padding: 12px 18px;
+  color: #64748b;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.workspaceNav button:last-child { border-right: 0; }
+.workspaceNav button:hover { background: #f8fafc; color: #1e293b; }
+
+.workspaceNav button::after {
+  position: absolute;
+  right: 16px;
+  bottom: 0;
+  left: 16px;
+  height: 3px;
+  background: transparent;
+  border-radius: 3px 3px 0 0;
+  content: "";
+}
+
+.workspaceNav .activeNav {
+  color: #0f2f6f;
+  background: #f7f9fd;
+}
+
+.workspaceNav .activeNav::after { background: #173f8a; }
+
+.workspaceNav strong,
+.workspaceNav small { display: block; }
+.workspaceNav strong { margin-bottom: 2px; font-size: 13px; font-weight: 700; }
+.workspaceNav small { color: #8491a3; font-size: 11px; }
+
+.navIndex {
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.activeNav .navIndex { color: #173f8a; }
+
+.viewPanel { animation: enter 180ms ease-out; }
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+  .workspaceNav { grid-template-columns: 1fr; }
+  .workspaceNav button { min-height: 56px; border-right: 0; border-bottom: 1px solid #e5e7eb; }
+  .workspaceNav button:last-child { border-bottom: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewPanel { animation: none; }
+}

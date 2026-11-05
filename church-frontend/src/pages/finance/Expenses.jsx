@@ -23,7 +23,9 @@ const loadTypes = () => {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY));
     if (Array.isArray(saved) && saved.length > 0) return saved;
-  } catch {}
+  } catch {
+    // Usa los rubros predeterminados si el almacenamiento local está dañado.
+  }
   return [...DEFAULT_TYPES, DIEZMO_TYPE];
 };
 
